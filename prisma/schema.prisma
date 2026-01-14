@@ -1,0 +1,276 @@
+// --------------------------------------------------------
+// KONFIGURASI KONEKSI
+// --------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------------------------
+// 1. DATA PENGURUS & SISTEM LOGIN (Auth & User Management)
+// --------------------------------------------------------
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      Role     @default(PENGURUS)
+
+  pengurus   Pengurus? @relation(fields: [pengurusId], references: [id])
+  pengurusId Int?      @unique
+
+  berita     Berita[]  // ✅ relasi 1 User → banyak Berita
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// Tabel Data Diri Anggota OSIS/MPK
+model Pengurus {
+  id        Int      @id @default(autoincrement())
+  nama      String
+  nis       String   @unique
+  kelas     String   
+  jabatan   String   
+  divisi    String
+  fotoUrl   String? @db.LongText
+  hp        String?
+  status    StatusPengurus @default(AKTIF)
+  isAdvisor Boolean  @default(false)
+
+  // === KOLOM TAMBAHAN BARU (Opsi A) ===
+  email        String?
+  instagram    String?
+  tiktok       String?
+  domisili     String?   // Alamat Lengkap
+  transportasi String?   
+  motto        String?   
+  tglLahir     DateTime? 
+  idCardDesign String?   @db.LongText
+  // ====================================
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?
+  absensi   Absensi[]
+  programKerja ProgramKerja[]
+}
+
+// --------------------------------------------------------
+// 2. MODUL INBOX ASPIRASI (Pesan Siswa)
+// --------------------------------------------------------
+model Aspirasi {
+  id        Int      @id @default(autoincrement())
+  pengirim  String   @default("Anonim")
+  kelas     String?
+  isi       String   @db.Text
+  kategori  String
+  status    StatusAspirasi @default(PENDING)
+  
+  // === TAMBAHAN BARU ===
+  balasan   String?  @db.Text // Jawaban Admin
+  balasanAt DateTime?         // Kapan dibalas
+  // =====================
+
+  createdAt DateTime @default(now())
+}
+// --------------------------------------------------------
+// 3. MODUL KELOLA BERITA (CMS Artikel)
+// --------------------------------------------------------
+model Berita {
+  id        Int      @id @default(autoincrement())
+  judul     String
+  slug      String   @unique
+
+  konten    String   @db.LongText
+  gambar    String?  @db.LongText
+  kategori  String
+
+  penulis   User     @relation(fields: [penulisId], references: [id])
+  penulisId Int
+
+  views     Int      @default(0)
+  status    String   @default("PUBLISHED")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+
+// --------------------------------------------------------
+// 4. MODUL PROGRAM KERJA (Kanban Board)
+// --------------------------------------------------------
+
+model ProgramKerja {
+  id           Int      @id @default(autoincrement())
+  nama         String
+  deskripsi    String?  @db.Text
+  divisi       String
+  
+  // === UPDATE KOLOM ===
+  status       StatusProker @default(TODO)
+  progress     Int          @default(0)        
+  prioritas    String       @default("Medium") 
+  anggaran     Float        @default(0)        
+  
+  deadline     DateTime?    
+  startDate    DateTime?    
+  // ====================
+
+  image        String?      @db.Text
+  isFeatured   Boolean      @default(false)
+  lokasi       String?      @default("Lingkungan Sekolah") 
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pj           Pengurus? @relation(fields: [pjId], references: [id])
+  pjId         Int?
+
+  // ✅ POSISI INI SUDAH BENAR
+  anggaranTerpakai Float @default(0) 
+
+  // ✅✅✅ TAMBAHKAN BARIS INI (PENYEBAB ERRORNYA)
+  transaksi    Keuangan[] 
+}
+
+// --------------------------------------------------------
+// 5. MODUL SCAN ABSENSI (Log Kehadiran)
+// --------------------------------------------------------
+model Absensi {
+  id          Int      @id @default(autoincrement())
+  tanggal     DateTime @default(now())
+  
+  // Kita simpan nama acaranya di sini. 
+  // Nanti admin ketik/pilih: "Rapat Rutin", "Upacara", dll.
+  kegiatan    String   
+  
+  status      StatusKehadiran @default(HADIR)
+  keterangan  String?
+
+  pengurus    Pengurus @relation(fields: [pengurusId], references: [id])
+  pengurusId  Int
+}
+
+// --------------------------------------------------------
+// 6. MODUL SURAT MENYURAT (Arsip Surat)
+// --------------------------------------------------------
+model Surat {
+  id          Int      @id @default(autoincrement())
+  nomorSurat  String   @unique
+  jenis       String   // Undangan, Permohonan, SK
+  perihal     String
+  tujuan      String
+  fileUrl     String?  // Link file PDF jika ada
+  tanggal     DateTime @default(now())
+}
+
+// --------------------------------------------------------
+// 7. MODUL KAS & ANGGARAN (Keuangan)
+// --------------------------------------------------------
+model Keuangan {
+  id          Int      @id @default(autoincrement())
+  judul       String
+  tipe        TipeTransaksi // PEMASUKAN / PENGELUARAN
+  nominal     Float
+  kategori    String   // "Dana BOS", "Event: LDKS", dll
+  tanggal     DateTime @default(now())
+  buktiUrl    String?
+  keterangan  String?  @db.Text
+  
+  // Relasi Opsional ke Proker (biar tau ini uang buat event mana)
+  proker      ProgramKerja? @relation(fields: [prokerId], references: [id])
+  prokerId    Int?
+}
+
+// --------------------------------------------------------
+// 8. MODUL INVENTARIS (Aset Barang)
+// --------------------------------------------------------
+model Inventaris {
+  id          Int      @id @default(autoincrement())
+  namaBarang  String
+  kodeBarang  String   @unique
+  jumlah      Int
+  kondisi     KondisiBarang @default(BAIK)
+  lokasi      String   // Contoh: Ruang OSIS, Gudang
+  keterangan  String?
+  lastUpdate  DateTime @updatedAt
+}
+
+
+model AppConfig {
+  id              Int     @id @default(autoincrement())
+  idCardBackImage String? @db.LongText // ✅ Tempat simpan background belakang
+}
+
+
+
+// --------------------------------------------------------
+// ENUMS (Pilihan Terbatas)
+// --------------------------------------------------------
+
+enum Role {
+  ADMIN     // Inti MPK / Ketua OSIS
+  PENGURUS  // Anggota biasa
+}
+
+enum StatusPengurus {
+  AKTIF
+  NONAKTIF
+  ALUMNI
+}
+
+enum StatusAspirasi {
+  PENDING
+  DITERIMA
+  DITOLAK
+  SELESAI
+}
+
+enum StatusProker {
+  TODO
+  IN_PROGRESS
+  DONE
+  BATAL
+}
+
+enum StatusKehadiran {
+  HADIR
+  IZIN
+  SAKIT
+  ALPA
+}
+
+enum TipeTransaksi {
+  PEMASUKAN
+  PENGELUARAN
+}
+
+enum KondisiBarang {
+  BAIK
+  RUSAK_RINGAN
+  RUSAK_BERAT
+  HILANG
+}
+
+// --------------------------------------------------------
+// 9. MODUL LANDING PAGE (Ketua OSIS & MPK)
+// --------------------------------------------------------
+model Leader {
+  id        Int      @id @default(autoincrement())
+  name      String
+  role      String
+  image     String   @db.Text
+  vision    String
+  mission   String   @db.Text
+  tags      String   // Disimpan string dipisah koma
+  createdAt DateTime @default(now())
+}
