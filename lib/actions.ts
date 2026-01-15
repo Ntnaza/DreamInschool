@@ -617,3 +617,174 @@ export async function createEventTrx(formData: FormData) {
     return { success: false, message: "Gagal update data event." };
   }
 }
+
+/* ======================================================
+   9. MANAJEMEN INVENTARIS
+====================================================== */
+
+// 1. Tambah/Edit Barang
+export async function saveInventaris(formData: FormData) {
+  const idRaw = formData.get("id");
+  const nama = formData.get("name") as string;
+  const kode = formData.get("code") as string;
+  const kategori = formData.get("category") as string;
+  const harga = Number(formData.get("price"));
+  const fotoUrl = formData.get("image") as string;
+  const serial = formData.get("serial") as string;
+
+  try {
+    if (idRaw) {
+      // Edit
+      await prisma.inventaris.update({
+        where: { id: Number(idRaw) },
+        data: { nama, kode, kategori, harga, serialNum: serial, ...(fotoUrl && { fotoUrl }) }
+      });
+    } else {
+      // Create
+      await prisma.inventaris.create({
+        data: { 
+           nama, kode, kategori, harga, serialNum: serial, fotoUrl, 
+           status: "AVAILABLE", kondisi: "Baik" 
+        }
+      });
+    }
+    revalidatePath("/admin/inventaris");
+    return { success: true, message: "Data aset tersimpan! 📦" };
+  } catch (error) {
+    return { success: false, message: "Gagal menyimpan aset." };
+  }
+}
+
+// 2. Hapus Barang
+export async function deleteInventaris(id: number) {
+  try {
+    await prisma.inventaris.delete({ where: { id } });
+    revalidatePath("/admin/inventaris");
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+// 3. Pinjam Barang
+export async function pinjamBarang(formData: FormData) {
+  const id = Number(formData.get("id"));
+  const peminjam = formData.get("borrower") as string;
+
+  try {
+    await prisma.inventaris.update({
+      where: { id },
+      data: {
+        status: "BORROWED",
+        peminjam: peminjam,
+        tglPinjam: new Date()
+      }
+    });
+    revalidatePath("/admin/inventaris");
+    return { success: true, message: "Barang berhasil dipinjam! 🕒" };
+  } catch (error) {
+    return { success: false, message: "Gagal memproses peminjaman." };
+  }
+}
+
+// 4. Kembalikan Barang
+export async function kembalikanBarang(formData: FormData) {
+  const id = Number(formData.get("id"));
+  const kondisi = formData.get("condition") as string;
+  
+  try {
+    // Ambil data barang dulu buat tau siapa peminjam terakhir
+    const barang = await prisma.inventaris.findUnique({ where: { id } });
+    if (!barang || !barang.peminjam) return { success: false, message: "Data tidak valid." };
+
+    // A. Simpan ke Riwayat
+    await prisma.riwayatAset.create({
+      data: {
+        inventarisId: id,
+        peminjam: barang.peminjam,
+        tglKeluar: barang.tglPinjam || new Date(),
+        tglKembali: new Date(),
+        kondisiKembali: kondisi
+      }
+    });
+
+    // B. Reset Status Barang
+    await prisma.inventaris.update({
+      where: { id },
+      data: {
+        status: kondisi === "Rusak" ? "MAINTENANCE" : "AVAILABLE",
+        kondisi: kondisi,
+        peminjam: null,
+        tglPinjam: null
+      }
+    });
+
+    revalidatePath("/admin/inventaris");
+    return { success: true, message: "Barang sudah dikembalikan! ✅" };
+  } catch (error) {
+    return { success: false, message: "Gagal memproses pengembalian." };
+  }
+}
+
+
+
+
+/* ======================================================
+   10. MANAJEMEN GALERI KEGIATAN
+====================================================== */
+
+export async function saveGaleri(formData: FormData) {
+  const idRaw = formData.get("id");
+  const judul = formData.get("judul") as string;
+  const kategori = formData.get("kategori") as string;
+  const tanggal = formData.get("tanggal") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+  
+  // Ambil JSON string dari form client
+  const imagesJson = formData.get("images") as string; 
+
+  if (!judul || !imagesJson) {
+    return { success: false, message: "Judul dan minimal 1 Foto wajib diisi!" };
+  }
+
+  try {
+    if (idRaw) {
+      // MODE EDIT
+      await prisma.galeri.update({
+        where: { id: Number(idRaw) },
+        data: {
+          judul, kategori, deskripsi,
+          tanggal: new Date(tanggal),
+          images: imagesJson // Simpan sebagai JSON String
+        }
+      });
+    } else {
+      // MODE BARU
+      await prisma.galeri.create({
+        data: {
+          judul, kategori, deskripsi,
+          tanggal: new Date(tanggal),
+          images: imagesJson
+        }
+      });
+    }
+    
+    revalidatePath("/admin/galeri");
+    revalidatePath("/galeri"); 
+    return { success: true, message: "Galeri berhasil disimpan! 📸" };
+  } catch (error) {
+    console.error("GALERI ERROR:", error);
+    return { success: false, message: "Gagal menyimpan galeri." };
+  }
+}
+
+export async function deleteGaleri(id: number) {
+  try {
+    await prisma.galeri.delete({ where: { id } });
+    revalidatePath("/admin/galeri");
+    revalidatePath("/galeri");
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}

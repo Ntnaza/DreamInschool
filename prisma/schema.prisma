@@ -195,14 +195,34 @@ model Keuangan {
 // 8. MODUL INVENTARIS (Aset Barang)
 // --------------------------------------------------------
 model Inventaris {
-  id          Int      @id @default(autoincrement())
-  namaBarang  String
-  kodeBarang  String   @unique
-  jumlah      Int
-  kondisi     KondisiBarang @default(BAIK)
-  lokasi      String   // Contoh: Ruang OSIS, Gudang
-  keterangan  String?
-  lastUpdate  DateTime @updatedAt
+  id          Int          @id @default(autoincrement())
+  nama        String
+  kode        String       @unique // INV-001
+  kategori    String       // Elektronik, Umum, dll
+  kondisi     String       // Baik, Rusak Ringan, dll
+  harga       Float        @default(0)
+  fotoUrl     String?      @db.LongText
+  serialNum   String?      // Serial Number Pabrik
+  
+  status      StatusBarang @default(AVAILABLE)
+  peminjam    String?      // Nama peminjam saat ini (jika dipinjam)
+  tglPinjam   DateTime?    // Tanggal keluar
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  riwayat     RiwayatAset[]
+}
+
+model RiwayatAset {
+  id            Int      @id @default(autoincrement())
+  peminjam      String
+  tglKeluar     DateTime
+  tglKembali    DateTime @default(now())
+  kondisiKembali String  // Kondisi saat dikembalikan
+  
+  inventaris    Inventaris @relation(fields: [inventarisId], references: [id], onDelete: Cascade)
+  inventarisId  Int
 }
 
 
@@ -261,6 +281,14 @@ enum KondisiBarang {
   HILANG
 }
 
+enum StatusBarang {
+  AVAILABLE
+  BORROWED
+  MAINTENANCE
+  LOST
+}
+
+
 // --------------------------------------------------------
 // 9. MODUL LANDING PAGE (Ketua OSIS & MPK)
 // --------------------------------------------------------
@@ -273,4 +301,23 @@ model Leader {
   mission   String   @db.Text
   tags      String   // Disimpan string dipisah koma
   createdAt DateTime @default(now())
+}
+
+
+// --------------------------------------------------------
+// 10. MODUL GALERI KEGIATAN
+// --------------------------------------------------------
+
+model Galeri {
+  id        Int      @id @default(autoincrement())
+  judul     String
+  kategori  String
+  tanggal   DateTime @default(now())
+  
+  // ⚠️ UBAH INI: Dari imageUrl jadi images (Simpan JSON Array: ["img1", "img2"])
+  images    String   @db.LongText 
+  
+  deskripsi String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

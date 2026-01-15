@@ -9,7 +9,8 @@ import { logoutAction } from "@/lib/auth";
 import { 
   LayoutDashboard, Inbox, Newspaper, CalendarDays, Users, 
   ChevronLeft, ChevronRight, LogOut, Rocket, Menu, Settings,
-  CreditCard, QrCode, FileText, Wallet, Package, HelpCircle
+  CreditCard, QrCode, FileText, Wallet, Package, HelpCircle,
+  Camera // ✅ Tambahkan icon Camera
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -49,6 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       items: [
         { name: "Kelola Berita", href: "/admin/berita", icon: Newspaper },
         { name: "Program Kerja", href: "/admin/proker", icon: CalendarDays },
+        { name: "Galeri Kegiatan", href: "/admin/galeri", icon: Camera }, // ✅ MENU BARU
       ]
     },
     {
@@ -68,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ]
     },
     {
-      title: "SUPPORT", // Grup Baru
+      title: "SUPPORT",
       items: [
         { name: "Pusat Bantuan", href: "/admin/bantuan", icon: HelpCircle },
       ]
@@ -158,15 +160,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         onMouseLeave={() => setHoveredMenu(null)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative ${!isSidebarOpen && !isMobile ? "justify-center w-11 h-11 mx-auto" : ""} ${isActive ? "bg-blue-50 dark:bg-blue-600/10 text-blue-700 dark:text-blue-400" : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"}`}
                      >
-                       {isActive && isSidebarOpen && <motion.div layoutId="activeNav" className="absolute left-0 w-1 h-6 bg-blue-600 rounded-r-full" />}
-                       <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
-                       <AnimatePresence>
-                         {isSidebarOpen && (
-                           <motion.span initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }} className="text-sm font-semibold tracking-wide whitespace-nowrap">
-                             {item.name}
-                           </motion.span>
-                         )}
-                       </AnimatePresence>
+                        {isActive && isSidebarOpen && <motion.div layoutId="activeNav" className="absolute left-0 w-1 h-6 bg-blue-600 rounded-r-full" />}
+                        <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className="flex-shrink-0" />
+                        <AnimatePresence>
+                          {isSidebarOpen && (
+                            <motion.span initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5, transition: { duration: 0.1 } }} className="text-sm font-semibold tracking-wide whitespace-nowrap">
+                              {item.name}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
                      </Link>
                    )
                  })}
@@ -185,12 +187,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                  <div className="scale-90"><ThemeToggle /></div>
              </div>
              <button 
-  onClick={() => logoutAction()} 
-  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50/50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all mt-2 cursor-pointer ${!isSidebarOpen && !isMobile ? "justify-center w-11 h-11" : "w-full"}`}
->
-  <LogOut size={18} />
-  {isSidebarOpen && <span className="text-xs font-bold">Log Out</span>}
-</button>
+                onClick={() => logoutAction()} 
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50/50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all mt-2 cursor-pointer ${!isSidebarOpen && !isMobile ? "justify-center w-11 h-11" : "w-full"}`}
+             >
+                <LogOut size={18} />
+                {isSidebarOpen && <span className="text-xs font-bold">Log Out</span>}
+             </button>
            </div>
         </div>
 
