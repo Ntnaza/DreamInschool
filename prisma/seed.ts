@@ -24,8 +24,8 @@ async function main() {
       status: 'AKTIF',
       user: {
         create: {
-          username: 'engkoh',
-          password: 'password123', // Nanti di real app ini di-hash
+          username: 'Raihan',
+          password: 'raihanakbar8', // Nanti di real app ini di-hash
           role: 'ADMIN'
         }
       }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma"; // 1. Import Koneksi Database
+import { prisma } from "@/lib/prisma";
 import HeroOrbit from "@/components/HeroOrbit";
 import LeaderSection from "@/components/LeaderSection";
 import ProgramSection from "@/components/ProgramSection";
@@ -11,19 +11,23 @@ import AspirasiSection from "@/components/AspirasiSection";
 import AspirasiWall from "@/components/AspirasiWall";
 import Footer from "@/components/Footer";
 
-// 2. Ubah menjadi Async Function agar bisa ambil data DB
+// Agar data selalu update saat ada perubahan di DB (Real-time)
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   
-  // 3. FETCHING DATA (Backend Logic)
+  // 1. FETCHING DATA (Backend Logic)
   // ---------------------------------------------
-  // Ambil data Ketua OSIS (Asumsi jabatan mengandung kata 'Ketua')
+  
+  // Ambil Ketua OSIS
+  // SAYA PERBAIKI QUERY-NYA: Pakai "Ketua OSIS" agar tidak tertukar dengan "Ketua MPK"
   const ketua = await prisma.pengurus.findFirst({
     where: { 
-      jabatan: { contains: "Ketua" } 
+      jabatan: { contains: "Ketua OSIS" } 
     }
   });
 
-  // Hitung jumlah data untuk statistik
+  // Hitung jumlah data untuk statistik dashboard
   const totalPengurus = await prisma.pengurus.count();
   const totalProker = await prisma.programKerja.count();
   const totalAspirasi = await prisma.aspirasi.count();
@@ -56,7 +60,7 @@ export default async function Home() {
             <div className="space-y-4 pt-20 lg:pt-0 text-center lg:text-left lg:max-w-lg mx-auto lg:mx-0">
               
               {/* 🔥 LIVE DB STATUS BADGE (BUKTI KONEKSI) 🔥 */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 mb-2 animate-fade-in-up">
+              {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 mb-2 animate-fade-in-up">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -64,7 +68,7 @@ export default async function Home() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">
                   Database Connected: {totalPengurus} Pengurus | {totalProker} Proker
                 </span>
-              </div>
+              </div> */}
 
               <h1 className="text-4xl lg:text-5xl font-black text-slate-900 dark:text-white leading-tight tracking-tight drop-shadow-sm dark:drop-shadow-2xl transition-colors duration-300">
                 OSIS & MPK <br />
@@ -78,7 +82,7 @@ export default async function Home() {
               </h1>
               
               <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed border-l-2 border-blue-600/50 dark:border-white/40 pl-5 max-w-md mx-auto lg:mx-0 mt-4 font-medium dark:font-normal">
-                {/* Kita bisa inject nama Ketua di sini secara dinamis */}
+                {/* Data Ketua OSIS diambil dinamis di sini */}
                 Selamat datang di portal resmi kami. Saat ini dipimpin oleh <b>{ketua?.nama || "Ketua OSIS"}</b> beserta {totalPengurus} pengurus lainnya.
               </p>
 
@@ -106,9 +110,10 @@ export default async function Home() {
           </div>
       </section>
 
-      {/* NOTE: Komponen di bawah ini masih STATIC.
-        Nanti kita akan update mereka satu per satu biar nerima data dari database.
-      */}
+      {/* ==================================================
+          SECTION BAWAHNYA (Masih Static/Aman)
+          ================================================== */}
+      
       <LeaderSection />
 
       <ProgramSection />

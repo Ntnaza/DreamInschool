@@ -40,6 +40,8 @@ model Pengurus {
   jabatan   String   
   divisi    String
   fotoUrl   String? @db.LongText
+  visi      String?  @db.Text
+  misi      String?  @db.Text
   hp        String?
   status    StatusPengurus @default(AKTIF)
   isAdvisor Boolean  @default(false)
@@ -289,19 +291,7 @@ enum StatusBarang {
 }
 
 
-// --------------------------------------------------------
-// 9. MODUL LANDING PAGE (Ketua OSIS & MPK)
-// --------------------------------------------------------
-model Leader {
-  id        Int      @id @default(autoincrement())
-  name      String
-  role      String
-  image     String   @db.Text
-  vision    String
-  mission   String   @db.Text
-  tags      String   // Disimpan string dipisah koma
-  createdAt DateTime @default(now())
-}
+
 
 
 // --------------------------------------------------------
@@ -314,7 +304,7 @@ model Galeri {
   kategori  String
   tanggal   DateTime @default(now())
   
-  // ⚠️ UBAH INI: Dari imageUrl jadi images (Simpan JSON Array: ["img1", "img2"])
+  // WAJIB LongText biar muat jutaan karakter
   images    String   @db.LongText 
   
   deskripsi String?  @db.Text

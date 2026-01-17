@@ -86,7 +86,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
       {/* HEADER */}
       <div className="tour-inbox-header">
           <div className="flex items-center gap-3">
-             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+             <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
                Inbox Aspirasi <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">📩</span>
              </h1>
              {isClient && <TourGuide steps={inboxTourSteps} />}

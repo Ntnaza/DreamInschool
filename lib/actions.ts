@@ -261,9 +261,6 @@ export async function deleteProker(id: number) {
 }
 
 
-/* ======================================================
-   5. MANAGEMEN PENGURUS
-====================================================== */
 
 /* ======================================================
    5. MANAJEMEN PENGURUS (LENGKAP)
@@ -277,15 +274,19 @@ export async function createPengurus(formData: FormData) {
   const jabatan = formData.get("jabatan") as string;
   const divisi = formData.get("divisi") as string;
   
-  // 2. Ambil Data Tambahan (Opsi A)
+  // 2. Ambil Data Tambahan
   const hp = formData.get("hp") as string;
   const email = formData.get("email") as string;
   const instagram = formData.get("instagram") as string;
   const tiktok = formData.get("tiktok") as string;
-  const domisili = formData.get("domisili") as string; // Alamat
+  const domisili = formData.get("domisili") as string;
   const transportasi = formData.get("transportasi") as string;
   const motto = formData.get("motto") as string;
   const fotoUrl = formData.get("fotoUrl") as string;
+  
+  // ✅ DATA BARU: VISI & MISI (Ditangkap dari FormData)
+  const visi = formData.get("visi") as string;
+  const misi = formData.get("misi") as string;
   
   // Cek Tanggal Lahir (Convert string ke Date)
   const tglLahirRaw = formData.get("tglLahir") as string;
@@ -314,6 +315,9 @@ export async function createPengurus(formData: FormData) {
         domisili,
         transportasi,
         motto,
+        // ✅ SIMPAN VISI & MISI KE DATABASE
+        visi: visi || null, 
+        misi: misi || null,
         tglLahir,
         fotoUrl: fotoUrl || null,
         status: "AKTIF",
@@ -351,9 +355,13 @@ export async function updatePengurus(formData: FormData) {
   const transportasi = formData.get("transportasi") as string;
   const motto = formData.get("motto") as string;
   const fotoUrl = formData.get("fotoUrl") as string;
+  
+  // ✅ DATA BARU: VISI & MISI (Update)
+  const visi = formData.get("visi") as string;
+  const misi = formData.get("misi") as string;
 
   const tglLahirRaw = formData.get("tglLahir") as string;
-  const tglLahir = tglLahirRaw ? new Date(tglLahirRaw) : undefined; // Pakai undefined biar gak kereset null kalau gak diisi
+  const tglLahir = tglLahirRaw ? new Date(tglLahirRaw) : undefined; 
 
   try {
     await prisma.pengurus.update({
@@ -372,6 +380,9 @@ export async function updatePengurus(formData: FormData) {
         domisili,
         transportasi,
         motto,
+        // ✅ UPDATE VISI & MISI
+        visi, 
+        misi,
         // Update tanggal lahir cuma kalau ada input baru
         ...(tglLahir && { tglLahir }),
         // Update foto cuma kalau ada foto baru yang dikirim
@@ -404,7 +415,7 @@ export async function updateIdCardDesign(id: number, designUrl: string | null) {
       where: { id },
       data: { idCardDesign: designUrl },
     });
-    revalidatePath("/admin/idcard"); // Refresh halaman ID Card
+    revalidatePath("/admin/idcard"); 
     return { success: true };
   } catch (error) {
     console.error("UPDATE ID CARD ERROR:", error);
@@ -414,7 +425,6 @@ export async function updateIdCardDesign(id: number, designUrl: string | null) {
 
 export async function saveIdCardBackground(imageUrl: string | null) {
   try {
-    // Kita paku di ID = 1, karena ini settingan global (cuma ada 1 baris data)
     await prisma.appConfig.upsert({
       where: { id: 1 },
       update: { idCardBackImage: imageUrl },

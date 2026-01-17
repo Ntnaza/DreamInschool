@@ -38,7 +38,7 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
 
   const categories = ["Rapat", "Upacara", "Event", "Pensi", "Sosial", "Kunjungan", "Karya"];
 
-  // --- FUNGSI KOMPRES GAMBAR (SOLUSI UTAMA) ---
+  // --- 🔥 FUNGSI KOMPRES GAMBAR (VERSI HD) 🔥 ---
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -50,16 +50,26 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
 
-          // Resize Logic (Max Lebar 1000px biar ringan banget)
-          const MAX_WIDTH = 1000;
-          const scaleSize = MAX_WIDTH / img.width;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * scaleSize;
+          // 🚀 UPGRADE: Resolusi Full HD (Biar Tajam)
+          // Kemarin 1000px, sekarang kita naikkan jadi 1920px (Standar Monitor)
+          // Kalau foto aslinya lebih kecil dari 1920, pakai ukuran asli (jangan diperbesar)
+          const MAX_WIDTH = 1920; 
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
 
           ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-          // Kompres jadi JPEG kualitas 70% (Ukuran turun drastis, kualitas tetep oke)
-          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          // 🚀 UPGRADE: Kualitas 0.9 (Hampir Original)
+          // Kemarin 0.5 (Burik), sekarang 0.9 (Sangat Jernih)
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.9);
           resolve(compressedDataUrl);
         };
         img.onerror = (err) => reject(err);
@@ -68,7 +78,7 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
     });
   };
 
-  // --- HANDLER MULTI-UPLOAD DENGAN KOMPRESI ---
+  // --- HANDLER MULTI-UPLOAD ---
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -76,17 +86,15 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
       const fileReaders: Promise<string>[] = [];
 
       Array.from(files).forEach(file => {
-        // Langsung kompres file apapun (kecuali SVG/GIF kalau mau animasi)
         fileReaders.push(compressImage(file));
       });
 
       try {
-        // Tunggu semua proses kompresi selesai
         const newImages = await Promise.all(fileReaders);
         
-        // Cek total size (Optional, buat debug aja)
+        // Debug Size (Biar tau ukurannya sekarang berapa)
         const totalSize = new Blob(newImages).size;
-        console.log(`Total ukuran upload setelah kompres: ${(totalSize/1024/1024).toFixed(2)} MB`);
+        console.log(`Total ukuran HD: ${(totalSize/1024/1024).toFixed(2)} MB`);
 
         setForm(prev => ({ 
             ...prev, 
@@ -94,7 +102,7 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
         }));
       } catch (err) {
         console.error("Gagal memproses gambar:", err);
-        alert("Gagal memproses gambar. Coba lagi.");
+        alert("Gagal memproses gambar.");
       }
     }
   };
@@ -197,7 +205,7 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                {filteredItems.map((item, idx) => (
                   <div key={item.id} className={`group relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ${idx === 0 ? 'tour-gallery-card' : ''}`}>
-                     {/* Thumbnail (Ambil foto pertama dari array) */}
+                     {/* Thumbnail */}
                      <div className="aspect-[4/3] relative bg-slate-100 overflow-hidden">
                         <Image src={item.images[0]} alt={item.judul} fill className="object-cover group-hover:scale-110 transition-transform duration-700"/>
                         

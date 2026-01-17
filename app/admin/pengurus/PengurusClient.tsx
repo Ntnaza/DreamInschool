@@ -7,12 +7,11 @@ import {
   Search, Plus, Grid, List, 
   User, Mail, Phone, MapPin, Award, X, Upload, 
   Instagram, Calendar, Heart, Truck, Ruler,
-  Edit3, Trash2, CheckCircle, Loader2
+  Edit3, Trash2, CheckCircle, Loader2, Lightbulb
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
-import { createPengurus, updatePengurus, deletePengurus } from "@/lib/actions"; // ✅ Import Action
+import { createPengurus, updatePengurus, deletePengurus } from "@/lib/actions";
 
-// DEFINISI LANGKAH TUR
 const pengurusTourSteps = [
     { target: '.tour-pengurus-header', content: 'Database lengkap anggota OSIS/MPK.', disableBeacon: true },
     { target: '.tour-add-member-btn', content: 'Klik untuk tambah anggota baru.' },
@@ -25,7 +24,6 @@ const pengurusTourSteps = [
 export default function PengurusClient({ initialData }: { initialData: any[] }) {
   const [members, setMembers] = useState(initialData);
 
-  // Update jika database berubah
   useEffect(() => { setMembers(initialData) }, [initialData]);
 
   const [filterSekbid, setFilterSekbid] = useState("Semua"); 
@@ -41,17 +39,18 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // STATE FORM LENGKAP (OPSI A)
+  // STATE FORM LENGKAP
+  // 🔥 UPDATE: Tambahkan 'visi' dan 'misi'
   const [form, setForm] = useState({
      nama: "", nis: "", kelas: "", jabatan: "Anggota", divisi: "Inti", status: "AKTIF",
      hp: "", email: "", instagram: "", tiktok: "",
      tglLahir: "", domisili: "", transportasi: "Motor Pribadi", motto: "",
+     visi: "", misi: "", // ✅ Field Baru
      fotoUrl: ""
   });
 
   useEffect(() => { setIsClient(true); }, []);
 
-  // --- HANDLER UPLOAD FOTO (Base64) ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -64,7 +63,6 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
     }
   };
 
-  // --- BUKA MODAL ---
   const openNewModal = () => {
     setIsEditing(false);
     setEditId(null);
@@ -72,6 +70,7 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
         nama: "", nis: "", kelas: "", jabatan: "Anggota", divisi: "Inti", status: "AKTIF",
         hp: "", email: "", instagram: "", tiktok: "",
         tglLahir: "", domisili: "", transportasi: "Motor Pribadi", motto: "",
+        visi: "", misi: "", // ✅ Reset Visi Misi
         fotoUrl: ""
     });
     setIsModalOpen(true);
@@ -84,19 +83,18 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
         nama: m.nama, nis: m.nis, kelas: m.kelas, jabatan: m.jabatan, divisi: m.divisi, status: m.status,
         hp: m.hp || "", email: m.email || "", instagram: m.instagram || "", tiktok: m.tiktok || "",
         tglLahir: m.tglLahir || "", domisili: m.domisili || "", transportasi: m.transportasi || "Motor Pribadi", motto: m.motto || "",
+        visi: m.visi || "", misi: m.misi || "", // ✅ Load Visi Misi dari DB
         fotoUrl: m.fotoUrl || ""
     });
     setIsModalOpen(true);
   };
 
-  // --- SIMPAN DATA (CREATE / UPDATE) ---
   const handleSave = async () => {
     if(!form.nama || !form.nis) return alert("Nama dan NIS wajib diisi!");
 
     setIsSubmitting(true);
     const formData = new FormData();
     
-    // Append semua data form ke FormData
     if (isEditing && editId) formData.append("id", editId.toString());
     Object.entries(form).forEach(([key, value]) => {
         formData.append(key, value);
@@ -120,15 +118,13 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
     }
   };
 
-  // --- HAPUS DATA ---
   const handleDelete = async (id: number) => {
     if(confirm("Hapus data pengurus ini permanen?")) {
-      setMembers(members.filter(m => m.id !== id)); // Optimistic UI
+      setMembers(members.filter(m => m.id !== id)); 
       await deletePengurus(id);
     }
   };
 
-  // --- FILTER & SEARCH ---
   const filteredMembers = members.filter((member) => {
     const matchSekbid = filterSekbid === "Semua" ? true : member.divisi === filterSekbid;
     const matchSearch = member.nama.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -180,7 +176,7 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
          </div>
       </div>
 
-      {/* MEMBERS GRID / LIST */}
+      {/* MEMBERS GRID / LIST (TETAP SAMA) */}
       {viewMode === "grid" ? (
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10">
             <AnimatePresence>
@@ -244,7 +240,7 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
          </div>
       )}
 
-      {/* MODERN MODAL (LENGKAP - OPSI A) */}
+      {/* MODERN MODAL */}
       <AnimatePresence>
          {isModalOpen && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -270,7 +266,8 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
                   </div>
                   
                   <div className="p-8 overflow-y-auto flex-1 bg-white dark:bg-[#0f172a]">
-                     {/* TAB PROFIL */}
+                     
+                     {/* TAB PROFIL (Tetap Sama) */}
                      {activeTab === "profil" && (
                         <div className="space-y-6">
                            <div className="flex items-center gap-6">
@@ -302,7 +299,7 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
                               <div>
                                  <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Jabatan</label>
                                  <select value={form.jabatan} onChange={e => setForm({...form, jabatan: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold text-slate-900 dark:text-white">
-                                    <option>Anggota</option><option>Ketua OSIS</option><option>Ketua MPK</option><option>Sekretaris</option><option>Bendahara</option><option>Koordinator</option>
+                                    <option>Anggota</option><option>Ketua OSIS</option><option>Ketua MPK</option><option>Wakil Ketua OSIS</option><option>Wakil Ketua MPK</option><option>Sekretaris</option><option>Bendahara</option><option>Koordinator</option>
                                  </select>
                               </div>
                               <div>
@@ -319,7 +316,7 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
                         </div>
                      )}
 
-                     {/* TAB KONTAK (OPSI A - DATA TAMBAHAN) */}
+                     {/* TAB KONTAK (Tetap Sama) */}
                      {activeTab === "kontak" && (
                         <div className="space-y-6">
                            <div className="grid grid-cols-2 gap-4">
@@ -344,7 +341,7 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
                         </div>
                      )}
 
-                     {/* TAB PERSONAL (OPSI A - DATA TAMBAHAN) */}
+                     {/* TAB PERSONAL + VISI MISI */}
                      {activeTab === "personal" && (
                         <div className="space-y-6">
                            <div className="grid grid-cols-2 gap-4">
@@ -363,8 +360,22 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
                                  </select>
                               </div>
                               <div className="col-span-2">
-                                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Motto Hidup / Quotes</label>
+                                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block flex items-center gap-1"><Lightbulb size={12} className="text-yellow-500"/> Motto Hidup / Quotes</label>
                                  <input type="text" value={form.motto} onChange={e => setForm({...form, motto: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold text-slate-900 dark:text-white italic" />
+                              </div>
+                              
+                              {/* 🔥 VISI & MISI SECTION (DITAMBAHKAN) 🔥 */}
+                              <div className="col-span-2 border-t border-slate-200 dark:border-white/10 my-2 pt-2">
+                                 <h4 className="text-sm font-black text-blue-600 dark:text-blue-400 mb-4">Khusus Ketua / Wakil</h4>
+                              </div>
+
+                              <div className="col-span-2">
+                                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Visi</label>
+                                 <textarea placeholder="Contoh: Mewujudkan OSIS yang berintegritas..." value={form.visi} onChange={e => setForm({...form, visi: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold text-slate-900 dark:text-white min-h-[60px]" />
+                              </div>
+                              <div className="col-span-2">
+                                 <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Misi</label>
+                                 <textarea placeholder="Contoh: 1. Meningkatkan kedisiplinan..." value={form.misi} onChange={e => setForm({...form, misi: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold text-slate-900 dark:text-white min-h-[80px]" />
                               </div>
                            </div>
                         </div>
