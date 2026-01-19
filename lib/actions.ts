@@ -194,65 +194,124 @@ export async function deleteBerita(id: number) {
 }
 
 /* ======================================================
-   4. MANAJEMEN PROGRAM KERJA
+   4. MANAJEMEN PROGRAM KERJA (UPDATE FIX)
 ====================================================== */
 
-export async function saveProker(formData: FormData) {
-  const idRaw = formData.get("id");
-  const nama = formData.get("title") as string;
-  const deskripsi = formData.get("description") as string;
-  const divisi = formData.get("sekbid") as string;
-  const prioritas = formData.get("priority") as string;
-  const anggaran = Number(formData.get("budget"));
+export async function createProgramKerja(formData: FormData) {
+  // Ambil data sesuai nama field di Frontend
+  const nama = formData.get("nama") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+  const divisi = formData.get("divisi") as string;
+  const prioritas = formData.get("priority") as string; // Frontend kirim 'priority', DB simpan 'prioritas'
+  const anggaran = Number(formData.get("anggaran"));
   const progress = Number(formData.get("progress"));
-  const startDate = formData.get("startDate") ? new Date(formData.get("startDate") as string) : null;
-  const endDate = formData.get("endDate") ? new Date(formData.get("endDate") as string) : null;
-  const picName = formData.get("pic") as string; // Sederhana dulu, simpan nama PIC sbg text sementara/lokasi
+  const lokasi = formData.get("lokasi") as string; // PIC disimpan di kolom lokasi
+  
+  // ✅ FITUR BARU: Image & Featured
+  const image = formData.get("image") as string; 
+  const isFeatured = formData.get("isFeatured") === "true";
 
-  // Mapping Status Logic
-  let status: StatusProker = "TODO";
+  // Date Handling
+  const startDateRaw = formData.get("startDate") as string;
+  const startDate = startDateRaw ? new Date(startDateRaw) : null;
+  const deadlineRaw = formData.get("deadline") as string;
+  const deadline = deadlineRaw ? new Date(deadlineRaw) : null;
+
+  // Mapping Status Logic (Otomatis atau Manual dari Frontend)
+  // Kita pakai status manual kalau dikirim, kalau nggak pakai logic progress
+  let status = "TODO";
   if (progress > 0 && progress < 100) status = "IN_PROGRESS";
   if (progress === 100) status = "DONE";
 
   try {
-    const dataToSave = {
-      nama,
-      deskripsi,
-      divisi,
-      prioritas,
-      anggaran,
-      progress,
-      status,
-      startDate,
-      deadline: endDate,
-      lokasi: picName, // Kita pinjam kolom lokasi buat simpan nama PIC sementara
-    };
+    await prisma.programKerja.create({
+      data: {
+        nama,
+        deskripsi,
+        divisi,
+        prioritas,
+        anggaran,
+        progress,
+        status, // Simpan status
+        lokasi, // PIC
+        startDate,
+        deadline,
+        image: image || null, // Simpan Gambar
+        isFeatured: isFeatured // Simpan Status Unggulan
+      },
+    });
 
-    if (idRaw) {
-      // UPDATE
-      await prisma.programKerja.update({
-        where: { id: Number(idRaw) },
-        data: dataToSave,
-      });
-    } else {
-      // CREATE
-      await prisma.programKerja.create({
-        data: dataToSave,
-      });
-    }
-
+    // Refresh halaman Admin & Homepage (karena ada section Program Unggulan)
     revalidatePath("/admin/proker");
-    return { success: true, message: "Proker berhasil disimpan! 🚀" };
+    revalidatePath("/"); 
+    return { success: true, message: "Proker berhasil dibuat! 🚀" };
   } catch (error) {
-    console.error("SAVE PROKER ERROR:", error);
-    return { success: false, message: "Gagal menyimpan proker." };
+    console.error("CREATE PROKER ERROR:", error);
+    return { success: false, message: "Gagal membuat proker." };
   }
 }
 
-export async function deleteProker(id: number) {
+export async function updateProgramKerja(formData: FormData) {
+  const idRaw = formData.get("id");
+  if (!idRaw) return { success: false, message: "ID tidak ditemukan" };
+  const id = Number(idRaw);
+
+  const nama = formData.get("nama") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+  const divisi = formData.get("divisi") as string;
+  const prioritas = formData.get("priority") as string;
+  const anggaran = Number(formData.get("anggaran"));
+  const progress = Number(formData.get("progress"));
+  const lokasi = formData.get("lokasi") as string;
+  
+  const image = formData.get("image") as string;
+  const isFeatured = formData.get("isFeatured") === "true";
+
+  const startDateRaw = formData.get("startDate") as string;
+  const startDate = startDateRaw ? new Date(startDateRaw) : null;
+  const deadlineRaw = formData.get("deadline") as string;
+  const deadline = deadlineRaw ? new Date(deadlineRaw) : null;
+
+  // Status Logic Update
+  let status = "TODO";
+  if (progress > 0 && progress < 100) status = "IN_PROGRESS";
+  if (progress === 100) status = "DONE";
+
+  try {
+    await prisma.programKerja.update({
+      where: { id },
+      data: {
+        nama,
+        deskripsi,
+        divisi,
+        prioritas,
+        anggaran,
+        progress,
+        status,
+        lokasi,
+        startDate,
+        deadline,
+        isFeatured,
+        // Update gambar CUMA jika user upload baru (string tidak kosong)
+        ...(image && { image }),
+      },
+    });
+
+    revalidatePath("/admin/proker");
+    revalidatePath("/");
+    return { success: true, message: "Proker berhasil diupdate! ✨" };
+  } catch (error) {
+    console.error("UPDATE PROKER ERROR:", error);
+    return { success: false, message: "Gagal update proker." };
+  }
+}
+
+// Ganti nama deleteProker jadi deleteProgramKerja biar konsisten sama frontend
+export async function deleteProgramKerja(id: number) {
   try {
     await prisma.programKerja.delete({ where: { id } });
     revalidatePath("/admin/proker");
+    revalidatePath("/");
     return { success: true };
   } catch (error) {
     console.error("DELETE PROKER ERROR:", error);

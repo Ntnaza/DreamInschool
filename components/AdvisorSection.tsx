@@ -38,9 +38,11 @@ export default async function AdvisorSection() {
             Pembina <span className="text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-slate-200 dark:to-slate-400">Organisasi</span>
           </h2>
           <div className="w-20 h-1 bg-blue-600 dark:bg-slate-500 mx-auto rounded-full" />
-          <p className="mt-4 text-slate-600 dark:text-slate-400 font-medium">
+          
+          {/* 🔥 UBAH P JADI DIV BIAR AMAN DARI HYDRATION ERROR 🔥 */}
+          <div className="mt-4 text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
             Membimbing dengan hati, mengarahkan dengan visi. Sosok inspiratif di balik kemajuan OSIS & MPK.
-          </p>
+          </div>
         </div>
 
         {/* GRID PEMBINA */}
@@ -54,10 +56,10 @@ export default async function AdvisorSection() {
               <div className="relative w-32 h-32 mb-6 rounded-full p-1 bg-gradient-to-br from-blue-500 to-indigo-500 dark:from-slate-400 dark:to-slate-600 shadow-lg group-hover:scale-105 transition-transform duration-300">
                 <div className="w-full h-full rounded-full overflow-hidden border-4 border-white dark:border-[#0b1121] relative">
                    <Image 
-                     src={item.fotoUrl || "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop"} 
-                     alt={item.nama}
-                     fill
-                     className="object-cover"
+                      src={item.fotoUrl || "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop"} 
+                      alt={item.nama}
+                      fill
+                      className="object-cover"
                    />
                 </div>
               </div>
@@ -67,13 +69,16 @@ export default async function AdvisorSection() {
                 {item.nama}
               </h3>
               
-              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-slate-700 dark:text-slate-300 mb-2">
-                {item.jabatan}
-              </span>
+              <div className="mb-2">
+                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-700 dark:bg-slate-700 dark:text-slate-300">
+                    {item.jabatan}
+                </span>
+              </div>
 
-              <p className="text-xs text-slate-500 dark:text-slate-500 font-mono">
+              {/* 🔥 UBAH P JADI DIV BIAR AMAN 🔥 */}
+              <div className="text-xs text-slate-500 dark:text-slate-500 font-mono">
                 NIP. {item.nis} {/* Kita pakai kolom NIS untuk simpan NIP */}
-              </p>
+              </div>
 
               {/* Garis Dekorasi Bawah */}
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-1 bg-blue-500 dark:bg-slate-400 rounded-t-full transition-all duration-300 group-hover:w-1/2" />

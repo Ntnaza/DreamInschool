@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, Plus, CheckCircle, X, 
-  Flag, Trash2, Edit, PlayCircle, AlertCircle, FileText, Loader2 
+  Flag, Trash2, Edit, PlayCircle, AlertCircle, FileText, Loader2,
+  Image as ImageIcon, Star, Upload
 } from "lucide-react";
-import TourGuide from "@/components/TourGuide"; // Pastikan path ini benar
-import { saveProker, deleteProker } from "@/lib/actions"; 
+import TourGuide from "@/components/TourGuide"; 
+import { createProgramKerja, updateProgramKerja, deleteProgramKerja } from "@/lib/actions"; 
 
-// KONFIGURASI TUR PANDUAN
 const tourSteps = [
     { target: '.tour-header-title', content: 'Pusat kendali kegiatan OSIS.', disableBeacon: true },
     { target: '.tour-buat-baru-btn', content: 'Klik untuk tambah proker baru.' },
@@ -20,81 +21,102 @@ const tourSteps = [
 ];
 
 export default function ProkerClient({ initialData }: { initialData: any[] }) {
-  // STATE DATA (Diambil dari Database via Props)
   const [prokers, setProkers] = useState(initialData);
 
-  // Update state kalau props berubah (misal setelah refresh server)
   useEffect(() => { setProkers(initialData) }, [initialData]);
 
   const [filterSekbid, setFilterSekbid] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [isClient, setIsClient] = useState(false);
   
-  // MODAL & LOADING STATE
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false); 
   const [editId, setEditId] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // FORM STATE
   const [formState, setFormState] = useState({
     title: "", description: "", sekbid: "Inti", priority: "Medium", 
-    startDate: "", endDate: "", pic: "", budget: 0, progress: 0
+    startDate: "", endDate: "", pic: "", budget: 0, progress: 0,
+    image: "", isFeatured: false 
   });
 
   useEffect(() => { setIsClient(true); }, []);
 
-  // --- ACTIONS ---
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) return alert("File terlalu besar! Max 2MB.");
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormState({ ...formState, image: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const openNewModal = () => {
     setIsEditing(false);
     setEditId(null);
-    setFormState({ title: "", description: "", sekbid: "Inti", priority: "Medium", startDate: "", endDate: "", pic: "", budget: 0, progress: 0 });
+    setFormState({ 
+        title: "", description: "", sekbid: "Inti", priority: "Medium", 
+        startDate: "", endDate: "", pic: "", budget: 0, progress: 0,
+        image: "", isFeatured: false 
+    });
     setIsModalOpen(true);
   };
 
   const openEditModal = (item: any) => {
     setIsEditing(true);
     setEditId(item.id);
+    
+    const safeDate = (date: any) => date ? new Date(date).toISOString().split("T")[0] : "";
+
     setFormState({ 
-        title: item.title,
-        description: item.description || "",
-        sekbid: item.sekbid,
-        priority: item.priority,
-        startDate: item.startDate,
-        endDate: item.endDate,
-        pic: item.pic,
-        budget: item.budget,
-        progress: item.progress
+        title: item.nama || item.title || "", 
+        description: item.deskripsi || item.description || "",
+        sekbid: item.divisi || item.sekbid || "Inti", 
+        priority: item.prioritas || item.priority || "Medium", 
+        startDate: safeDate(item.startDate),
+        endDate: safeDate(item.deadline || item.endDate), 
+        pic: item.lokasi || item.pic || "", 
+        budget: item.anggaran || item.budget || 0,
+        progress: item.progress || 0,
+        image: item.image || "", 
+        isFeatured: item.isFeatured || false
     });
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!formState.title) return alert("Nama kegiatan wajib diisi!");
-    
     setIsSaving(true);
 
-    // BUNGKUS DATA KE FORMDATA BIAR BISA DIKIRIM KE SERVER ACTION
     const formData = new FormData();
     if (isEditing && editId) formData.append("id", editId.toString());
     
-    formData.append("title", formState.title);
-    formData.append("description", formState.description);
-    formData.append("sekbid", formState.sekbid);
-    formData.append("priority", formState.priority);
+    formData.append("nama", formState.title);
+    formData.append("deskripsi", formState.description);
+    formData.append("divisi", formState.sekbid);
+    formData.append("priority", formState.priority); 
     formData.append("startDate", formState.startDate);
-    formData.append("endDate", formState.endDate);
-    formData.append("pic", formState.pic); // Ini sementara disimpan di kolom 'lokasi' db
-    formData.append("budget", formState.budget.toString());
+    formData.append("deadline", formState.endDate);
+    formData.append("lokasi", formState.pic); 
+    formData.append("anggaran", formState.budget.toString());
     formData.append("progress", formState.progress.toString());
+    formData.append("image", formState.image);
+    formData.append("isFeatured", formState.isFeatured ? "true" : "false");
 
     try {
-        const result = await saveProker(formData);
+        const result = isEditing 
+            ? await updateProgramKerja(formData) 
+            : await createProgramKerja(formData);
         
         if (result.success) {
             alert(result.message);
             setIsModalOpen(false);
-            window.location.reload(); // Refresh halaman biar data baru muncul
+            window.location.reload(); 
         } else {
             alert("Gagal: " + result.message);
         }
@@ -108,23 +130,19 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
 
   const handleDelete = async (id: number) => {
     if(confirm("Yakin ingin menghapus proker ini permanen?")) {
-      // Optimistic Update (Hapus dulu di layar biar berasa cepet)
       setProkers(prokers.filter(p => p.id !== id));
-      
-      const res = await deleteProker(id);
-      if(!res.success) alert("Gagal menghapus data di server.");
+      await deleteProgramKerja(id);
     }
   };
 
-  // --- FILTER LOGIC ---
   const filteredProkers = prokers.filter((item) => {
-    const matchSekbid = filterSekbid === "Semua" ? true : item.sekbid === filterSekbid;
-    const matchSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const itemDivisi = item.divisi || item.sekbid || ""; 
+    const itemNama = item.nama || item.title || "";
+    const matchSekbid = filterSekbid === "Semua" ? true : itemDivisi === filterSekbid;
+    const matchSearch = itemNama.toLowerCase().includes(searchQuery.toLowerCase());
     return matchSekbid && matchSearch;
   });
 
-  // Mapping Status untuk Tampilan Kanban
-  // Logic: Kalau progress 0 = SEGERA, 1-99 = BERJALAN, 100 = SELESAI
   const listSegera = filteredProkers.filter(p => p.progress === 0);
   const listBerjalan = filteredProkers.filter(p => p.progress > 0 && p.progress < 100);
   const listSelesai = filteredProkers.filter(p => p.progress === 100);
@@ -149,7 +167,7 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
         </button>
       </div>
 
-      {/* TOOLBAR (Filter & Search) */}
+      {/* TOOLBAR */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white/50 dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/5 backdrop-blur-sm">
          <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
             {['Semua', 'Inti', 'MPK (Legislatif)', 'Sekbid 1', 'Sekbid 2', 'Sekbid 3', 'Sekbid 4'].map((sekbid) => (
@@ -167,23 +185,20 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
       {/* KANBAN BOARD */}
       <div className="flex-1 overflow-x-auto pb-8 custom-scrollbar">
          <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0">
-            {/* KOLOM SEGERA */}
             <KanbanColumn tourClass="tour-col-segera" title="SEGERA" icon={<AlertCircle size={18} />} count={listSegera.length} color="blue">
                {listSegera.map((item, idx) => (
                    <ProkerCard 
                        key={item.id} data={item} 
                        onDelete={handleDelete} onEdit={openEditModal} 
-                       isFirstPriority={idx === 0 && item.priority === 'High'}
+                       isFirstPriority={idx === 0 && (item.prioritas || item.priority) === 'High'}
                    />
                ))}
             </KanbanColumn>
             
-            {/* KOLOM BERJALAN */}
             <KanbanColumn tourClass="tour-col-berjalan" title="BERJALAN" icon={<PlayCircle size={18} />} count={listBerjalan.length} color="yellow">
                {listBerjalan.map((item) => <ProkerCard key={item.id} data={item} onDelete={handleDelete} onEdit={openEditModal} />)}
             </KanbanColumn>
 
-            {/* KOLOM SELESAI */}
             <KanbanColumn title="SELESAI" icon={<CheckCircle size={18} />} count={listSelesai.length} color="green">
                {listSelesai.map((item) => <ProkerCard key={item.id} data={item} onDelete={handleDelete} onEdit={openEditModal} />)}
             </KanbanColumn>
@@ -206,6 +221,32 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
                   </div>
 
                   <div className="p-8 overflow-y-auto flex-1 space-y-5 custom-scrollbar">
+                     
+                     <div className="flex items-center gap-6 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-dashed border-slate-300 dark:border-white/10">
+                        <div onClick={() => fileInputRef.current?.click()} className="w-24 h-24 rounded-lg bg-white dark:bg-black/20 flex items-center justify-center cursor-pointer overflow-hidden relative group border border-slate-200 dark:border-white/10">
+                           {formState.image ? (
+                              <Image src={formState.image} alt="Preview" fill className="object-cover" />
+                           ) : (
+                              <div className="text-center text-slate-400 group-hover:text-blue-500 transition-colors">
+                                 <ImageIcon size={24} className="mx-auto mb-1"/>
+                                 <span className="text-[9px]">Upload</span>
+                              </div>
+                           )}
+                        </div>
+                        <div className="flex-1">
+                           <h4 className="text-sm font-bold text-slate-700 dark:text-white mb-1">Foto Cover / Banner</h4>
+                           <p className="text-xs text-slate-500 mb-3">Tampil di Halaman Depan. Max 2MB.</p>
+                           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+                           <div className="flex gap-2">
+                              <button onClick={() => fileInputRef.current?.click()} className="px-3 py-1.5 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-md text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors">Pilih File</button>
+                              
+                              <div onClick={() => setFormState({...formState, isFeatured: !formState.isFeatured})} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 cursor-pointer select-none transition-all ${formState.isFeatured ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-slate-100 text-slate-400 border border-transparent'}`}>
+                                 <Star size={12} fill={formState.isFeatured ? "currentColor" : "none"} /> Unggulan?
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+
                      <div className="space-y-4">
                         <div>
                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Nama Kegiatan</label>
@@ -263,8 +304,6 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
   );
 }
 
-// === KOMPONEN PENDUKUNG (KanbanColumn & ProkerCard) ===
-
 function KanbanColumn({ title, icon, count, children, color, tourClass }: any) {
    const colors: any = {
       blue: "bg-blue-50/80 dark:bg-blue-900/10 border-blue-200 dark:border-blue-500/20",
@@ -288,13 +327,11 @@ function KanbanColumn({ title, icon, count, children, color, tourClass }: any) {
 }
 
 function ProkerCard({ data, onDelete, onEdit, isFirstPriority }: any) {
-   // Warna PIC Random/Static
    const colorVariants: any = {
       blue: "from-blue-400 to-blue-600", purple: "from-purple-400 to-purple-600",
       pink: "from-pink-400 to-pink-600", green: "from-green-400 to-green-600", orange: "from-orange-400 to-orange-600",
    };
    
-   // Logic Status Badge
    const getStatusBadge = (progress: number) => {
       if (progress === 100) return <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-wide">SELESAI</span>;
       if (progress > 0) return <span className="px-2.5 py-1 rounded-md bg-yellow-100 text-yellow-700 text-[10px] font-black uppercase tracking-wide">BERJALAN</span>;
@@ -303,21 +340,37 @@ function ProkerCard({ data, onDelete, onEdit, isFirstPriority }: any) {
 
    const statusColor = data.progress === 100 ? 'bg-slate-400' : data.progress > 0 ? 'bg-yellow-500' : 'bg-blue-500';
 
+   const namaKegiatan = data.nama || data.title || "Tanpa Nama";
+   const deskripsi = data.deskripsi || data.description || "Tidak ada deskripsi kegiatan.";
+   const divisi = data.divisi || data.sekbid || "-";
+   const prioritas = data.prioritas || data.priority;
+   const lokasiPic = data.lokasi || data.pic || "";
+   const deadline = data.deadline || data.endDate;
+   const anggaran = data.anggaran || data.budget;
+
    return (
       <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} whileHover={{ y: -4, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.1)" }} className="bg-white dark:bg-[#1e293b] p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm cursor-grab active:cursor-grabbing group relative overflow-hidden">
+         {data.isFeatured && (
+            <div className="absolute top-0 right-0 bg-yellow-400 w-6 h-6 flex items-center justify-center rounded-bl-xl shadow-sm z-10">
+               <Star size={10} className="text-yellow-900" fill="currentColor"/>
+            </div>
+         )}
+
          <div className="flex justify-between items-start mb-3">
             {getStatusBadge(data.progress)}
             <div className="flex gap-2">
-                <span className="text-[10px] font-bold text-slate-400">{data.sekbid}</span>
-                <button onClick={() => onEdit(data)} className="text-slate-300 hover:text-blue-500 transition-colors tour-edit-action" title="Edit"><Edit size={14} /></button>
-                <button onClick={() => onDelete(data.id)} className="text-slate-300 hover:text-red-500 transition-colors" title="Hapus"><Trash2 size={14} /></button>
+               {data.image && <ImageIcon size={14} className="text-blue-400" />}
+               
+               <span className="text-[10px] font-bold text-slate-400">{divisi}</span>
+               <button onClick={() => onEdit(data)} className="text-slate-300 hover:text-blue-500 transition-colors tour-edit-action" title="Edit"><Edit size={14} /></button>
+               <button onClick={() => onDelete(data.id)} className="text-slate-300 hover:text-red-500 transition-colors" title="Hapus"><Trash2 size={14} /></button>
             </div>
          </div>
 
-         <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm mb-1 leading-snug group-hover:text-blue-600 transition-colors">{data.title}</h3>
+         <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm mb-1 leading-snug group-hover:text-blue-600 transition-colors">{namaKegiatan}</h3>
          
          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-3 line-clamp-2 leading-relaxed">
-            {data.description || "Tidak ada deskripsi kegiatan."}
+            {deskripsi}
          </p>
 
          <div className="mb-4">
@@ -330,15 +383,20 @@ function ProkerCard({ data, onDelete, onEdit, isFirstPriority }: any) {
          <div className="flex items-center justify-between pt-3 border-t border-slate-50 dark:border-white/5">
             <div className="flex items-center gap-2">
                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold text-white bg-gradient-to-br ${colorVariants[data.picColor || "blue"]}`}>
-                  {data.pic ? data.pic.charAt(0) : "?"}
+                  {lokasiPic ? lokasiPic.charAt(0) : "?"}
                </div>
                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{data.endDate || "-"}</span>
-                  {data.budget > 0 && <span className="text-[9px] text-slate-400 font-mono">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(data.budget)}</span>}
+                  {/* 🔥 FIX HYDRATION ERROR DISINI (PAKSA LOCALE 'id-ID') 🔥 */}
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                     {deadline ? new Date(deadline).toLocaleDateString("id-ID") : "-"}
+                  </span>
+                  {anggaran > 0 ? (
+                     <span className="text-[9px] text-slate-400 font-mono">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(anggaran)}</span>
+                  ) : <span className="text-[9px] text-slate-400">Rp 0</span>}
                </div>
             </div>
             
-            {data.priority === 'High' && (
+            {prioritas === 'High' && (
                 <div className={`flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full ${isFirstPriority ? 'tour-priority-badge' : ''}`}>
                     <Flag size={10} fill="currentColor" /> High
                 </div>

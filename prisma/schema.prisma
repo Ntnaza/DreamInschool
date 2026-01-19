@@ -127,7 +127,7 @@ model ProgramKerja {
   startDate    DateTime?    
   // ====================
 
-  image        String?      @db.Text
+  image        String?   @db.LongText
   isFeatured   Boolean      @default(false)
   lokasi       String?      @default("Lingkungan Sekolah") 
 

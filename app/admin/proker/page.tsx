@@ -8,26 +8,27 @@ export default async function ProkerPage() {
   });
 
   // 2. MAPPING DATA (DATABASE -> UI)
-  // Kita sesuaikan formatnya biar komponen Client nggak kaget
   const formattedProkers = rawProkers.map((p) => ({
     id: p.id,
     title: p.nama,
     description: p.deskripsi,
     sekbid: p.divisi,
     
-    // Convert Date object ke String (YYYY-MM-DD) biar bisa masuk input type="date"
+    // Convert Date
     startDate: p.startDate ? p.startDate.toISOString().split('T')[0] : "",
     endDate: p.deadline ? p.deadline.toISOString().split('T')[0] : "",
     
-    progress: p.progress, // (0-100)
+    progress: p.progress, 
     priority: p.prioritas,
     budget: p.anggaran,
 
-    // PIC kita ambil dari kolom 'lokasi' sementara (sesuai kesepakatan)
     pic: p.lokasi || "Admin",
-    
-    // Warna avatar PIC di-random biar cantik (opsional)
-    picColor: ["blue", "purple", "pink", "green", "orange"][p.id % 5] 
+    picColor: ["blue", "purple", "pink", "green", "orange"][p.id % 5],
+
+    // 🔥🔥 INI YANG KEMARIN KETINGGALAN! 🔥🔥
+    // Tanpa ini, Client nggak tau kalau ada gambar/featured di database
+    image: p.image, 
+    isFeatured: p.isFeatured
   }));
 
   // 3. LEMPAR KE CLIENT COMPONENT

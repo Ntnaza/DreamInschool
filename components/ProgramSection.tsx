@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { prisma } from "@/lib/prisma"; // Pastikan import ini benar
+import { prisma } from "@/lib/prisma"; 
+import Link from "next/link";
 
 // Function ambil data (Hanya ambil 3 program teratas)
 async function getPrograms() {
@@ -8,7 +9,7 @@ async function getPrograms() {
       take: 3, // Cuma ambil 3 biji buat di Landing Page
       orderBy: [
         { isFeatured: 'desc' }, // Yang Featured (True) taruh paling atas
-        { createdAt: 'desc' }
+        { createdAt: 'desc' }   // Sisanya urutkan yang terbaru
       ]
     });
     return data;
@@ -27,7 +28,7 @@ export default async function ProgramSection() {
     <section className="relative w-full py-24 z-10 overflow-hidden">
       
       {/* === BACKGROUND SEAMLESS === */}
-      <div className="absolute inset-0 bg-slate-300 dark:bg-[#0f172a] z-0" />
+      <div className="absolute inset-0 bg-slate-100 dark:bg-[#0f172a] z-0" />
       
       {/* Dekorasi Gradient Blob */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl opacity-30 dark:opacity-20 pointer-events-none">
@@ -52,16 +53,12 @@ export default async function ProgramSection() {
           
           {programs.map((program, index) => {
             // LOGIKA WARNA & UKURAN BERDASARKAN URUTAN
-            // Index 0 (Utama) = Biru & Besar
-            // Index 1 = Ungu & Kecil
-            // Index 2 = Orange & Kecil
-            
             const isMain = index === 0;
             let gradientColor = "";
             let badgeColor = "";
             let subTextColor = "";
 
-            if (index === 0) { // BLUE THEME
+            if (index === 0) { // BLUE THEME (MAIN)
                gradientColor = "from-slate-900 via-slate-900/40 to-transparent";
                badgeColor = "bg-blue-600 shadow-blue-600/50";
                subTextColor = "text-slate-200";
@@ -73,20 +70,29 @@ export default async function ProgramSection() {
                subTextColor = "text-orange-200";
             }
 
+            // LOGIKA FALLBACK IMAGE
+            const displayImage = program.image || "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop";
+
             return (
+              // 🔥 UBAH KE DIV (Bukan Link Langsung) UNTUK MENGHINDARI HYDRATION ERROR
               <div 
                 key={program.id}
-                className={`group relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 
+                className={`group relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 cursor-pointer
                   ${isMain ? 'col-span-1 md:col-span-2 md:row-span-2' : 'col-span-1 md:col-span-1 md:row-span-1'}
                 `}
               >
+                {/* 🔥 LINK SEBAGAI OVERLAY (Teknik Stretched Link) */}
+                <Link href="/program" className="absolute inset-0 z-20">
+                   <span className="sr-only">Lihat Detail Program</span>
+                </Link>
+
                 {/* BACKGROUND IMAGE */}
                 <div className="absolute inset-0 z-0">
                    <Image 
-                     src={program.image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop"} 
-                     alt={program.nama}
-                     fill
-                     className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 dark:opacity-70"
+                      src={displayImage} 
+                      alt={program.nama}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 dark:opacity-70"
                    />
                    {/* Gradient Overlay */}
                    <div className={`absolute inset-0 bg-gradient-to-t ${gradientColor}`} />
@@ -102,7 +108,7 @@ export default async function ProgramSection() {
                     </span>
                   )}
 
-                  <h3 className={`${isMain ? 'text-2xl md:text-4xl' : 'text-xl'} font-black text-white mb-2`}>
+                  <h3 className={`${isMain ? 'text-2xl md:text-4xl' : 'text-xl'} font-black text-white mb-2 leading-tight`}>
                     {program.nama}
                   </h3>
                   
