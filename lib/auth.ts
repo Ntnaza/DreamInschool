@@ -3,6 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import bcrypt from "bcryptjs";
+import { SignJWT } from "jose";
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "rahasia-osis-mpk-2026-sangat-kuat"
+);
 
 export async function loginAction(formData: FormData) {
   const username = formData.get("username") as string;
@@ -18,41 +24,56 @@ export async function loginAction(formData: FormData) {
       include: { pengurus: true }
     });
 
-    if (!user || user.password !== password) {
+    if (!user) {
       return { success: false, message: "ID atau Password salah!" };
     }
 
-    // === PERBAIKAN DI SINI (TAMBAH AWAIT) ===
-    // Di Next.js terbaru, cookies() itu async (harus ditunggu)
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return { success: false, message: "ID atau Password salah!" };
+    }
+
+    // Buat JWT Token
+    const token = await new SignJWT({ 
+      username: user.username, 
+      role: user.role 
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("1d")
+      .sign(JWT_SECRET);
+
     const cookieStore = await cookies();
 
-    cookieStore.set("session_user", user.username, {
+    // Simpan token di cookie yang aman
+    cookieStore.set("session_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24, // 1 Hari
       path: "/",
+      sameSite: "lax"
     });
     
+    // Cookie role tetap ada untuk kebutuhan UI ringan, tapi bukan penentu akses (Satpam asli ada di JWT)
     cookieStore.set("session_role", user.role, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24, 
       path: "/",
     });
-    // ========================================
 
     return { success: true, message: "Login Berhasil! Mengalihkan..." };
 
   } catch (error) {
-    // Ini biar kita tau error aslinya apa di terminal
     console.error("Login Error (Detail):", error); 
     return { success: false, message: "Terjadi kesalahan sistem. Cek Terminal." };
   }
 }
 
 export async function logoutAction() {
-  const cookieStore = await cookies(); // Tambah await juga di sini
-  cookieStore.delete("session_user");
+  const cookieStore = await cookies(); 
+  cookieStore.delete("session_token");
   cookieStore.delete("session_role");
   redirect("/login");
 }

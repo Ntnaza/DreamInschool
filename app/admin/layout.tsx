@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] flex font-sans overflow-hidden transition-colors duration-500 relative">
+    <div className="h-screen bg-[#F8FAFC] dark:bg-[#020617] flex font-sans overflow-hidden transition-colors duration-500 relative">
       
       {/* Background Decor */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-0 dark:opacity-100 transition-opacity duration-500">
@@ -126,14 +126,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* 2. Menu List (SCROLLBAR TIPIS) */}
         <nav className="flex-1 py-6 px-4 space-y-6 overflow-y-auto overflow-x-hidden thin-scrollbar hover:thin-scrollbar-thumb relative">
-           <style jsx>{`
-              .thin-scrollbar::-webkit-scrollbar { width: 4px; }
-              .thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
-              .thin-scrollbar::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; }
-              .thin-scrollbar:hover::-webkit-scrollbar-thumb { background: #cbd5e1; }
-              :global(.dark) .thin-scrollbar:hover::-webkit-scrollbar-thumb { background: #334155; }
-           `}</style>
-
            {menuGroups.map((group, groupIdx) => (
              <div key={groupIdx}>
                {isSidebarOpen && (
@@ -216,11 +208,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </motion.aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 h-screen overflow-y-auto relative z-10 scrollbar-hide">
+      <main className="flex-1 overflow-y-auto relative z-10 custom-scrollbar-main">
          <div className="p-6 md:p-10 pb-24 pt-24 md:pt-10 max-w-7xl mx-auto">
             {children}
          </div>
       </main>
+
+      {/* === CUSTOM STYLES (Fixed Nested Style Error) === */}
+      <style jsx global>{`
+        /* 1. Sidebar Scrollbar */
+        .thin-scrollbar::-webkit-scrollbar { width: 4px; }
+        .thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .thin-scrollbar::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; }
+        .thin-scrollbar:hover::-webkit-scrollbar-thumb { background: #cbd5e1; }
+        .dark .thin-scrollbar:hover::-webkit-scrollbar-thumb { background: #334155; }
+
+        /* 2. Main Content Scrollbar */
+        .custom-scrollbar-main::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar-main::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar-main::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scrollbar-main::-webkit-scrollbar-thumb { background: #334155; }
+      `}</style>
 
     </div>
   );

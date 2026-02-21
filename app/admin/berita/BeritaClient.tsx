@@ -94,12 +94,12 @@ export default function BeritaClient({ initialPosts }: { initialPosts: any[] }) 
   };
 
   return (
-    <div className="relative min-h-screen font-sans pb-20">
+    <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
       
-      {/* HEADER DASHBOARD */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
+      {/* HEADER (FIXED/STICKY) */}
+      <div className="flex-shrink-0 flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
         <div>
-           <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+           <h1 className="text-3xl font-black font-bold text-slate-900 dark:text-white flex items-center gap-3">
              Kelola Berita <span className="text-2xl p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">📰</span>
            </h1>
            <p className="text-slate-500 mt-1">Dapur redaksi OSIS & MPK.</p>
@@ -112,40 +112,42 @@ export default function BeritaClient({ initialPosts }: { initialPosts: any[] }) 
         </button>
       </div>
 
-      {/* LIST BERITA */}
-      <div className="grid grid-cols-1 gap-4">
-         <AnimatePresence>
-            {posts.map((post) => (
-               <motion.div
-                 key={post.id}
-                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                 className="group flex flex-col md:flex-row items-center gap-6 p-4 bg-white dark:bg-[#0f172a]/60 border border-slate-200 dark:border-white/10 rounded-3xl hover:border-blue-400 transition-all"
-               >
-                  <div className="relative w-full md:w-48 h-32 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-200">
-                     <Image src={post.gambar || "https://source.unsplash.com/random"} alt={post.judul} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
-                  </div>
-                  <div className="flex-1 w-full text-center md:text-left">
-                     <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
-                       <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">
-                          {post.kategori}
-                       </span>
-                       <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${post.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                          {post.status}
-                       </span>
-                     </div>
-                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{post.judul}</h3>
-                     <div className="flex items-center justify-center md:justify-start gap-4 text-xs text-slate-500">
-                        <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.createdAt).toLocaleDateString("id-ID")}</span>
-                        <span className="flex items-center gap-1"><Eye size={12}/> {post.views} Views</span>
-                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => openEditor(post)} className="p-3 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl transition-colors"><Edit3 size={18} /></button>
-                    <button onClick={() => handleDelete(post.id)} className="p-3 bg-slate-100 hover:bg-red-600 hover:text-white rounded-xl transition-colors"><Trash2 size={18} /></button>
-                  </div>
-               </motion.div>
-            ))}
-         </AnimatePresence>
+      {/* LIST BERITA (SCROLLABLE AREA) */}
+      <div className="flex-1 overflow-y-auto pb-20 pr-2 custom-scrollbar">
+        <div className="grid grid-cols-1 gap-4">
+          <AnimatePresence>
+              {posts.map((post) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  className="group flex flex-col md:flex-row items-center gap-6 p-4 bg-white dark:bg-[#0f172a]/60 border border-slate-200 dark:border-white/10 rounded-3xl hover:border-blue-400 transition-all"
+                >
+                    <div className="relative w-full md:w-48 h-32 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-200">
+                      <Image src={post.gambar || "https://source.unsplash.com/random"} alt={post.judul} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="flex-1 w-full text-center md:text-left">
+                      <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md">
+                            {post.kategori}
+                        </span>
+                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${post.status === 'PUBLISHED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                            {post.status}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">{post.judul}</h3>
+                      <div className="flex items-center justify-center md:justify-start gap-4 text-xs text-slate-500">
+                          <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.createdAt).toLocaleDateString("id-ID")}</span>
+                          <span className="flex items-center gap-1"><Eye size={12}/> {post.views} Views</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => openEditor(post)} className="p-3 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl transition-colors"><Edit3 size={18} /></button>
+                      <button onClick={() => handleDelete(post.id)} className="p-3 bg-slate-100 hover:bg-red-600 hover:text-white rounded-xl transition-colors"><Trash2 size={18} /></button>
+                    </div>
+                </motion.div>
+              ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* === EDITOR FULL SCREEN (YANG SUDAH DILEBARKAN) === */}

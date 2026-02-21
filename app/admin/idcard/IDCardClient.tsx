@@ -230,8 +230,8 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
   if (!selectedMember) return <div className="p-10 text-center">Belum ada data pengurus. Tambahkan dulu di menu Data Pengurus.</div>;
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col gap-6 font-sans">
-       {/* === HEADER === */}
+    <div className="h-[calc(100vh-140px)] flex flex-col gap-6 font-sans">
+       {/* === HEADER (FIXED) === */}
        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-2 shrink-0">
           <div>
              <div className="flex items-center gap-4">

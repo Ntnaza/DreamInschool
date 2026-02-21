@@ -81,10 +81,10 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
   ];
 
   return (
-    <div className="space-y-6 h-full flex flex-col font-sans relative">
+    <div className="h-[calc(100vh-140px)] flex flex-col font-sans relative">
       
-      {/* HEADER */}
-      <div className="tour-inbox-header">
+      {/* HEADER (FIXED/STICKY) */}
+      <div className="tour-inbox-header flex-shrink-0 mb-6">
           <div className="flex items-center gap-3">
              <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
                Inbox Aspirasi <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">📩</span>
@@ -96,11 +96,11 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
           </p>
       </div>
 
-      {/* MAIN CONTAINER */}
-      <div className="flex-1 bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] overflow-hidden shadow-sm flex flex-col md:flex-row min-h-[600px]">
+      {/* MAIN CONTAINER (SCROLLABLE AREA) */}
+      <div className="flex-1 bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] overflow-hidden shadow-sm flex flex-col md:flex-row min-h-0">
         
-        {/* SIDEBAR FILTER */}
-        <div className="tour-folder-sidebar w-full md:w-72 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/5 p-6 bg-slate-100 dark:bg-white/5 flex flex-col gap-6">
+        {/* SIDEBAR FILTER (STAYS IN PLACE) */}
+        <div className="tour-folder-sidebar w-full md:w-72 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/5 p-6 bg-slate-100 dark:bg-white/5 flex flex-col gap-6 flex-shrink-0">
            <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all">
               <Filter size={18} /> Filter Lanjutan
            </button>
@@ -137,11 +137,11 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
            </div>
         </div>
 
-        {/* LIST PESAN */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-transparent">
+        {/* LIST PESAN (HAS OWN SCROLL) */}
+        <div className="flex-1 flex flex-col bg-white dark:bg-transparent min-w-0">
            
-           {/* TOOLBAR */}
-           <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between gap-4 relative z-20">
+           {/* TOOLBAR (STICKY INSIDE LIST) */}
+           <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between gap-4 relative z-20 flex-shrink-0">
               <div className="relative flex-1 max-w-md tour-search-bar">
                  <input 
                    type="text" 
@@ -155,8 +155,8 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
               <button className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"><MoreHorizontal size={20}/></button>
            </div>
 
-           {/* LIST CONTENT */}
-           <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-slate-50/30 dark:bg-transparent">
+           {/* LIST CONTENT (SCROLLABLE) */}
+           <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-slate-50/30 dark:bg-transparent custom-scrollbar">
              <div className="space-y-3">
                <AnimatePresence>
                  {filteredMessages.length > 0 ? (

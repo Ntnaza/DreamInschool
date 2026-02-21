@@ -148,43 +148,46 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
   const listSelesai = filteredProkers.filter(p => p.progress === 100);
 
   return (
-    <div className="relative h-full flex flex-col min-h-screen font-sans pb-20">
+    <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
-        <div>
-           <div className="flex items-center gap-3 mb-1">
-               <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-header-title">
-                 Manajemen Proker <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">🚀</span>
-               </h1>
-               {isClient && <TourGuide steps={tourSteps} />}
-           </div>
-           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Pantau status kegiatan: Segera, Berjalan, dan Selesai.</p>
+      {/* HEADER & TOOLBAR (STABIL/FIXED) */}
+      <div className="flex-shrink-0">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-header-title">
+                  Manajemen Proker <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">🚀</span>
+                </h1>
+                {isClient && <TourGuide steps={tourSteps} />}
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Pantau status kegiatan: Segera, Berjalan, dan Selesai.</p>
+          </div>
+          
+          <button onClick={openNewModal} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-transform active:scale-95 tour-buat-baru-btn">
+            <Plus size={20} /> Proker Baru
+          </button>
         </div>
-        
-        <button onClick={openNewModal} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-transform active:scale-95 tour-buat-baru-btn">
-           <Plus size={20} /> Proker Baru
-        </button>
+
+        {/* TOOLBAR */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white/50 dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/5 backdrop-blur-sm">
+          <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
+              {['Semua', 'Inti', 'MPK (Legislatif)', 'Sekbid 1', 'Sekbid 2', 'Sekbid 3', 'Sekbid 4'].map((sekbid) => (
+                <button key={sekbid} onClick={() => setFilterSekbid(sekbid)} className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === sekbid ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white border-blue-100 dark:border-transparent shadow-sm" : "bg-transparent border-transparent text-slate-500 hover:bg-white/50 dark:hover:bg-white/5"}`}>
+                    {sekbid}
+                </button>
+              ))}
+          </div>
+          <div className="relative flex-1 md:w-72 group w-full">
+              <input type="text" placeholder="Cari program kerja..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500/50 outline-none text-sm font-medium text-slate-700 dark:text-white shadow-sm"/>
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          </div>
+        </div>
       </div>
 
-      {/* TOOLBAR */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white/50 dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/5 backdrop-blur-sm">
-         <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
-            {['Semua', 'Inti', 'MPK (Legislatif)', 'Sekbid 1', 'Sekbid 2', 'Sekbid 3', 'Sekbid 4'].map((sekbid) => (
-               <button key={sekbid} onClick={() => setFilterSekbid(sekbid)} className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === sekbid ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white border-blue-100 dark:border-transparent shadow-sm" : "bg-transparent border-transparent text-slate-500 hover:bg-white/50 dark:hover:bg-white/5"}`}>
-                  {sekbid}
-               </button>
-            ))}
-         </div>
-         <div className="relative flex-1 md:w-72 group w-full">
-            <input type="text" placeholder="Cari program kerja..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500/50 outline-none text-sm font-medium text-slate-700 dark:text-white shadow-sm"/>
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-         </div>
-      </div>
-
-      {/* KANBAN BOARD */}
-      <div className="flex-1 overflow-x-auto pb-8 custom-scrollbar">
-         <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0">
+      {/* KANBAN BOARD (SCROLLABLE AREA) */}
+      <div className="flex-1 overflow-y-auto overflow-x-auto pb-20 custom-scrollbar pr-2">
+         <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0 h-full">
             <KanbanColumn tourClass="tour-col-segera" title="SEGERA" icon={<AlertCircle size={18} />} count={listSegera.length} color="blue">
                {listSegera.map((item, idx) => (
                    <ProkerCard 

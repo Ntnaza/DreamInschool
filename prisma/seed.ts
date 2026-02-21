@@ -1,11 +1,15 @@
 // prisma/seed.ts
 
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Memulai proses seeding data...')
+
+  const hashedPasswordAdmin = await bcrypt.hash('raihanakbar8', 10)
+  const hashedPasswordUser = await bcrypt.hash('password123', 10)
 
   // 1. Buat Data Pengurus (DUMMY)
   // ------------------------------------------
@@ -25,7 +29,7 @@ async function main() {
       user: {
         create: {
           username: 'Raihan',
-          password: 'raihanakbar8', // Nanti di real app ini di-hash
+          password: hashedPasswordAdmin, 
           role: 'ADMIN'
         }
       }
@@ -46,7 +50,7 @@ async function main() {
       user: {
         create: {
           username: 'siti',
-          password: 'password123',
+          password: hashedPasswordUser,
           role: 'PENGURUS'
         }
       }

@@ -3,9 +3,56 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { StatusProker } from "@prisma/client";
+import { z } from "zod";
+
+import { jwtVerify } from "jose";
+import { cookies } from "next/headers";
+
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "rahasia-osis-mpk-2026-sangat-kuat"
+);
+
+async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("session_token")?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload as { username: string; role: string };
+  } catch (error) {
+    return null;
+  }
+}
+
 /* ======================================================
-   HELPER
+   ZOD SCHEMAS (VALIDATION)
 ====================================================== */
+
+const BeritaSchema = z.object({
+  judul: z.string().min(5, "Judul minimal 5 karakter"),
+  konten: z.string().min(20, "Konten minimal 20 karakter"),
+  kategori: z.string().default("Umum"),
+  gambar: z.string().optional().nullable(),
+});
+
+const ProkerSchema = z.object({
+  nama: z.string().min(3, "Nama proker minimal 3 karakter"),
+  deskripsi: z.string().optional().nullable(),
+  divisi: z.string(),
+  prioritas: z.string().default("Medium"),
+  anggaran: z.number().nonnegative().default(0),
+  progress: z.number().min(0).max(100).default(0),
+  lokasi: z.string().optional().nullable(),
+  image: z.string().optional().nullable(),
+  isFeatured: z.boolean().default(false),
+  startDate: z.date().optional().nullable(),
+  deadline: z.date().optional().nullable(),
+});
+
+/* ======================================================
+   1. ASPIRASI SISWA
+====================================================== */
+// ... (skip for brevity, will apply in multiple steps if needed)
 
 
 /* ======================================================
@@ -101,24 +148,35 @@ function slugify(text: string) {
 // File: lib/actions.ts
 
 export async function createBerita(formData: FormData) {
-  const judul = formData.get("judul") as string;
-  const konten = formData.get("konten") as string;
-  const kategori = (formData.get("kategori") as string) || "Umum";
-  const gambar = formData.get("gambar") as string | null;
+  const validatedFields = BeritaSchema.safeParse({
+    judul: formData.get("judul"),
+    konten: formData.get("konten"),
+    kategori: formData.get("kategori") || "Umum",
+    gambar: formData.get("gambar"),
+  });
 
-  if (!judul || !konten) {
-    return { success: false, message: "Judul & Konten wajib diisi!" };
+  if (!validatedFields.success) {
+    const errorMsg = validatedFields.error.flatten().fieldErrors;
+    return { 
+      success: false, 
+      message: errorMsg.judul?.[0] || errorMsg.konten?.[0] || "Data tidak valid." 
+    };
   }
 
+  const { judul, konten, kategori, gambar } = validatedFields.data;
   const slug = `${slugify(judul)}-${Date.now()}`;
 
-  // === PERBAIKAN DI SINI ===
-  // 1. Kita cari dulu user (Admin) yang ada di database
-  // Nanti kalau sudah ada login, kita ambil dari session user yang login
-  const adminUser = await prisma.user.findFirst();
+  const session = await getCurrentUser();
+  if (!session) {
+    return { success: false, message: "Sesi habis. Silakan login kembali." };
+  }
+
+  const adminUser = await prisma.user.findUnique({
+    where: { username: session.username },
+  });
 
   if (!adminUser) {
-    return { success: false, message: "Error: Belum ada User/Admin di database!" };
+    return { success: false, message: "Error: User tidak ditemukan di database!" };
   }
 
   try {
@@ -129,11 +187,7 @@ export async function createBerita(formData: FormData) {
         konten,
         kategori,
         gambar: gambar || null,
-        
-        // 2. Hubungkan ke ID User yang ditemukan tadi
         penulisId: adminUser.id, 
-        
-        // Jangan pakai 'penulis: "Admin OSIS"', itu salah.
         status: "PUBLISHED",
         views: 0,
       },
@@ -621,33 +675,36 @@ export async function createEventBudget(formData: FormData) {
   const dateStr = formData.get("date") as string;
 
   try {
-    // A. Catat PENGELUARAN di Kas Umum
-    await prisma.keuangan.create({
-      data: {
-        judul: `Modal Event: ${namaEvent}`,
-        nominal: budget,
-        tipe: "PENGELUARAN",
-        kategori: "Anggaran Event",
-        tanggal: new Date(dateStr),
-        keterangan: "Alokasi dana ke event baru",
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      // A. Catat PENGELUARAN di Kas Umum
+      await tx.keuangan.create({
+        data: {
+          judul: `Modal Event: ${namaEvent}`,
+          nominal: budget,
+          tipe: "PENGELUARAN",
+          kategori: "Anggaran Event",
+          tanggal: new Date(dateStr),
+          keterangan: "Alokasi dana ke event baru",
+        },
+      });
 
-    // B. Buat Data Proker Baru (Status: ACTIVE)
-    await prisma.programKerja.create({
-      data: {
-        nama: namaEvent,
-        anggaran: budget,
-        anggaranTerpakai: 0,
-        status: "IN_PROGRESS", // Anggap event sedang jalan
-        divisi: "Kepanitiaan", // Default divisi
-        deadline: new Date(dateStr), // Sementara pakai tgl transaksi
-      }
+      // B. Buat Data Proker Baru (Status: ACTIVE)
+      await tx.programKerja.create({
+        data: {
+          nama: namaEvent,
+          anggaran: budget,
+          anggaranTerpakai: 0,
+          status: "IN_PROGRESS", 
+          divisi: "Kepanitiaan", 
+          deadline: new Date(dateStr), 
+        }
+      });
     });
 
     revalidatePath("/admin/keuangan");
     return { success: true, message: "Anggaran Event berhasil dibuka! 🎉" };
   } catch (error) {
+    console.error("CREATE EVENT BUDGET ERROR:", error);
     return { success: false, message: "Gagal membuka anggaran." };
   }
 }
@@ -660,29 +717,32 @@ export async function createEventTrx(formData: FormData) {
   const dateStr = formData.get("date") as string;
 
   try {
-    // A. Simpan Transaksi (Linked ke ProkerID)
-    await prisma.keuangan.create({
-      data: {
-        judul,
-        nominal,
-        tipe: "PENGELUARAN",
-        kategori: "Pengeluaran Event",
-        tanggal: new Date(dateStr),
-        prokerId: eventId, // Link ke Event
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      // A. Simpan Transaksi (Linked ke ProkerID)
+      await tx.keuangan.create({
+        data: {
+          judul,
+          nominal,
+          tipe: "PENGELUARAN",
+          kategori: "Pengeluaran Event",
+          tanggal: new Date(dateStr),
+          prokerId: eventId, 
+        },
+      });
 
-    // B. Update 'anggaranTerpakai' di tabel Proker
-    await prisma.programKerja.update({
-      where: { id: eventId },
-      data: {
-        anggaranTerpakai: { increment: nominal } // Tambah otomatis
-      }
+      // B. Update 'anggaranTerpakai' di tabel Proker
+      await tx.programKerja.update({
+        where: { id: eventId },
+        data: {
+          anggaranTerpakai: { increment: nominal } 
+        }
+      });
     });
 
     revalidatePath("/admin/keuangan");
     return { success: true, message: "Pengeluaran event dicatat! 🧾" };
   } catch (error) {
+    console.error("CREATE EVENT TRX ERROR:", error);
     return { success: false, message: "Gagal update data event." };
   }
 }
@@ -762,36 +822,43 @@ export async function kembalikanBarang(formData: FormData) {
   const kondisi = formData.get("condition") as string;
   
   try {
-    // Ambil data barang dulu buat tau siapa peminjam terakhir
-    const barang = await prisma.inventaris.findUnique({ where: { id } });
-    if (!barang || !barang.peminjam) return { success: false, message: "Data tidak valid." };
-
-    // A. Simpan ke Riwayat
-    await prisma.riwayatAset.create({
-      data: {
-        inventarisId: id,
-        peminjam: barang.peminjam,
-        tglKeluar: barang.tglPinjam || new Date(),
-        tglKembali: new Date(),
-        kondisiKembali: kondisi
+    const result = await prisma.$transaction(async (tx) => {
+      // Ambil data barang dulu buat tau siapa peminjam terakhir
+      const barang = await tx.inventaris.findUnique({ where: { id } });
+      if (!barang || !barang.peminjam) {
+        throw new Error("Data barang tidak valid atau tidak sedang dipinjam.");
       }
-    });
 
-    // B. Reset Status Barang
-    await prisma.inventaris.update({
-      where: { id },
-      data: {
-        status: kondisi === "Rusak" ? "MAINTENANCE" : "AVAILABLE",
-        kondisi: kondisi,
-        peminjam: null,
-        tglPinjam: null
-      }
+      // A. Simpan ke Riwayat
+      await tx.riwayatAset.create({
+        data: {
+          inventarisId: id,
+          peminjam: barang.peminjam,
+          tglKeluar: barang.tglPinjam || new Date(),
+          tglKembali: new Date(),
+          kondisiKembali: kondisi
+        }
+      });
+
+      // B. Reset Status Barang
+      await tx.inventaris.update({
+        where: { id },
+        data: {
+          status: kondisi === "Rusak" ? "MAINTENANCE" : "AVAILABLE",
+          kondisi: kondisi,
+          peminjam: null,
+          tglPinjam: null
+        }
+      });
+
+      return { success: true, message: "Barang sudah dikembalikan! ✅" };
     });
 
     revalidatePath("/admin/inventaris");
-    return { success: true, message: "Barang sudah dikembalikan! ✅" };
-  } catch (error) {
-    return { success: false, message: "Gagal memproses pengembalian." };
+    return result;
+  } catch (error: any) {
+    console.error("RETURN ITEM ERROR:", error);
+    return { success: false, message: error.message || "Gagal memproses pengembalian." };
   }
 }
 

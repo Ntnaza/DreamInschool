@@ -1,23 +1,34 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { jwtVerify } from "jose";
 
-export function middleware(request: NextRequest) {
-  // Cek apakah user punya "tiket" login (cookie)
-  const isLoggedIn = request.cookies.has('session_user');
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "rahasia-osis-mpk-2026-sangat-kuat"
+);
+
+export async function middleware(request: NextRequest) {
+  const token = request.cookies.get('session_token')?.value;
   
-  // Cek halaman yang sedang diakses
   const isLoginPage = request.nextUrl.pathname === '/login';
-  
-  // PERBAIKAN: Gunakan .startsWith (Huruf besar 'W')
   const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
 
-  // SKENARIO 1: Belum Login, tapi nekat masuk Admin -> Tendang ke Login
-  if (isAdminPage && !isLoggedIn) {
+  let verifiedToken = null;
+  if (token) {
+    try {
+      const { payload } = await jwtVerify(token, JWT_SECRET);
+      verifiedToken = payload;
+    } catch (error) {
+      console.error("JWT Verification failed:", error);
+    }
+  }
+
+  // Jika mencoba masuk admin tapi token tidak valid
+  if (isAdminPage && !verifiedToken) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // SKENARIO 2: Sudah Login, tapi mau buka halaman Login lagi -> Lempar ke Admin
-  if (isLoginPage && isLoggedIn) {
+  // Jika sudah login tapi mau buka login lagi
+  if (isLoginPage && verifiedToken) {
     return NextResponse.redirect(new URL('/admin', request.url));
   }
 

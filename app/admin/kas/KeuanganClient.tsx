@@ -108,9 +108,9 @@ export default function KeuanganClient({ generalTrx, events }: { generalTrx: any
   };
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col gap-6 font-sans">
+    <div className="h-[calc(100vh-140px)] flex flex-col gap-6 font-sans">
       
-      {/* HEADER & TABS (Sama persis dengan kode Koh) */}
+      {/* HEADER & TABS (FIXED) */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 shrink-0">
          <div>
             <div className="flex items-center gap-4 mb-1">

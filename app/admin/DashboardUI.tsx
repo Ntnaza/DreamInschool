@@ -87,9 +87,9 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
   ];
 
   return (
-    <div className="space-y-6 font-sans pb-10">
-      {/* HEADER */}
-      <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-6 pb-2">
+    <div className="h-[calc(100vh-140px)] flex flex-col font-sans">
+      {/* HEADER (FIXED) */}
+      <div className="flex flex-col-reverse md:flex-row justify-between items-start md:items-center gap-6 pb-6 shrink-0">
          <div>
             <div className="flex items-center gap-4 mb-1">
                 <h1 className="text-3xl font-black font-bold text-slate-900 dark:text-white tracking-tight tour-dashboard-header">
@@ -112,8 +112,10 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
          </div>
       </div>
 
-      {/* STATS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 tour-stats-grid">
+      {/* SCROLLABLE CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto pb-20 pr-2 custom-scrollbar space-y-6">
+         {/* STATS GRID */}
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 tour-stats-grid">
          <SpotlightCard color="blue" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => router.push('/admin/absensi')}>
             <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 shadow-sm">
                 <UserCheck size={20} />
@@ -236,6 +238,7 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
          </motion.div>
 
       </div>
+    </div>
     </div>
   );
 }

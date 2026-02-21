@@ -133,52 +133,55 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
   });
 
   return (
-    <div className="relative h-full flex flex-col min-h-screen pb-20">
+    <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
-        <div>
-           <div className="flex items-center gap-4">
-               <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-pengurus-header">
-                 Data Pengurus <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">👥</span>
-               </h1>
-               {isClient && <TourGuide steps={pengurusTourSteps} />}
-           </div>
-           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">
-             Manajemen struktur organisasi dan anggota.
-           </p>
+      {/* HEADER (FIXED/STICKY) */}
+      <div className="flex-shrink-0">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
+          <div>
+            <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-pengurus-header">
+                  Data Pengurus <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">👥</span>
+                </h1>
+                {isClient && <TourGuide steps={pengurusTourSteps} />}
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">
+              Manajemen struktur organisasi dan anggota.
+            </p>
+          </div>
+          
+          <button onClick={openNewModal} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-transform active:scale-95 tour-add-member-btn">
+            <Plus size={20} /> Tambah Pengurus
+          </button>
         </div>
-        
-        <button onClick={openNewModal} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-transform active:scale-95 tour-add-member-btn">
-           <Plus size={20} /> Tambah Pengurus
-        </button>
+
+        {/* TOOLBAR */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white/50 dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/5 backdrop-blur-sm">
+          <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide tour-filter-sekbid">
+              {['Semua', 'Inti', 'Sekbid 1', 'Sekbid 2', 'Sekbid 3', 'Sekbid 4'].map((sekbid) => (
+                <button key={sekbid} onClick={() => setFilterSekbid(sekbid)} className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === sekbid ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white border-blue-100 dark:border-transparent shadow-sm" : "bg-transparent border-transparent text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"}`}>
+                    {sekbid}
+                </button>
+              ))}
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-lg tour-view-toggle">
+                <button onClick={() => setViewMode("grid")} className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-white' : 'text-slate-400'}`}><Grid size={16} /></button>
+                <button onClick={() => setViewMode("list")} className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-white' : 'text-slate-400'}`}><List size={16} /></button>
+              </div>
+              <div className="relative flex-1 md:w-64 group">
+                <input type="text" placeholder="Cari nama / jabatan..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500/50 outline-none text-sm font-medium text-slate-700 dark:text-white shadow-sm"/>
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              </div>
+          </div>
+        </div>
       </div>
 
-      {/* TOOLBAR */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 bg-white/50 dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/5 backdrop-blur-sm">
-         <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide tour-filter-sekbid">
-            {['Semua', 'Inti', 'Sekbid 1', 'Sekbid 2', 'Sekbid 3', 'Sekbid 4'].map((sekbid) => (
-               <button key={sekbid} onClick={() => setFilterSekbid(sekbid)} className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === sekbid ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white border-blue-100 dark:border-transparent shadow-sm" : "bg-transparent border-transparent text-slate-500 hover:bg-white/50 dark:hover:bg-white/5"}`}>
-                  {sekbid}
-               </button>
-            ))}
-         </div>
-
-         <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-lg tour-view-toggle">
-               <button onClick={() => setViewMode("grid")} className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-white' : 'text-slate-400'}`}><Grid size={16} /></button>
-               <button onClick={() => setViewMode("list")} className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-white' : 'text-slate-400'}`}><List size={16} /></button>
-            </div>
-            <div className="relative flex-1 md:w-64 group">
-               <input type="text" placeholder="Cari nama / jabatan..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500/50 outline-none text-sm font-medium text-slate-700 dark:text-white shadow-sm"/>
-               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            </div>
-         </div>
-      </div>
-
-      {/* MEMBERS GRID / LIST (TETAP SAMA) */}
-      {viewMode === "grid" ? (
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10">
+      {/* MEMBERS GRID / LIST (SCROLLABLE AREA) */}
+      <div className="flex-1 overflow-y-auto pb-20 pr-2 custom-scrollbar">
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence>
                {filteredMembers.map((member, index) => (
                   <motion.div key={member.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`group relative bg-white dark:bg-[#0f172a]/60 border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-500/50 transition-all duration-300 flex flex-col items-center text-center overflow-hidden ${index === 0 ? 'tour-member-card' : ''}`}>
@@ -211,10 +214,10 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
                   </motion.div>
                ))}
             </AnimatePresence>
-         </div>
-      ) : (
-         /* LIST VIEW */
-         <div className="space-y-3 pb-10">
+          </div>
+        ) : (
+          /* LIST VIEW */
+          <div className="space-y-3 pb-10">
             {filteredMembers.map((member) => (
                <motion.div key={member.id} layout className="flex items-center justify-between p-4 bg-white dark:bg-[#0f172a]/60 border border-slate-200 dark:border-white/10 rounded-2xl hover:shadow-md transition-all">
                   <div className="flex items-center gap-4">
@@ -237,8 +240,9 @@ export default function PengurusClient({ initialData }: { initialData: any[] }) 
                   </div>
                </motion.div>
             ))}
-         </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* MODERN MODAL */}
       <AnimatePresence>

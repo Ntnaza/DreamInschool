@@ -195,9 +195,9 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
   });
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col gap-6 font-sans relative">
+    <div className="h-[calc(100vh-140px)] flex flex-col gap-6 font-sans relative">
       
-      {/* HEADER & FILTER */}
+      {/* HEADER & FILTER (FIXED) */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 shrink-0">
          <div>
             <div className="flex items-center gap-4">
