@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Memulai proses seeding data...')
 
-  const hashedPasswordAdmin = await bcrypt.hash('raihanakbar8', 10)
+  const hashedPasswordAdmin = await bcrypt.hash('admin123', 10)
   const hashedPasswordUser = await bcrypt.hash('password123', 10)
 
   // 1. Buat Data Pengurus (DUMMY)
@@ -28,7 +28,7 @@ async function main() {
       status: 'AKTIF',
       user: {
         create: {
-          username: 'Raihan',
+          username: 'admin',
           password: hashedPasswordAdmin, 
           role: 'ADMIN'
         }

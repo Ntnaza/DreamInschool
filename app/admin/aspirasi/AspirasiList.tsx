@@ -4,12 +4,22 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, Filter, Trash2, CheckCircle, MessageSquare, 
-  AlertCircle, MoreHorizontal, Send, X, Reply // Tambah icon Reply, Send, X
+  AlertCircle, MoreHorizontal, Send, X, Reply,
+  Inbox, ChevronRight, User, Calendar, Tag, Clock, Loader2,
+  CheckCircle2, Info
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
 import { deleteAspirasi, replyAspirasi } from "@/lib/actions"; 
 
-// Helper Warna
+// Helper Warna Tag
+const tagColorMap: any = {
+  orange: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300 border-orange-200/50",
+  purple: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border-purple-200/50",
+  blue: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-200/50",
+  green: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300 border-green-200/50",
+  slate: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 border-slate-200/50",
+};
+
 const getTagColor = (cat: string) => {
   const c = cat.toLowerCase();
   if (c.includes('sarana')) return 'orange';
@@ -18,7 +28,14 @@ const getTagColor = (cat: string) => {
   return 'slate';
 };
 
-const formatDate = (date: Date) => {
+const formatDateFull = (date: Date) => {
+  return new Date(date).toLocaleDateString('id-ID', { 
+    day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+};
+
+const formatDateShort = (date: Date) => {
   return new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 };
 
@@ -26,23 +43,33 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
   const [messages, setMessages] = useState(initialData);
   const [selectedTab, setSelectedTab] = useState("all"); 
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<number | null>(initialData.length > 0 ? initialData[0].id : null);
   const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // STATE BARU: Untuk Modal Balasan
-  const [replyModal, setReplyModal] = useState<{open: boolean, id: number | null, sender: string}>({
-    open: false, id: null, sender: ""
-  });
+  const [replyText, setReplyText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => { setIsClient(true); }, []);
+  useEffect(() => { 
+    setIsClient(true); 
+    // Simulasi loading skeleton sebentar agar terasa lebih smooth dan profesional
+    const timer = setTimeout(() => {
+        setIsLoading(false);
+    }, 800);
+
+    if (initialData.length > 0 && !selectedId) {
+        setSelectedId(initialData[0].id);
+    }
+    return () => clearTimeout(timer);
+  }, [initialData, selectedId]);
 
   // Filter Logic
   const filteredMessages = messages.filter((msg) => {
-    const status = msg.status === 'SELESAI' ? 'done' : 'unread';
+    const isDone = msg.status === 'SELESAI';
     const matchesTab = 
-      selectedTab === "all" ? status !== "done" : 
-      selectedTab === "done" ? status === "done" :
-      selectedTab === "unread" ? status === "unread" : true;
+      selectedTab === "all" ? !isDone : 
+      selectedTab === "done" ? isDone :
+      selectedTab === "unread" ? msg.status === "PENDING" : true;
     
     const matchesSearch = 
       msg.pengirim.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -51,243 +78,297 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
     return matchesTab && matchesSearch;
   });
 
+  const selectedMsg = messages.find(m => m.id === selectedId);
+
+  // Komponen Skeleton (Bayangan Loading)
+  const SkeletonItem = () => (
+    <div className="p-4 rounded-2xl border border-slate-100 dark:border-white/5 bg-white/50 dark:bg-white/5 animate-pulse">
+       <div className="flex justify-between mb-3">
+          <div className="flex items-center gap-2">
+             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700" />
+             <div className="space-y-1.5">
+                <div className="h-2.5 w-20 bg-slate-200 dark:bg-slate-700 rounded" />
+                <div className="h-2 w-12 bg-slate-100 dark:bg-slate-800 rounded" />
+             </div>
+          </div>
+          <div className="h-2 w-10 bg-slate-100 dark:bg-slate-800 rounded" />
+       </div>
+       <div className="space-y-2">
+          <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded" />
+          <div className="h-2 w-2/3 bg-slate-100 dark:bg-slate-800 rounded" />
+       </div>
+    </div>
+  );
+
   const handleDelete = async (id: number) => {
     if(confirm("Hapus pesan ini permanen?")) {
-      setMessages(messages.filter(m => m.id !== id));
+      const newMessages = messages.filter(m => m.id !== id);
+      setMessages(newMessages);
+      if (selectedId === id) {
+        setSelectedId(newMessages.length > 0 ? newMessages[0].id : null);
+      }
       await deleteAspirasi(id);
     }
   };
 
-  // FUNGSI BARU: Kirim Balasan via Modal
-  const handleSendReply = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSendReply = async () => {
+    if (!replyText.trim() || !selectedId) return;
     setIsSubmitting(true);
     
-    const formData = new FormData(e.currentTarget);
-    await replyAspirasi(formData); // Panggil Server Action
+    const formData = new FormData();
+    formData.append("id", selectedId.toString());
+    formData.append("balasan", replyText);
 
-    // Update UI Local
-    setMessages(messages.map(m => m.id === replyModal.id ? { ...m, status: "SELESAI" } : m));
+    const res = await replyAspirasi(formData);
+
+    if (res.success) {
+        setMessages(messages.map(m => m.id === selectedId ? { ...m, status: "SELESAI", balasan: replyText, balasanAt: new Date() } : m));
+        setReplyText("");
+        alert("Balasan terkirim! ✅");
+    } else {
+        alert("Gagal: " + res.message);
+    }
     
     setIsSubmitting(false);
-    setReplyModal({ open: false, id: null, sender: "" }); // Tutup Modal
-    alert("Balasan terkirim! ✅");
   };
 
   const inboxTourSteps = [
-    { target: '.tour-inbox-header', content: 'Halaman Inbox Aspirasi.', disableBeacon: true },
-    { target: '.tour-folder-sidebar', content: 'Filter pesan di sini.', placement: 'right' as const },
-    { target: '.tour-reply-btn', content: 'Klik tombol ini untuk membalas pesan siswa.' }, 
+    { target: '.tour-inbox-header', content: 'Pusat Manajemen Aspirasi Siswa.', disableBeacon: true },
+    { target: '.tour-tab-nav', content: 'Gunakan folder ini untuk memisahkan pesan masuk dan arsip selesai.', placement: 'right' as const },
+    { target: '.tour-message-list', content: 'Daftar pesan masuk. Klik salah satu untuk membaca detailnya.', placement: 'right' as const },
+    { target: '.tour-message-detail', content: 'Baca isi lengkap aspirasi dan berikan jawaban langsung di panel ini.', placement: 'left' as const },
   ];
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col font-sans relative">
+    <div className="h-[calc(100vh-140px)] flex flex-col font-sans relative overflow-hidden">
       
-      {/* HEADER (FIXED/STICKY) */}
+      {/* HEADER */}
       <div className="tour-inbox-header flex-shrink-0 mb-6">
           <div className="flex items-center gap-3">
-             <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-               Inbox Aspirasi <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">📩</span>
+             <h1 className="text-3xl font-black font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+               Inbox Aspirasi <span className="text-2xl p-2 bg-pink-100 dark:bg-pink-900/30 rounded-full">📩</span>
              </h1>
              {isClient && <TourGuide steps={inboxTourSteps} />}
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1 ml-1">
-            Kelola pesan masuk dari seluruh siswa.
+            Respon aspirasi dan keluhan siswa secara profesional.
           </p>
       </div>
 
-      {/* MAIN CONTAINER (SCROLLABLE AREA) */}
-      <div className="flex-1 bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] overflow-hidden shadow-sm flex flex-col md:flex-row min-h-0">
+      {/* MAIN CONTAINER (MODERN TWO COLUMN) */}
+      <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
         
-        {/* SIDEBAR FILTER (STAYS IN PLACE) */}
-        <div className="tour-folder-sidebar w-full md:w-72 border-b md:border-b-0 md:border-r border-slate-200 dark:border-white/5 p-6 bg-slate-100 dark:bg-white/5 flex flex-col gap-6 flex-shrink-0">
-           <button className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all">
-              <Filter size={18} /> Filter Lanjutan
-           </button>
-
-           <div className="space-y-2">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest px-3 mb-1">Folder</p>
-              {[
-                { id: "all", label: "Kotak Masuk", icon: MessageSquare, count: messages.filter(m => m.status !== "SELESAI").length },
-                { id: "unread", label: "Belum Dibaca", icon: AlertCircle, count: messages.filter(m => m.status === "PENDING").length },
-                { id: "done", label: "Arsip Selesai", icon: CheckCircle, count: messages.filter(m => m.status === "SELESAI").length },
-              ].map((tab) => (
-                <button 
-                  key={tab.id}
-                  onClick={() => setSelectedTab(tab.id)}
-                  className={`relative w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all border group
-                    ${selectedTab === tab.id 
-                      ? "bg-white dark:bg-white/10 text-blue-600 dark:text-white border-blue-100 dark:border-transparent shadow-sm" 
-                      : "bg-transparent border-transparent text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
-                    }
-                  `}
-                >
-                   {selectedTab === tab.id && <motion.div layoutId="activeTabIndicator" className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full" />}
-                   <div className="flex items-center gap-3">
-                      <tab.icon size={18} className={selectedTab === tab.id ? "text-blue-500 dark:text-blue-400" : "opacity-70 group-hover:opacity-100"} />
-                      {tab.label}
-                   </div>
-                   {tab.count > 0 && (
-                     <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${selectedTab === tab.id ? "bg-blue-100 text-blue-600" : "bg-slate-200 text-slate-600"}`}>
-                       {tab.count}
-                     </span>
-                   )}
-                </button>
-              ))}
-           </div>
-        </div>
-
-        {/* LIST PESAN (HAS OWN SCROLL) */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-transparent min-w-0">
-           
-           {/* TOOLBAR (STICKY INSIDE LIST) */}
-           <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between gap-4 relative z-20 flex-shrink-0">
-              <div className="relative flex-1 max-w-md tour-search-bar">
+        {/* COLUMN 1: SIDEBAR & LIST (Diperlebar menjadi 420px) */}
+        <div className="w-full md:w-[420px] flex flex-col gap-4 flex-shrink-0">
+           {/* SEARCH & FILTER */}
+           <div className="tour-tab-nav space-y-4">
+              <div className="relative group">
                  <input 
                    type="text" 
-                   placeholder="Cari pengirim atau isi pesan..." 
+                   placeholder="Cari aspirasi..." 
                    value={searchQuery}
                    onChange={(e) => setSearchQuery(e.target.value)}
-                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-sm font-medium text-slate-700 dark:text-white"
+                   className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white dark:bg-[#0f172a]/60 border border-slate-200 dark:border-white/10 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-bold text-slate-700 dark:text-white shadow-sm"
                  />
-                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
               </div>
-              <button className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"><MoreHorizontal size={20}/></button>
+
+              <div className="flex p-1 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-white/5">
+                 {[
+                   { id: "all", label: "Masuk", icon: Inbox },
+                   { id: "unread", label: "Baru", icon: AlertCircle },
+                   { id: "done", label: "Selesai", icon: CheckCircle2 },
+                 ].map((tab) => (
+                   <button 
+                     key={tab.id}
+                     onClick={() => setSelectedTab(tab.id)}
+                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black font-bold transition-all
+                       ${selectedTab === tab.id 
+                         ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm border border-slate-100 dark:border-white/5" 
+                         : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                       }
+                     `}
+                   >
+                      <tab.icon size={14} />
+                      {tab.label}
+                   </button>
+                 ))}
+              </div>
            </div>
 
-           {/* LIST CONTENT (SCROLLABLE) */}
-           <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-slate-50/30 dark:bg-transparent custom-scrollbar">
-             <div className="space-y-3">
-               <AnimatePresence>
-                 {filteredMessages.length > 0 ? (
-                   filteredMessages.map((msg, index) => {
-                     const color = getTagColor(msg.kategori);
-                     const isUnread = msg.status === 'PENDING';
-                     
-                     return (
-                       <motion.div 
-                         key={msg.id}
-                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                         className={`group relative p-5 rounded-2xl border transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 ${index === 0 ? 'tour-message-item' : ''}
-                           ${isUnread 
-                             ? "bg-white dark:bg-white/10 border-blue-200 dark:border-blue-500/30 shadow-sm shadow-blue-500/5 ring-1 ring-blue-50 dark:ring-0" 
-                             : "bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 opacity-80 hover:opacity-100"
-                           }
-                         `}
-                       >
-                         <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-3">
-                               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm bg-gradient-to-br from-blue-400 to-cyan-500`}>
-                                  {msg.pengirim.charAt(0)}
-                               </div>
-                               <div>
-                                  <div className="flex items-center gap-2">
-                                    <h4 className={`text-sm ${isUnread ? "font-black text-slate-900 dark:text-white" : "font-bold text-slate-700 dark:text-slate-300"}`}>
-                                      {msg.pengirim}
-                                    </h4>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-${color}-100 text-${color}-700 dark:bg-${color}-500/20 dark:text-${color}-300`}>
-                                      {msg.kategori}
-                                    </span>
-                                  </div>
-                                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                                    {msg.kelas || "Siswa"}
-                                  </span>
-                               </div>
-                            </div>
-                            <span className={`text-xs font-bold ${isUnread ? "text-blue-600" : "text-slate-400"}`}>
-                              {formatDate(msg.createdAt)}
-                            </span>
-                         </div>
+           {/* MESSAGE LIST */}
+           <div className="tour-message-list flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+              <AnimatePresence mode="popLayout">
+                 {isLoading ? (
+                    // Tampilkan 4 Skeleton saat loading
+                    [1,2,3,4].map(i => <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SkeletonItem /></motion.div>)
+                 ) : filteredMessages.length > 0 ? (
+                   filteredMessages.map((msg) => (
+                     <motion.div 
+                       key={msg.id}
+                       layout
+                       initial={{ opacity: 0 }}
+                       animate={{ opacity: 1 }}
+                       exit={{ opacity: 0, scale: 0.95 }}
+                       onClick={() => setSelectedId(msg.id)}
+                       className={`group p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden
+                         ${selectedId === msg.id 
+                           ? "bg-white dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/40 shadow-md ring-1 ring-blue-50 dark:ring-0" 
+                           : "bg-white/50 dark:bg-white/5 border-slate-100 dark:border-white/5 hover:bg-white dark:hover:bg-white/10"
+                         }
+                       `}
+                     >
+                        {/* Fix Notif Badge - Tidak terpotong border */}
+                        {msg.status === 'PENDING' && (
+                          <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm z-10" />
+                        )}
 
-                         <div className="pl-13 md:pl-13 mb-4">
-                             <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed">
-                                 {msg.isi}
-                             </p>
-                         </div>
-
-                         {/* Action Buttons */}
-                         <div className="absolute right-4 bottom-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                            {/* TOMBOL BALAS BARU */}
-                            {msg.status !== "SELESAI" && (
-                              <button 
-                                onClick={() => setReplyModal({ open: true, id: msg.id, sender: msg.pengirim })} 
-                                title="Balas Pesan" 
-                                className="tour-reply-btn px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-sm transition-colors text-xs font-bold flex items-center gap-1"
-                              >
-                                <Reply size={12} /> Balas
-                              </button>
-                            )}
-                            <button onClick={() => handleDelete(msg.id)} title="Hapus" className="p-1.5 bg-white dark:bg-slate-800 border hover:border-red-500 text-slate-500 hover:text-red-500 rounded-lg shadow-sm transition-colors"><Trash2 size={14} /></button>
-                         </div>
-                       </motion.div>
-                     );
-                   })
+                        <div className="flex justify-between items-start mb-2">
+                           <div className="flex items-center gap-2">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black font-bold text-white shadow-sm bg-gradient-to-br from-slate-400 to-slate-600`}>
+                                 {msg.pengirim.charAt(0)}
+                              </div>
+                              <div className="min-w-0">
+                                 <h4 className={`text-xs truncate font-black font-bold ${selectedId === msg.id ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-white"}`}>
+                                   {msg.pengirim}
+                                 </h4>
+                                 <p className="text-[10px] text-slate-400 font-medium">{msg.kelas || "Siswa"}</p>
+                              </div>
+                           </div>
+                           <span className="text-[9px] font-bold text-slate-400 shrink-0">{formatDateShort(msg.createdAt)}</span>
+                        </div>
+                        <p className={`text-[11px] leading-relaxed line-clamp-2 ${selectedId === msg.id ? "text-slate-700 dark:text-slate-200" : "text-slate-500 dark:text-slate-400"}`}>
+                           {msg.isi}
+                        </p>
+                     </motion.div>
+                   ))
                  ) : (
-                   <div className="flex flex-col items-center justify-center h-full py-20 text-center text-slate-400">
-                      <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4"><Filter size={24} className="opacity-30" /></div>
-                      <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Folder ini kosong</p>
+                   <div className="flex flex-col items-center justify-center py-20 text-center opacity-50">
+                      <Inbox size={40} className="mb-4 text-slate-300" />
+                      <p className="text-xs font-bold text-slate-500">Tidak ada aspirasi.</p>
                    </div>
                  )}
-               </AnimatePresence>
-             </div>
+              </AnimatePresence>
            </div>
         </div>
+
+        {/* COLUMN 2: MESSAGE DETAIL PREVIEW (Min-w-0 ditambahkan) */}
+        <div className="tour-message-detail hidden md:flex flex-1 bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] shadow-sm flex flex-col relative min-w-0">
+           <AnimatePresence mode="wait">
+              {selectedMsg ? (
+                 <motion.div 
+                   key={selectedMsg.id}
+                   initial={{ opacity: 0, y: 10 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: -10 }}
+                   className="flex-1 flex flex-col min-h-0"
+                 >
+                    {/* DETAIL HEADER */}
+                    <div className="p-8 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex-shrink-0">
+                       <div className="flex justify-between items-start mb-6">
+                          <div className="flex items-center gap-4">
+                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-black font-bold shadow-lg shadow-blue-500/20">
+                                {selectedMsg.pengirim.charAt(0)}
+                             </div>
+                             <div>
+                                <h2 className="text-xl font-black font-bold text-slate-900 dark:text-white">{selectedMsg.pengirim}</h2>
+                                <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{selectedMsg.kelas || "Siswa Anonim"}</p>
+                             </div>
+                          </div>
+                          <div className="flex gap-2">
+                             <button onClick={() => handleDelete(selectedMsg.id)} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-2xl text-slate-400 hover:text-red-500 hover:border-red-500 transition-all shadow-sm active:scale-90">
+                                <Trash2 size={20} />
+                             </button>
+                          </div>
+                       </div>
+
+                       <div className="flex flex-wrap gap-3">
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/10 shadow-sm">
+                             <Tag size={14} className="text-slate-400" />
+                             <span className={`text-[10px] font-black font-bold uppercase tracking-wider ${tagColorMap[getTagColor(selectedMsg.kategori)]} px-2 py-0.5 rounded-md border`}>
+                                {selectedMsg.kategori}
+                             </span>
+                          </div>
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/10 shadow-sm">
+                             <Calendar size={14} className="text-slate-400" />
+                             <span className="text-[10px] font-black font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{formatDateFull(selectedMsg.createdAt)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/10 shadow-sm">
+                             <Clock size={14} className="text-slate-400" />
+                             <span className={`text-[10px] font-black font-bold uppercase tracking-wider ${selectedMsg.status === 'SELESAI' ? 'text-green-500' : 'text-blue-500'}`}>
+                                {selectedMsg.status === 'SELESAI' ? 'TERJAWAB' : 'MENUNGGU BALASAN'}
+                             </span>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* DETAIL CONTENT (Scrollable) */}
+                    <div className="flex-1 p-8 overflow-y-auto custom-scrollbar space-y-8 min-h-0">
+                       <div className="bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 relative">
+                          <div className="absolute -top-3 left-6 px-3 py-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/10 rounded-lg text-[10px] font-black font-bold text-slate-400 uppercase tracking-widest">Aspirasi</div>
+                          <p className="text-sm md:text-md leading-relaxed text-slate-700 dark:text-slate-200 font-medium">
+                             {selectedMsg.isi}
+                          </p>
+                       </div>
+
+                       {selectedMsg.status === 'SELESAI' && selectedMsg.balasan && (
+                         <div className="bg-blue-50/50 dark:bg-blue-500/5 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-500/20 relative ml-8">
+                            <div className="absolute -top-3 left-6 px-3 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-black font-bold uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                               <Reply size={10} className="-scale-x-100" /> Jawaban Admin
+                            </div>
+                            <p className="text-sm text-blue-900 dark:text-blue-100 font-bold leading-relaxed">
+                               {selectedMsg.balasan}
+                            </p>
+                            <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                               <CheckCircle size={12} /> Dibalas pada {formatDateFull(selectedMsg.balasanAt || new Date())}
+                            </div>
+                         </div>
+                       )}
+
+                       {/* REPLY PANEL - Padding bawah agar tidak terpotong */}
+                       {selectedMsg.status !== 'SELESAI' && (
+                          <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 pb-10">
+                             <div className="flex items-center gap-2 mb-4">
+                                <MessageSquare size={18} className="text-blue-500" />
+                                <h3 className="text-sm font-black font-bold text-slate-800 dark:text-white uppercase tracking-widest">Tulis Tanggapan</h3>
+                             </div>
+                             <div className="relative group">
+                                <textarea 
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  placeholder={`Ketik jawaban untuk ${selectedMsg.pengirim}...`}
+                                  className="w-full p-5 rounded-3xl bg-white dark:bg-black/20 border-2 border-slate-100 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all text-sm font-medium dark:text-white resize-none h-40 shadow-inner"
+                                />
+                                <div className="absolute bottom-4 right-4 flex gap-2">
+                                   <button 
+                                     onClick={handleSendReply}
+                                     disabled={isSubmitting || !replyText.trim()}
+                                     className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-2xl font-black font-bold text-sm shadow-xl shadow-blue-500/30 flex items-center gap-2 transition-all active:scale-95"
+                                   >
+                                      {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
+                                      {isSubmitting ? "Mengirim..." : "Kirim Jawaban"}
+                                   </button>
+                                </div>
+                             </div>
+                             <p className="mt-4 text-[11px] text-slate-400 font-medium flex items-center gap-2">
+                                <Info size={14} /> Balasan Anda akan langsung muncul di halaman Aspirasi Publik dan Dashboard Siswa.
+                             </p>
+                          </div>
+                       )}
+                    </div>
+                 </motion.div>
+              ) : (
+                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                    <div className="w-24 h-24 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+                       <Inbox size={48} className="text-slate-200" />
+                    </div>
+                    <h3 className="text-lg font-black font-bold text-slate-800 dark:text-white mb-2">Pilih Aspirasi</h3>
+                    <p className="text-sm text-slate-400 max-w-xs">Silakan pilih salah satu pesan di daftar kiri untuk membaca detail dan memberikan tanggapan.</p>
+                 </div>
+              )}
+           </AnimatePresence>
+        </div>
       </div>
-
-      {/* === MODAL BALASAN === */}
-      <AnimatePresence>
-        {replyModal.open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-[#1e293b] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10"
-            >
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-slate-50 dark:bg-white/5">
-                <h3 className="font-bold text-slate-800 dark:text-white">Balas Pesan {replyModal.sender}</h3>
-                <button onClick={() => setReplyModal({ ...replyModal, open: false })} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
-                  <X size={18} />
-                </button>
-              </div>
-              
-              <form onSubmit={handleSendReply} className="p-6 space-y-4">
-                <input type="hidden" name="id" value={replyModal.id || ""} />
-                
-                <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Isi Balasan</label>
-                  <textarea 
-                    name="balasan"
-                    rows={5}
-                    className="w-full p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium resize-none"
-                    placeholder="Tulis tanggapan untuk siswa ini..."
-                    autoFocus
-                    required
-                  ></textarea>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button 
-                    type="button"
-                    onClick={() => setReplyModal({ ...replyModal, open: false })}
-                    className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button 
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-6 py-2 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20 disabled:opacity-70"
-                  >
-                    {isSubmitting ? "Mengirim..." : <><Send size={16} /> Kirim Balasan</>}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
     </div>
   );
 }

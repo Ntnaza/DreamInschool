@@ -7,6 +7,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Navbar from "@/components/Navbar";
 // 2. IMPORT INI (YANG BARU)
 import NextTopLoader from 'nextjs-toploader'; 
+import { headers } from "next/headers";
+import { trackVisitor } from "@/lib/actions";
 
 // 3. Konfigurasi Font
 const jakarta = Plus_Jakarta_Sans({ 
@@ -20,11 +22,20 @@ export const metadata: Metadata = {
   description: "Website Resmi Organisasi Siswa Intra Sekolah",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // --- TRACKING VISITOR ---
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for") || "127.0.0.1";
+  const userAgent = headerList.get("user-agent") || "Unknown";
+  // Untuk path di Server Component Layout agak sulit tanpa middleware, 
+  // kita gunakan default "/" atau biarkan trackVisitor menangani rute admin.
+  // Panggilan ini bersifat fire-and-forget (tidak perlu await)
+  trackVisitor(ip, userAgent, "/");
+
   return (
     <html lang="id" suppressHydrationWarning>
       {/* 4. Terapkan Font di Body */}

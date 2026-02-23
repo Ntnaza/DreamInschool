@@ -24,6 +24,12 @@ export default async function AdminPage() {
   const pengeluaran = await prisma.keuangan.aggregate({ _sum: { nominal: true }, where: { tipe: 'PENGELUARAN' } });
   const danaKas = (pemasukan._sum.nominal || 0) - (pengeluaran._sum.nominal || 0);
 
+  // C. Statistik Pengunjung (Views)
+  const totalViews = await prisma.visitor.count();
+  const viewsHariIni = await prisma.visitor.count({
+    where: { createdAt: { gte: todayStart } }
+  });
+
   // --- 2. List Data Terbaru ---
   
   // Agenda Terdekat
@@ -47,11 +53,12 @@ export default async function AdminPage() {
     }
   });
 
-  // Aspirasi Terbaru
+  // Aspirasi Terbaru (Hanya yang belum dibalas/PENDING)
   const aspirasi = await prisma.aspirasi.findMany({
-    take: 3,
+    take: 5,
+    where: { status: 'PENDING' },
     orderBy: { createdAt: 'desc' },
-    select: { id: true, pengirim: true, isi: true, kategori: true, createdAt: true }
+    select: { id: true, pengirim: true, isi: true, kategori: true, status: true, createdAt: true }
   });
 
   // --- 3. Data Chart 7 Hari Terakhir ---
@@ -79,7 +86,15 @@ export default async function AdminPage() {
 
   return (
     <DashboardUI 
-      stats={{ totalPengurus, hadirHariIni, aspirasiBaru, prokerPersen, danaKas }}
+      stats={{ 
+        totalPengurus, 
+        hadirHariIni, 
+        aspirasiBaru, 
+        prokerPersen, 
+        danaKas,
+        totalViews,
+        viewsHariIni
+      }}
       agenda={agenda}
       transaksiTerakhir={transaksiTerakhir} // Kirim data transaksi
       aspirasi={aspirasi}

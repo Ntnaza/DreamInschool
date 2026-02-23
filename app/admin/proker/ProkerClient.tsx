@@ -187,7 +187,7 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
 
       {/* KANBAN BOARD (SCROLLABLE AREA) */}
       <div className="flex-1 overflow-y-auto overflow-x-auto pb-20 custom-scrollbar pr-2">
-         <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0 h-full">
+         <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0 min-h-full h-fit">
             <KanbanColumn tourClass="tour-col-segera" title="SEGERA" icon={<AlertCircle size={18} />} count={listSegera.length} color="blue">
                {listSegera.map((item, idx) => (
                    <ProkerCard 
@@ -217,7 +217,7 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
                   
                   <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
                      <div>
-                        <h2 className="text-xl font-black text-slate-900 dark:text-white">{isEditing ? "Edit Proker" : "Proker Baru"}</h2>
+                        <h2 className="text-xl font-black font-bold text-slate-900 dark:text-white">{isEditing ? "Edit Proker" : "Proker Baru"}</h2>
                         <p className="text-xs text-slate-500 mt-1">{isEditing ? "Update detail & progress kegiatan." : "Detail rencana kegiatan."}</p>
                      </div>
                      <button onClick={() => setIsModalOpen(false)}><X size={24} className="text-slate-400" /></button>
@@ -287,7 +287,7 @@ export default function ProkerClient({ initialData }: { initialData: any[] }) {
                      </div>
 
                      <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-500/20">
-                        <div className="flex justify-between items-center mb-2"><label className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase block">Progress</label><span className="text-sm font-black text-blue-600 dark:text-white">{formState.progress}%</span></div>
+                        <div className="flex justify-between items-center mb-2"><label className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase block">Progress</label><span className="text-sm font-black font-bold text-blue-600 dark:text-white">{formState.progress}%</span></div>
                         <input type="range" min="0" max="100" value={formState.progress} onChange={(e) => setFormState({...formState, progress: parseInt(e.target.value)})} className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
                      </div>
                   </div>
@@ -319,9 +319,9 @@ function KanbanColumn({ title, icon, count, children, color, tourClass }: any) {
       green: "text-slate-600 dark:text-slate-400",
    }
    return (
-      <div className={`flex-1 rounded-[2rem] p-4 border ${colors[color]} flex flex-col min-h-[500px] ${tourClass || ''}`}>
+      <div className={`flex-1 rounded-[2rem] p-4 border ${colors[color]} flex flex-col h-fit min-h-full ${tourClass || ''}`}>
          <div className="flex items-center justify-between mb-4 px-2">
-            <div className={`flex items-center gap-2 font-black uppercase tracking-wider text-xs ${textColors[color]}`}>{icon} <span>{title}</span></div>
+            <div className={`flex items-center gap-2 font-black font-bold uppercase tracking-wider text-xs ${textColors[color]}`}>{icon} <span>{title}</span></div>
             <span className="px-2.5 py-0.5 rounded-full bg-white dark:bg-white/10 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-sm">{count}</span>
          </div>
          <div className="space-y-3 flex-1">{children}</div>
@@ -336,9 +336,9 @@ function ProkerCard({ data, onDelete, onEdit, isFirstPriority }: any) {
    };
    
    const getStatusBadge = (progress: number) => {
-      if (progress === 100) return <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-wide">SELESAI</span>;
-      if (progress > 0) return <span className="px-2.5 py-1 rounded-md bg-yellow-100 text-yellow-700 text-[10px] font-black uppercase tracking-wide">BERJALAN</span>;
-      return <span className="px-2.5 py-1 rounded-md bg-blue-100 text-blue-600 text-[10px] font-black uppercase tracking-wide">SEGERA</span>;
+      if (progress === 100) return <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[10px] font-black font-bold uppercase tracking-wide">SELESAI</span>;
+      if (progress > 0) return <span className="px-2.5 py-1 rounded-md bg-yellow-100 text-yellow-700 text-[10px] font-black font-bold uppercase tracking-wide">BERJALAN</span>;
+      return <span className="px-2.5 py-1 rounded-md bg-blue-100 text-blue-600 text-[10px] font-black font-bold uppercase tracking-wide">SEGERA</span>;
    }
 
    const statusColor = data.progress === 100 ? 'bg-slate-400' : data.progress > 0 ? 'bg-yellow-500' : 'bg-blue-500';

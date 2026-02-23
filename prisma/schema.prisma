@@ -321,3 +321,14 @@ model Leader {
   mission String  @db.Text
   tags    String? // Simpan tag dipisah koma: "Kolaborasi,Prestasi"
 }
+
+model Visitor {
+  id        Int      @id @default(autoincrement())
+  ip        String
+  userAgent String?
+  path      String   @default("/")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([ip, path, createdAt]) // Index gabungan untuk pencarian cepat
+}

@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, UserCheck, Mail, CheckCircle, Wallet, PenTool, 
   ClipboardList, MessageCircle, Bell, 
   Activity, Calendar, Clock,
-  FileText, QrCode, ArrowUpRight, ArrowDownLeft
+  FileText, QrCode, ArrowUpRight, ArrowDownLeft,
+  ChevronRight, Inbox, Send, Loader2, X, MessageSquare, Eye
 } from "lucide-react";
 import { ActivityChart } from "@/components/DashboardCharts"; 
 import SpotlightCard from "@/components/SpotlightCard"; 
 import TourGuide from "@/components/TourGuide";
+import { replyAspirasi } from "@/lib/actions";
 
 // --- Props Interface ---
 interface DashboardUIProps {
@@ -21,6 +23,8 @@ interface DashboardUIProps {
     aspirasiBaru: number;
     prokerPersen: number;
     danaKas: number;
+    totalViews: number;
+    viewsHariIni: number;
   };
   agenda: any[];
   transaksiTerakhir: any[];
@@ -39,22 +43,62 @@ const formatDateShort = (date: Date | null) => {
   return new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 };
 
-// ✅ UPDATE: 7 LANGKAH PANDUAN LENGKAP
+// ✅ UPDATE: 8 LANGKAH PANDUAN LENGKAP
 const dashboardSteps = [
     { target: '.tour-dashboard-header', content: 'Selamat Datang! Ini adalah pusat kontrol utama untuk memantau seluruh aktivitas organisasi.', disableBeacon: true },
-    { target: '.tour-stats-grid', content: 'Ringkasan data real-time: Kehadiran hari ini, Aspirasi baru, Progres Proker, dan Saldo Kas.' },
-    { target: '.tour-activity-chart', content: 'Grafik ini menampilkan tren kesibukan (aspirasi vs kegiatan) dalam 7 hari terakhir.' },
-    { target: '.tour-quick-access', content: 'Jalan pintas ke menu yang paling sering digunakan: Berita, Surat, Absensi, dan Kas.' },
-    { target: '.tour-agenda-widget', content: 'Daftar agenda atau proker terdekat yang harus segera disiapkan.' },
-    { target: '.tour-recent-trx', content: 'Pantau arus keluar-masuk uang terbaru (Mini Mutasi) agar transparan.' },
-    { target: '.tour-inbox-widget', content: 'Pesan dan aspirasi terbaru dari siswa yang perlu ditindaklanjuti.' },
+    { target: '.tour-stats-grid', content: 'Ringkasan data real-time: Pantau kehadiran pengurus, jumlah aspirasi, progres proker, saldo kas, hingga statistik pengunjung website dalam satu area.' },
+    { target: '.tour-notif-bell', content: 'Klik ikon lonceng ini untuk melihat dan membalas aspirasi siswa secara cepat tanpa harus berpindah halaman.' },
+    { target: '.tour-activity-chart', content: 'Grafik ini menampilkan tren kesibukan organisasi (Aspirasi vs Kegiatan) dalam 7 hari terakhir.' },
+    { target: '.tour-quick-access', content: 'Jalan pintas ke menu yang paling sering digunakan untuk mempercepat kerja administrasi Anda.' },
+    { target: '.tour-agenda-widget', content: 'Daftar agenda atau proker terdekat yang harus segera disiapkan agar tidak terlewat.' },
+    { target: '.tour-recent-trx', content: 'Pantau arus kas masuk dan keluar terbaru agar pengelolaan keuangan tetap transparan.' },
+    { target: '.tour-inbox-widget', content: 'Pesan dan aspirasi terbaru dari siswa yang perlu ditindaklanjuti lebih lanjut.' },
 ];
 
 export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi, chartData }: DashboardUIProps) {
   const [isClient, setIsClient] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const notifRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  useEffect(() => { setIsClient(true); }, []);
+  useEffect(() => { 
+    setIsClient(true); 
+    
+    // Handle click outside to close notif
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
+        setReplyingTo(null);
+        setReplyText("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleReply = async (id: number) => {
+    if (!replyText.trim()) return;
+    setIsSubmitting(true);
+    
+    const formData = new FormData();
+    formData.append("id", id.toString());
+    formData.append("balasan", replyText);
+    
+    const res = await replyAspirasi(formData);
+    if (res.success) {
+      setReplyingTo(null);
+      setReplyText("");
+      // Aspirasi akan terupdate otomatis via revalidatePath di action
+    } else {
+      alert(res.message);
+    }
+    setIsSubmitting(false);
+  };
 
   // Helpers Warna Tag
   const tagColorMap: any = {
@@ -101,21 +145,160 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
                Pantau performa organisasi secara real-time hari ini.
             </p>
          </div>
-         <div className="flex items-center gap-4">
+         <div className="flex items-center gap-4 relative" ref={notifRef}>
              <button 
-                onClick={() => router.push('/admin/aspirasi')} 
-                className="tour-notif-bell w-10 h-10 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 relative shadow-sm hover:shadow-md hover:bg-slate-50 transition-all active:scale-95"
+                onClick={() => {
+                  setIsNotifOpen(!isNotifOpen);
+                  if (isNotifOpen) {
+                    setReplyingTo(null);
+                    setReplyText("");
+                  }
+                }} 
+                className={`tour-notif-bell w-10 h-10 rounded-lg border flex items-center justify-center relative shadow-sm transition-all active:scale-95 ${
+                  isNotifOpen 
+                  ? "bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-500/20 dark:border-blue-500/30 dark:text-blue-400" 
+                  : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 hover:shadow-md hover:bg-slate-50"
+                }`}
              >
                 <Bell size={20} />
                 {stats.aspirasiBaru > 0 && <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-[#0f172a] animate-pulse" />}
              </button>
+
+             {/* FLOATING NOTIFICATION DROPDOWN */}
+             <AnimatePresence>
+                {isNotifOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="absolute right-0 top-12 w-80 md:w-[420px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col"
+                  >
+                    <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
+                        <div className="flex items-center gap-2">
+                           <Inbox size={18} className="text-blue-600" />
+                           <h3 className="font-black font-bold text-slate-900 dark:text-white text-sm">Aspirasi Terbaru</h3>
+                        </div>
+                        <span className="text-[10px] font-black font-bold bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                          {stats.aspirasiBaru} Baru
+                        </span>
+                    </div>
+
+                    <div className="max-h-[450px] overflow-y-auto custom-scrollbar p-2 space-y-2">
+                       {aspirasi.length > 0 ? (
+                         aspirasi.map((item, i) => (
+                           <div 
+                             key={i} 
+                             className={`p-3 rounded-xl transition-all border ${
+                               replyingTo === item.id 
+                               ? "bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30" 
+                               : "hover:bg-slate-50 dark:hover:bg-white/5 border-transparent hover:border-slate-100 dark:hover:border-white/5"
+                             }`}
+                           >
+                              <div className="flex items-start gap-3">
+                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black font-bold text-xs shrink-0 shadow-sm">
+                                    {item.pengirim.charAt(0)}
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-0.5">
+                                       <h4 className="text-xs font-black font-bold text-slate-900 dark:text-white truncate pr-2">{item.pengirim}</h4>
+                                       <span className="text-[9px] text-slate-400 font-medium shrink-0">{formatDateShort(item.createdAt || new Date())}</span>
+                                    </div>
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                       {item.isi}
+                                    </p>
+                                    
+                                    <div className="mt-2 flex items-center justify-between">
+                                       <span className={`text-[8px] font-black font-bold px-1.5 py-0.5 rounded ${tagColorMap[getKategoriColor(item.kategori)]}`}>
+                                          {item.kategori}
+                                       </span>
+                                       
+                                       {item.status !== 'SELESAI' ? (
+                                         <button 
+                                            onClick={() => {
+                                              if (replyingTo === item.id) {
+                                                setReplyingTo(null);
+                                                setReplyText("");
+                                              } else {
+                                                setReplyingTo(item.id);
+                                                setReplyText("");
+                                              }
+                                            }}
+                                            className="text-[10px] font-black font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                         >
+                                            <MessageSquare size={12} />
+                                            {replyingTo === item.id ? "Batal" : "Balas Cepat"}
+                                         </button>
+                                       ) : (
+                                         <span className="text-[9px] text-green-500 font-bold flex items-center gap-1">
+                                            <CheckCircle size={10} /> Terjawab
+                                         </span>
+                                       )}
+                                    </div>
+
+                                    {/* REPLY INPUT AREA */}
+                                    <AnimatePresence>
+                                      {replyingTo === item.id && (
+                                        <motion.div 
+                                          initial={{ opacity: 0, height: 0 }}
+                                          animate={{ opacity: 1, height: "auto" }}
+                                          exit={{ opacity: 0, height: 0 }}
+                                          className="mt-3 overflow-hidden"
+                                        >
+                                          <textarea 
+                                            autoFocus
+                                            value={replyText}
+                                            onChange={(e) => setReplyText(e.target.value)}
+                                            placeholder="Tulis jawaban Anda..."
+                                            className="w-full p-2 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 outline-none resize-none h-20"
+                                          />
+                                          <div className="mt-2 flex justify-end">
+                                            <button 
+                                              disabled={isSubmitting || !replyText.trim()}
+                                              onClick={() => handleReply(item.id)}
+                                              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-[10px] font-black font-bold px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+                                            >
+                                              {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                                              Kirim Balasan
+                                            </button>
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                 </div>
+                              </div>
+                           </div>
+                         ))
+                       ) : (
+                         <div className="py-12 text-center">
+                            <div className="w-12 h-12 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-300">
+                               <Bell size={24} />
+                            </div>
+                            <p className="text-xs text-slate-500 italic">Belum ada aspirasi baru.</p>
+                         </div>
+                       )}
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        router.push('/admin/aspirasi');
+                        setIsNotifOpen(false);
+                      }}
+                      className="w-full p-3 text-center text-xs font-black font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors border-t border-slate-100 dark:border-white/5 flex items-center justify-center gap-2 group"
+                    >
+                      Lihat Semua Aspirasi
+                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </motion.div>
+                )}
+             </AnimatePresence>
          </div>
       </div>
 
       {/* SCROLLABLE CONTENT AREA */}
       <div className="flex-1 overflow-y-auto pb-20 pr-2 custom-scrollbar space-y-6">
          {/* STATS GRID */}
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 tour-stats-grid">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 tour-stats-grid">
          <SpotlightCard color="blue" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => router.push('/admin/absensi')}>
             <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 shadow-sm">
                 <UserCheck size={20} />
@@ -143,6 +326,15 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
             <div className="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400 mb-4 shadow-sm"><Wallet size={20} /></div>
             <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Dana Kas</h3>
             <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{formatCurrency(stats.danaKas)}</p>
+         </SpotlightCard>
+
+         <SpotlightCard color="indigo" className="tour-total-views p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-indigo-300 transition-colors">
+            <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 shadow-sm"><Eye size={20} /></div>
+            <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Views</h3>
+            <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{stats.totalViews}</p>
+                <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">+{stats.viewsHariIni} hari ini</span>
+            </div>
          </SpotlightCard>
       </div>
 

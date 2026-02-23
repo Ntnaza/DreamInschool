@@ -866,6 +866,52 @@ export async function kembalikanBarang(formData: FormData) {
 
 
 /* ======================================================
+   11. STATISTIK PENGUNJUNG (VISITOR TRACKING)
+====================================================== */
+
+export async function trackVisitor(ip: string, userAgent: string, path: string) {
+  // 1. Abaikan rute internal/admin
+  if (path.startsWith('/admin') || path.startsWith('/api') || path.includes('_next') || path.includes('favicon')) {
+    return;
+  }
+
+  // 2. Filter Bot Dasar (Mencegah jutaan hit dari crawler)
+  const botKeywords = ['bot', 'crawler', 'spider', 'googlebot', 'bingbot', 'yandexbot', 'slurp', 'baiduspider'];
+  const uaLower = userAgent.toLowerCase();
+  if (botKeywords.some(keyword => uaLower.includes(keyword))) {
+    return;
+  }
+
+  // Safety check: Pastikan model visitor ada
+  if (!(prisma as any).visitor) return;
+
+  try {
+    // 3. Gunakan rentang waktu untuk pengecekan "unique visit"
+    // Kita anggap satu orang adalah satu kunjungan per 1 jam per halaman
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    
+    // Cek apakah sudah ada kunjungan serupa (gunakan select id saja agar ringan)
+    const recentVisit = await (prisma as any).visitor.findFirst({
+      where: {
+        ip,
+        path,
+        createdAt: { gte: oneHourAgo }
+      },
+      select: { id: true }
+    });
+
+    if (!recentVisit) {
+      await (prisma as any).visitor.create({
+        data: { ip, userAgent: userAgent.substring(0, 255), path }
+      });
+    }
+  } catch (error) {
+    // Gunakan logging yang tidak menghentikan proses utama
+    console.error("TRACK VISITOR ERROR:", error);
+  }
+}
+
+/* ======================================================
    10. MANAJEMEN GALERI KEGIATAN
 ====================================================== */
 
