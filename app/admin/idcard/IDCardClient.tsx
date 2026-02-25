@@ -130,8 +130,8 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
   // === COMPONENT: CARD RENDERER (UNIFIED) ===
   const CardRenderer = ({ member, side, variant = 'preview' }: { member: any, side: 'front' | 'back', variant?: 'preview' | 'print' }) => {
     const isPrint = variant === 'print';
-    // MENGGABUNGKAN NAMA & NIS AGAR QR TERLIHAT LEBIH RUMIT/KOMPLEKS
-    const qrData = encodeURIComponent(`${member.name} - ${member.nis || member.id}`);
+    // HANYA NIS agar sinkron dengan sistem absensi
+    const qrData = encodeURIComponent(member.nis || member.id.toString());
     const iW = 540;
     const iH = 860;
 

@@ -1,0 +1,48 @@
+model Acara {
+  id                Int      @id @default(autoincrement())
+  nama              String
+  deskripsi         String?  @db.Text
+  tipe              TipeAcara @default(SEKALI_PAKAI)
+  tanggal           DateTime @default(now())
+  waktuMulai        DateTime? 
+  waktuSelesai      DateTime?
+  waktuMulaiAktual  DateTime? 
+  waktuSelesaiAktual DateTime? 
+  lokasi            String?  @default("Sekolah")
+  status            StatusAcara @default(UPCOMING)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  absensi           Absensi[]
+}
+
+enum TipeAcara {
+  SEKALI_PAKAI
+  RUTINAN
+}
+
+model Absensi {
+  id          Int      @id @default(autoincrement())
+  tanggal     DateTime @default(now())
+  
+  // Relasi ke Acara
+  acara       Acara    @relation(fields: [acaraId], references: [id], onDelete: Cascade)
+  acaraId     Int
+
+  // Kita tetap simpan kolom kegiatan (string) sebagai backup/denormalisasi jika perlu
+  kegiatan    String   
+  
+  status      StatusKehadiran @default(HADIR)
+  keterangan  String?
+
+  pengurus    Pengurus @relation(fields: [pengurusId], references: [id])
+  pengurusId  Int
+}
+
+enum StatusAcara {
+  UPCOMING    // Belum dimulai
+  ONGOING     // Sedang berlangsung (Bisa di-scan)
+  COMPLETED   // Sudah selesai
+  CANCELLED   // Dibatalkan
+}

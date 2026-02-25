@@ -147,12 +147,35 @@ model ProgramKerja {
 // --------------------------------------------------------
 // 5. MODUL SCAN ABSENSI (Log Kehadiran)
 // --------------------------------------------------------
+
+model Acara {
+  id                Int      @id @default(autoincrement())
+  nama              String
+  deskripsi         String?  @db.Text
+  tipe              TipeAcara @default(SEKALI_PAKAI)
+  tanggal           DateTime @default(now())
+  waktuMulai        DateTime? 
+  waktuSelesai      DateTime?
+  waktuMulaiAktual  DateTime? // Kapan Admin klik START
+  waktuSelesaiAktual DateTime? // Kapan Admin klik STOP
+  lokasi            String?  @default("Sekolah")
+  status            StatusAcara @default(UPCOMING)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  absensi           Absensi[]
+}
+
 model Absensi {
   id          Int      @id @default(autoincrement())
   tanggal     DateTime @default(now())
   
-  // Kita simpan nama acaranya di sini. 
-  // Nanti admin ketik/pilih: "Rapat Rutin", "Upacara", dll.
+  // Relasi ke Acara
+  acara       Acara    @relation(fields: [acaraId], references: [id], onDelete: Cascade)
+  acaraId     Int
+
+  // Kita tetap simpan kolom kegiatan (string) sebagai backup/denormalisasi jika perlu
   kegiatan    String   
   
   status      StatusKehadiran @default(HADIR)
@@ -262,6 +285,18 @@ enum StatusProker {
   IN_PROGRESS
   DONE
   BATAL
+}
+
+enum TipeAcara {
+  SEKALI_PAKAI
+  RUTINAN
+}
+
+enum StatusAcara {
+  UPCOMING    // Belum dimulai
+  ONGOING     // Sedang berlangsung (Bisa di-scan)
+  COMPLETED   // Sudah selesai
+  CANCELLED   // Dibatalkan
 }
 
 enum StatusKehadiran {

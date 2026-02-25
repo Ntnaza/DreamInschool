@@ -553,49 +553,181 @@ export async function saveIdCardBackground(imageUrl: string | null) {
 }
 
 /* ======================================================
-   7. SISTEM ABSENSI (SCANNER)
+   7. SISTEM ABSENSI (SCANNER & ACARA)
 ====================================================== */
 
-export async function scanAbsensi(nis: string) {
-  if (!nis) return { success: false, message: "QR Code kosong!" };
+// 1. Buat Acara Baru (Update: Tambah Waktu & Tipe)
+export async function createAcara(formData: FormData) {
+  const nama = formData.get("nama") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+  const tanggalStr = formData.get("tanggal") as string;
+  const lokasi = formData.get("lokasi") as string;
+  const mulaiStr = formData.get("waktuMulai") as string; 
+  const selesaiStr = formData.get("waktuSelesai") as string; 
+  const tipe = (formData.get("tipe") as any) || "SEKALI_PAKAI";
+
+  if (!nama || !tanggalStr) return { success: false, message: "Nama dan Tanggal wajib diisi!" };
 
   try {
-    // 1. Cari Pengurus berdasarkan NIS
-    const pengurus = await prisma.pengurus.findUnique({
-      where: { nis: nis },
+    const start = mulaiStr ? new Date(`${tanggalStr}T${mulaiStr}`) : null;
+    const end = selesaiStr ? new Date(`${tanggalStr}T${selesaiStr}`) : null;
+
+    const newAcara = await prisma.acara.create({
+      data: {
+        nama,
+        deskripsi: deskripsi || "",
+        tipe,
+        tanggal: new Date(tanggalStr),
+        waktuMulai: start,
+        waktuSelesai: end,
+        lokasi: lokasi || "Sekolah",
+        status: "UPCOMING"
+      }
     });
-
-    if (!pengurus) {
-      return { success: false, message: "❌ QR Code Tidak Terdaftar!" };
-    }
-
-    if (pengurus.status !== "AKTIF") {
-      return { success: false, message: "⚠️ Anggota Tidak Aktif/Alumni" };
-    }
-
-    // 2. Cek apakah sudah absen hari ini? (Opsional: Cegah spam scan)
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
     
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    revalidatePath("/admin/absensi");
+    return { success: true, message: "Acara berhasil dibuat! 📅", id: newAcara.id };
+  } catch (error) {
+    console.error("CREATE ACARA ERROR:", error);
+    return { success: false, message: "Gagal membuat acara." };
+  }
+}
 
-    const existingLog = await prisma.absensi.findFirst({
-      where: {
-        pengurusId: pengurus.id,
-        tanggal: {
-          gte: todayStart,
-          lte: todayEnd,
-        },
-      },
+// 6. Update Status Kehadiran (Sakit, Izin, dll)
+export async function updateStatusKehadiran(absensiId: number, status: any) {
+  try {
+    await prisma.absensi.update({
+      where: { id: absensiId },
+      data: { status }
     });
+    revalidatePath("/admin/absensi");
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+// 2. Ambil Semua Acara (Terutama yang aktif/mendatang)
+export async function getDaftarAcara() {
+  try {
+    return await prisma.acara.findMany({
+      orderBy: { createdAt: 'desc' } // Urutkan dari yang terbaru dibuat
+    });
+  } catch (error) {
+    return [];
+  }
+}
+
+// 3. Update Acara (Edit detail + Tipe)
+export async function updateAcara(id: number, formData: FormData) {
+  const nama = formData.get("nama") as string;
+  const tanggalStr = formData.get("tanggal") as string;
+  const lokasi = formData.get("lokasi") as string;
+  const mulaiStr = formData.get("waktuMulai") as string;
+  const selesaiStr = formData.get("waktuSelesai") as string;
+  const tipe = (formData.get("tipe") as any) || "SEKALI_PAKAI";
+
+  try {
+    const start = mulaiStr ? new Date(`${tanggalStr}T${mulaiStr}`) : null;
+    const end = selesaiStr ? new Date(`${tanggalStr}T${selesaiStr}`) : null;
+
+    await prisma.acara.update({
+      where: { id },
+      data: {
+        nama,
+        tipe,
+        tanggal: new Date(tanggalStr),
+        lokasi,
+        waktuMulai: start,
+        waktuSelesai: end
+      }
+    });
+    revalidatePath("/admin/absensi");
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+// 4. Hapus Acara
+export async function deleteAcara(id: number) {
+  try {
+    await prisma.acara.delete({ where: { id } });
+    revalidatePath("/admin/absensi");
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+// 5. Start Sesi (Manual Override)
+export async function startAcaraSession(id: number) {
+  try {
+    await prisma.acara.update({
+      where: { id },
+      data: {
+        status: "ONGOING",
+        waktuMulaiAktual: new Date() // Catat waktu asli dimulai
+      }
+    });
+    revalidatePath("/admin/absensi");
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+// 6. Stop Sesi
+export async function stopAcaraSession(id: number) {
+  try {
+    await prisma.acara.update({
+      where: { id },
+      data: {
+        status: "COMPLETED",
+        waktuSelesaiAktual: new Date() // Catat waktu asli diakhiri
+      }
+    });
+    revalidatePath("/admin/absensi");
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+// 7. Scan Absensi (Update: Logika Rutinan vs Sekali Pakai)
+export async function scanAbsensi(nis: string, acaraId: number) {
+  if (!nis || !acaraId) return { success: false, message: "Data tidak lengkap!" };
+
+  try {
+    const pengurus = await prisma.pengurus.findUnique({ where: { nis } });
+    if (!pengurus) return { success: false, message: "❌ QR Code Tidak Terdaftar!" };
+    if (pengurus.status !== "AKTIF") return { success: false, message: "⚠️ Anggota Tidak Aktif" };
+
+    const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
+    if (!acara) return { success: false, message: "❌ Acara tidak ditemukan!" };
+
+    // Tentukan filter pencarian duplikasi
+    let duplicateFilter: any = { pengurusId: pengurus.id, acaraId: acaraId };
+
+    // JIKA RUTINAN: Cek apakah sudah absen HARI INI saja
+    if (acara.tipe === "RUTINAN") {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      duplicateFilter.tanggal = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+    }
+
+    const existingLog = await prisma.absensi.findFirst({ where: duplicateFilter });
 
     if (existingLog) {
-      // Kalau sudah absen, kita tetap return success tapi kasih info "Sudah Absen"
-      // Biar UI tetap menampilkan profilnya, tapi statusnya beda.
       return { 
         success: true, 
-        message: "Kamu sudah absen hari ini! 👌", 
+        message: "Sudah absen " + (acara.tipe === "RUTINAN" ? "hari ini! 👌" : "di acara ini! 👌"), 
         data: {
            name: pengurus.nama,
            role: pengurus.jabatan,
@@ -605,17 +737,17 @@ export async function scanAbsensi(nis: string) {
       };
     }
 
-    // 3. Simpan ke Tabel Absensi
+    // Simpan Absensi
     await prisma.absensi.create({
       data: {
         pengurusId: pengurus.id,
-        kegiatan: "Absensi Harian", // Sementara hardcode dulu
+        acaraId: acaraId,
+        kegiatan: acara.nama,
         status: "HADIR",
         tanggal: new Date(),
       },
     });
 
-    // 4. Return Data Pengurus ke Frontend
     return { 
       success: true, 
       message: "Absensi Berhasil! ✅",
@@ -626,10 +758,171 @@ export async function scanAbsensi(nis: string) {
          status: "HADIR"
       }
     };
-
   } catch (error) {
     console.error("SCAN ERROR:", error);
     return { success: false, message: "Server Error." };
+  }
+}
+
+// 11. Input Absensi Manual (Tanpa Scan)
+export async function inputManualAbsensi(acaraId: number, pengurusId: number, status: any) {
+  try {
+    const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
+    if (!acara) return { success: false, message: "Acara tidak ditemukan" };
+
+    await prisma.absensi.upsert({
+      where: {
+        // Karena di schema belum ada unique constraint gabungan, 
+        // kita pakai findFirst dulu atau pastikan data belum ada
+        id: -1 // Ini trik agar selalu create jika tidak pakai unique key
+      },
+      create: {
+        acaraId,
+        pengurusId,
+        status,
+        kegiatan: acara.nama,
+        tanggal: new Date()
+      },
+      update: { status }
+    });
+    
+    revalidatePath("/admin/absensi");
+    return { success: true };
+  } catch (error) {
+    // Jika upsert gagal karena ID -1, kita pakai create biasa
+    try {
+        const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
+        await prisma.absensi.create({
+            data: { acaraId, pengurusId, status, kegiatan: acara!.nama, tanggal: new Date() }
+        });
+        revalidatePath("/admin/absensi");
+        return { success: true };
+    } catch (e) {
+        return { success: false };
+    }
+  }
+}
+
+// 12. Auto-Alpa bagi yang tidak hadir saat sesi ditutup
+export async function autoAlpaRemaining(acaraId: number) {
+  try {
+    const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
+    if (!acara) return { success: false };
+
+    // 1. Ambil semua pengurus aktif
+    const semuaPengurus = await prisma.pengurus.findMany({
+      where: { status: "AKTIF" },
+      select: { id: true }
+    });
+
+    // 2. Ambil pengurus yang SUDAH punya record (Hadir/Izin/Sakit)
+    const sudahAbsen = await prisma.absensi.findMany({
+      where: { acaraId },
+      select: { pengurusId: true }
+    });
+
+    const idsSudahAbsen = sudahAbsen.map(a => a.pengurusId);
+
+    // 3. Filter siapa yang belum ada recordnya
+    const belumAbsen = semuaPengurus.filter(p => !idsSudahAbsen.includes(p.id));
+
+    // 4. Masukkan mereka sebagai ALPA
+    if (belumAbsen.length > 0) {
+      await prisma.absensi.createMany({
+        data: belumAbsen.map(p => ({
+          acaraId,
+          pengurusId: p.id,
+          status: "ALPA",
+          kegiatan: acara.nama,
+          tanggal: new Date()
+        }))
+      });
+    }
+
+    // 5. Tutup Sesi
+    await prisma.acara.update({
+      where: { id: acaraId },
+      data: { status: "COMPLETED", waktuSelesaiAktual: new Date() }
+    });
+
+    revalidatePath("/admin/absensi");
+    return { success: true, count: belumAbsen.length };
+  } catch (error) {
+    console.error("AUTO ALPA ERROR:", error);
+    return { success: false };
+  }
+}
+
+// 13. Ambil Daftar Pengurus Aktif (Untuk Dropdown Manual)
+export async function getDaftarPengurus() {
+  try {
+    return await prisma.pengurus.findMany({
+      where: { status: "AKTIF" },
+      orderBy: { nama: "asc" }
+    });
+  } catch (error) {
+    return [];
+  }
+}
+
+// 8. Ambil Rekap Absensi Lengkap (Untuk Laporan)
+export async function getRekapAbsensi() {
+  try {
+    const totalPengurus = await prisma.pengurus.count({ where: { status: "AKTIF" } });
+    
+    const rekap = await prisma.acara.findMany({
+      include: {
+        _count: {
+          select: {
+            absensi: { where: { status: "HADIR" } }
+          }
+        },
+        absensi: {
+          include: {
+            pengurus: true
+          }
+        }
+      },
+      orderBy: { tanggal: 'desc' }
+    });
+
+    return {
+      success: true,
+      data: rekap.map(a => ({
+        ...a,
+        totalHadir: a._count.absensi,
+        totalAnggota: totalPengurus,
+        persentase: totalPengurus > 0 ? Math.round((a._count.absensi / totalPengurus) * 100) : 0
+      }))
+    };
+  } catch (error) {
+    return { success: false, message: "Gagal memuat rekap." };
+  }
+}
+
+// 9. Ambil Detail Absensi per Acara (Laporan - Sort by Nama)
+export async function getDetailLaporan(acaraId: number) {
+  try {
+    return await prisma.absensi.findMany({
+      where: { acaraId },
+      include: { pengurus: true },
+      orderBy: { pengurus: { nama: 'asc' } }
+    });
+  } catch (error) {
+    return [];
+  }
+}
+
+// 10. Ambil Log Absensi per Acara (Activity Stream - Sort by Tanggal)
+export async function getLogsByAcara(acaraId: number) {
+  try {
+    return await prisma.absensi.findMany({
+      where: { acaraId },
+      include: { pengurus: true },
+      orderBy: { tanggal: 'desc' }
+    });
+  } catch (error) {
+    return [];
   }
 }
 

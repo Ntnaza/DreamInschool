@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Inbox, Newspaper, CalendarDays, Users, 
   ChevronLeft, ChevronRight, LogOut, Rocket, Menu, Settings,
   CreditCard, QrCode, FileText, Wallet, Package, HelpCircle,
-  Camera // ✅ Tambahkan icon Camera
+  Camera, BarChart3 // ✅ Tambahkan ikon BarChart3
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -59,6 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Data Pengurus", href: "/admin/pengurus", icon: Users },
         { name: "ID Card Studio", href: "/admin/idcard", icon: CreditCard },
         { name: "Scan Absensi", href: "/admin/absensi", icon: QrCode },
+        { name: "Laporan Absensi", href: "/admin/absensi/laporan", icon: BarChart3 },
       ]
     },
     {
