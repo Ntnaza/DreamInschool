@@ -1,0 +1,24 @@
+-- AlterTable
+ALTER TABLE `absensi` ADD COLUMN `sesiId` INTEGER NULL;
+
+-- AlterTable
+ALTER TABLE `acara` ADD COLUMN `autoStart` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `hari` VARCHAR(191) NULL;
+
+-- CreateTable
+CREATE TABLE `SesiAcara` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `acaraId` INTEGER NOT NULL,
+    `waktuMulai` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `waktuSelesai` DATETIME(3) NULL,
+    `status` ENUM('UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED') NOT NULL DEFAULT 'ONGOING',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `SesiAcara` ADD CONSTRAINT `SesiAcara_acaraId_fkey` FOREIGN KEY (`acaraId`) REFERENCES `Acara`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Absensi` ADD CONSTRAINT `Absensi_sesiId_fkey` FOREIGN KEY (`sesiId`) REFERENCES `SesiAcara`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

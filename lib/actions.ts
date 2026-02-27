@@ -556,7 +556,7 @@ export async function saveIdCardBackground(imageUrl: string | null) {
    7. SISTEM ABSENSI (SCANNER & ACARA)
 ====================================================== */
 
-// 1. Buat Acara Baru (Update: Tambah Waktu & Tipe)
+// 1. Buat Acara Baru (Update: Tambah Waktu, Tipe, Hari, & AutoStart)
 export async function createAcara(formData: FormData) {
   const nama = formData.get("nama") as string;
   const deskripsi = formData.get("deskripsi") as string;
@@ -565,6 +565,8 @@ export async function createAcara(formData: FormData) {
   const mulaiStr = formData.get("waktuMulai") as string; 
   const selesaiStr = formData.get("waktuSelesai") as string; 
   const tipe = (formData.get("tipe") as any) || "SEKALI_PAKAI";
+  const hari = formData.get("hari") as string; // Contoh: "Senin,Selasa"
+  const autoStart = formData.get("autoStart") === "true";
 
   if (!nama || !tanggalStr) return { success: false, message: "Nama dan Tanggal wajib diisi!" };
 
@@ -577,11 +579,13 @@ export async function createAcara(formData: FormData) {
         nama,
         deskripsi: deskripsi || "",
         tipe,
+        hari: tipe === "RUTINAN" ? hari : null,
         tanggal: new Date(tanggalStr),
         waktuMulai: start,
         waktuSelesai: end,
         lokasi: lokasi || "Sekolah",
-        status: "UPCOMING"
+        status: "UPCOMING",
+        autoStart
       }
     });
     
@@ -611,6 +615,13 @@ export async function updateStatusKehadiran(absensiId: number, status: any) {
 export async function getDaftarAcara() {
   try {
     return await prisma.acara.findMany({
+      include: {
+        sesi: {
+          where: { status: "ONGOING" },
+          take: 1,
+          orderBy: { waktuMulai: 'desc' }
+        }
+      },
       orderBy: { createdAt: 'desc' } // Urutkan dari yang terbaru dibuat
     });
   } catch (error) {
@@ -618,7 +629,7 @@ export async function getDaftarAcara() {
   }
 }
 
-// 3. Update Acara (Edit detail + Tipe)
+// 3. Update Acara (Edit detail + Tipe + Hari + AutoStart)
 export async function updateAcara(id: number, formData: FormData) {
   const nama = formData.get("nama") as string;
   const tanggalStr = formData.get("tanggal") as string;
@@ -626,6 +637,8 @@ export async function updateAcara(id: number, formData: FormData) {
   const mulaiStr = formData.get("waktuMulai") as string;
   const selesaiStr = formData.get("waktuSelesai") as string;
   const tipe = (formData.get("tipe") as any) || "SEKALI_PAKAI";
+  const hari = formData.get("hari") as string;
+  const autoStart = formData.get("autoStart") === "true";
 
   try {
     const start = mulaiStr ? new Date(`${tanggalStr}T${mulaiStr}`) : null;
@@ -636,10 +649,12 @@ export async function updateAcara(id: number, formData: FormData) {
       data: {
         nama,
         tipe,
+        hari: tipe === "RUTINAN" ? hari : null,
         tanggal: new Date(tanggalStr),
         lokasi,
         waktuMulai: start,
-        waktuSelesai: end
+        waktuSelesai: end,
+        autoStart
       }
     });
     revalidatePath("/admin/absensi");
@@ -660,19 +675,33 @@ export async function deleteAcara(id: number) {
   }
 }
 
-// 5. Start Sesi (Manual Override)
+// 5. Start Sesi (Manual Override & Logic Sesi Baru)
 export async function startAcaraSession(id: number) {
   try {
-    await prisma.acara.update({
-      where: { id },
-      data: {
-        status: "ONGOING",
-        waktuMulaiAktual: new Date() // Catat waktu asli dimulai
-      }
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update status Acara
+      await tx.acara.update({
+        where: { id },
+        data: {
+          status: "ONGOING",
+          waktuMulaiAktual: new Date()
+        }
+      });
+
+      // 2. Buat Sesi Baru
+      return await tx.sesiAcara.create({
+        data: {
+          acaraId: id,
+          waktuMulai: new Date(),
+          status: "ONGOING"
+        }
+      });
     });
+
     revalidatePath("/admin/absensi");
-    return { success: true };
+    return { success: true, sesiId: result.id };
   } catch (error) {
+    console.error("START SESSION ERROR:", error);
     return { success: false };
   }
 }
@@ -680,21 +709,48 @@ export async function startAcaraSession(id: number) {
 // 6. Stop Sesi
 export async function stopAcaraSession(id: number) {
   try {
-    await prisma.acara.update({
-      where: { id },
-      data: {
-        status: "COMPLETED",
-        waktuSelesaiAktual: new Date() // Catat waktu asli diakhiri
+    const acara = await prisma.acara.findUnique({ where: { id } });
+    if (!acara) return { success: false };
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Cari sesi yang aktif
+      const sesiAktif = await tx.sesiAcara.findFirst({
+        where: { acaraId: id, status: "ONGOING" },
+        orderBy: { waktuMulai: 'desc' }
+      });
+
+      if (sesiAktif) {
+        await tx.sesiAcara.update({
+          where: { id: sesiAktif.id },
+          data: {
+            status: "COMPLETED",
+            waktuSelesai: new Date()
+          }
+        });
       }
+
+      // 2. Update status Acara
+      // Jika Rutinan, balik ke UPCOMING biar bisa di-start lagi besok
+      const nextStatus = acara.tipe === "RUTINAN" ? "UPCOMING" : "COMPLETED";
+
+      await tx.acara.update({
+        where: { id: id },
+        data: {
+          status: nextStatus,
+          waktuSelesaiAktual: new Date()
+        }
+      });
     });
+
     revalidatePath("/admin/absensi");
     return { success: true };
   } catch (error) {
+    console.error("STOP SESSION ERROR:", error);
     return { success: false };
   }
 }
 
-// 7. Scan Absensi (Update: Logika Rutinan vs Sekali Pakai)
+// 7. Scan Absensi (Update: Logika Berbasis Sesi)
 export async function scanAbsensi(nis: string, acaraId: number) {
   if (!nis || !acaraId) return { success: false, message: "Data tidak lengkap!" };
 
@@ -706,28 +762,26 @@ export async function scanAbsensi(nis: string, acaraId: number) {
     const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
     if (!acara) return { success: false, message: "❌ Acara tidak ditemukan!" };
 
-    // Tentukan filter pencarian duplikasi
-    let duplicateFilter: any = { pengurusId: pengurus.id, acaraId: acaraId };
+    // CARI SESI AKTIF
+    const sesiAktif = await prisma.sesiAcara.findFirst({
+      where: { acaraId: acaraId, status: "ONGOING" },
+      orderBy: { waktuMulai: 'desc' }
+    });
 
-    // JIKA RUTINAN: Cek apakah sudah absen HARI INI saja
-    if (acara.tipe === "RUTINAN") {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
+    if (!sesiAktif) return { success: false, message: "⚠️ Sesi tidak aktif! Silakan Start dulu." };
 
-      duplicateFilter.tanggal = {
-        gte: startOfDay,
-        lte: endOfDay
-      };
-    }
-
-    const existingLog = await prisma.absensi.findFirst({ where: duplicateFilter });
+    // Cek duplikasi berdasarkan sesiId
+    const existingLog = await prisma.absensi.findFirst({ 
+      where: { 
+        pengurusId: pengurus.id, 
+        sesiId: sesiAktif.id 
+      } 
+    });
 
     if (existingLog) {
       return { 
         success: true, 
-        message: "Sudah absen " + (acara.tipe === "RUTINAN" ? "hari ini! 👌" : "di acara ini! 👌"), 
+        message: "Sudah absen di sesi ini! 👌", 
         data: {
            name: pengurus.nama,
            role: pengurus.jabatan,
@@ -742,6 +796,7 @@ export async function scanAbsensi(nis: string, acaraId: number) {
       data: {
         pengurusId: pengurus.id,
         acaraId: acaraId,
+        sesiId: sesiAktif.id, // WAJIB simpan sesiId
         kegiatan: acara.nama,
         status: "HADIR",
         tanggal: new Date(),
@@ -764,48 +819,60 @@ export async function scanAbsensi(nis: string, acaraId: number) {
   }
 }
 
-// 11. Input Absensi Manual (Tanpa Scan)
+// 11. Input Absensi Manual (Update: Berbasis Sesi)
 export async function inputManualAbsensi(acaraId: number, pengurusId: number, status: any) {
   try {
+    const sesiAktif = await prisma.sesiAcara.findFirst({
+        where: { acaraId: acaraId, status: "ONGOING" },
+        orderBy: { waktuMulai: 'desc' }
+    });
+    
+    if (!sesiAktif) return { success: false, message: "⚠️ Tidak ada sesi aktif! Silakan Start dulu." };
+
     const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
     if (!acara) return { success: false, message: "Acara tidak ditemukan" };
 
-    await prisma.absensi.upsert({
-      where: {
-        // Karena di schema belum ada unique constraint gabungan, 
-        // kita pakai findFirst dulu atau pastikan data belum ada
-        id: -1 // Ini trik agar selalu create jika tidak pakai unique key
-      },
-      create: {
-        acaraId,
-        pengurusId,
-        status,
-        kegiatan: acara.nama,
-        tanggal: new Date()
-      },
-      update: { status }
+    // Gunakan findFirst + Create/Update karena Absensi tidak punya unique key di schema yang mendukung Upsert untuk sesiId
+    const existing = await prisma.absensi.findFirst({
+        where: { pengurusId, sesiId: sesiAktif.id }
     });
+
+    if (existing) {
+        await prisma.absensi.update({
+            where: { id: existing.id },
+            data: { status }
+        });
+    } else {
+        await prisma.absensi.create({
+            data: {
+                acaraId,
+                sesiId: sesiAktif.id,
+                pengurusId,
+                status,
+                kegiatan: acara.nama,
+                tanggal: new Date()
+            }
+        });
+    }
     
     revalidatePath("/admin/absensi");
     return { success: true };
   } catch (error) {
-    // Jika upsert gagal karena ID -1, kita pakai create biasa
-    try {
-        const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
-        await prisma.absensi.create({
-            data: { acaraId, pengurusId, status, kegiatan: acara!.nama, tanggal: new Date() }
-        });
-        revalidatePath("/admin/absensi");
-        return { success: true };
-    } catch (e) {
-        return { success: false };
-    }
+    console.error("MANUAL INPUT ERROR:", error);
+    return { success: false };
   }
 }
 
-// 12. Auto-Alpa bagi yang tidak hadir saat sesi ditutup
+// 12. Auto-Alpa bagi yang tidak hadir saat sesi ditutup (Update: Berbasis Sesi)
 export async function autoAlpaRemaining(acaraId: number) {
   try {
+    const sesiAktif = await prisma.sesiAcara.findFirst({
+        where: { acaraId: acaraId, status: "ONGOING" },
+        orderBy: { waktuMulai: 'desc' }
+    });
+    
+    if (!sesiAktif) return { success: false, message: "Tidak ada sesi aktif" };
+
     const acara = await prisma.acara.findUnique({ where: { id: acaraId } });
     if (!acara) return { success: false };
 
@@ -815,9 +882,9 @@ export async function autoAlpaRemaining(acaraId: number) {
       select: { id: true }
     });
 
-    // 2. Ambil pengurus yang SUDAH punya record (Hadir/Izin/Sakit)
+    // 2. Ambil pengurus yang SUDAH punya record di SESI INI
     const sudahAbsen = await prisma.absensi.findMany({
-      where: { acaraId },
+      where: { sesiId: sesiAktif.id },
       select: { pengurusId: true }
     });
 
@@ -831,6 +898,7 @@ export async function autoAlpaRemaining(acaraId: number) {
       await prisma.absensi.createMany({
         data: belumAbsen.map(p => ({
           acaraId,
+          sesiId: sesiAktif.id,
           pengurusId: p.id,
           status: "ALPA",
           kegiatan: acara.nama,
@@ -839,11 +907,8 @@ export async function autoAlpaRemaining(acaraId: number) {
       });
     }
 
-    // 5. Tutup Sesi
-    await prisma.acara.update({
-      where: { id: acaraId },
-      data: { status: "COMPLETED", waktuSelesaiAktual: new Date() }
-    });
+    // 5. Tutup Sesi secara resmi
+    await stopAcaraSession(acaraId);
 
     revalidatePath("/admin/absensi");
     return { success: true, count: belumAbsen.length };
@@ -865,59 +930,171 @@ export async function getDaftarPengurus() {
   }
 }
 
-// 8. Ambil Rekap Absensi Lengkap (Untuk Laporan)
-export async function getRekapAbsensi() {
+// 14. Auto-Start Sesi berdasarkan Waktu
+export async function checkAndAutoStartAcara() {
+  const now = new Date();
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  
+  // Hitung total menit dari jam sekarang (Lokal)
+  const currentTimeVal = now.getHours() * 60 + now.getMinutes();
+
+  const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const todayDay = days[now.getDay()];
+
   try {
-    const totalPengurus = await prisma.pengurus.count({ where: { status: "AKTIF" } });
-    
-    const rekap = await prisma.acara.findMany({
-      include: {
-        _count: {
-          select: {
-            absensi: { where: { status: "HADIR" } }
-          }
-        },
-        absensi: {
-          include: {
-            pengurus: true
-          }
-        }
-      },
-      orderBy: { tanggal: 'desc' }
+    const upcomingAcara = await prisma.acara.findMany({
+      where: {
+        status: "UPCOMING",
+        autoStart: true,
+      }
     });
 
-    return {
-      success: true,
-      data: rekap.map(a => ({
-        ...a,
-        totalHadir: a._count.absensi,
-        totalAnggota: totalPengurus,
-        persentase: totalPengurus > 0 ? Math.round((a._count.absensi / totalPengurus) * 100) : 0
-      }))
-    };
+    for (const acara of upcomingAcara) {
+      if (!acara.waktuMulai) continue;
+
+      // Hitung total menit dari jadwal
+      const scheduleHours = acara.waktuMulai.getHours();
+      const scheduleMinutes = acara.waktuMulai.getMinutes();
+      const scheduleTimeVal = scheduleHours * 60 + scheduleMinutes;
+
+      const isToday = acara.tipe === "SEKALI_PAKAI" && 
+                      acara.tanggal.toDateString() === now.toDateString();
+      
+      const isRoutineToday = acara.tipe === "RUTINAN" && 
+                             acara.hari?.includes(todayDay);
+
+      if ((isToday || isRoutineToday) && currentTimeVal >= scheduleTimeVal) {
+        
+        // 1. Cek apakah ada sesi yang sedang ONGOING (Jangan double start)
+        const activeSesi = await prisma.sesiAcara.findFirst({
+            where: { acaraId: acara.id, status: "ONGOING" }
+        });
+        if (activeSesi) continue;
+
+        // 2. Cek Sesi terakhir hari ini
+        const lastSesiHariIni = await prisma.sesiAcara.findFirst({
+            where: { 
+                acaraId: acara.id, 
+                waktuMulai: { gte: startOfToday } 
+            },
+            orderBy: { waktuMulai: 'desc' }
+        });
+
+        if (!lastSesiHariIni) {
+            // Belum ada sesi sama sekali hari ini, boleh start
+            console.log(`Auto-starting session for: ${acara.nama}`);
+            await startAcaraSession(acara.id);
+        } else {
+            // Jika sudah ada sesi, bandingkan jam jadwalnya.
+            // Jika jadwal diedit ke waktu yang lebih baru dari sesi terakhir, boleh start lagi.
+            const lastSesiTimeVal = lastSesiHariIni.waktuMulai.getHours() * 60 + lastSesiHariIni.waktuMulai.getMinutes();
+            
+            if (scheduleTimeVal > lastSesiTimeVal) {
+                console.log(`New schedule detected for ${acara.nama}, restarting session...`);
+                await startAcaraSession(acara.id);
+            }
+        }
+      }
+    }
+    return { success: true };
   } catch (error) {
-    return { success: false, message: "Gagal memuat rekap." };
+    console.error("AUTO START ERROR:", error);
+    return { success: false };
   }
 }
 
-// 9. Ambil Detail Absensi per Acara (Laporan - Sort by Nama)
-export async function getDetailLaporan(acaraId: number) {
+// 15. Ambil Daftar Sesi (Untuk Laporan Per Sesi)
+export async function getDaftarSesi(acaraId: number) {
   try {
-    return await prisma.absensi.findMany({
+    return await prisma.sesiAcara.findMany({
       where: { acaraId },
-      include: { pengurus: true },
-      orderBy: { pengurus: { nama: 'asc' } }
+      orderBy: { waktuMulai: 'desc' }
     });
   } catch (error) {
     return [];
   }
 }
 
-// 10. Ambil Log Absensi per Acara (Activity Stream - Sort by Tanggal)
-export async function getLogsByAcara(acaraId: number) {
+// 8. Ambil Rekap Absensi Lengkap (Update: Berbasis Sesi & Multi-Status)
+export async function getRekapAbsensi() {
+  try {
+    const totalPengurus = await prisma.pengurus.count({ where: { status: "AKTIF" } });
+    
+    // Ambil semua sesi yang pernah dilakukan
+    const sesiList = await prisma.sesiAcara.findMany({
+      include: {
+        acara: true,
+        absensi: {
+          select: { status: true }
+        }
+      },
+      orderBy: { waktuMulai: 'desc' }
+    });
+
+    return {
+      success: true,
+      data: sesiList.map(s => {
+        const tgl = new Date(s.waktuMulai);
+        const formatTgl = tgl.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+        const formatJam = tgl.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        const counts = {
+          HADIR: s.absensi.filter(a => a.status === 'HADIR').length,
+          IZIN: s.absensi.filter(a => a.status === 'IZIN').length,
+          SAKIT: s.absensi.filter(a => a.status === 'SAKIT').length,
+          ALPA: s.absensi.filter(a => a.status === 'ALPA').length,
+        };
+
+        return {
+          id: s.id,
+          acaraId: s.acaraId,
+          nama: `${s.acara.nama} (${formatTgl} ${formatJam})`,
+          lokasi: s.acara.lokasi,
+          tanggal: s.waktuMulai,
+          counts,
+          totalAnggota: totalPengurus,
+          persentase: totalPengurus > 0 ? Math.round((counts.HADIR / totalPengurus) * 100) : 0,
+          statusSesi: s.status
+        };
+      })
+    };
+  } catch (error) {
+    console.error("REKAP ERROR:", error);
+    return { success: false, message: "Gagal memuat rekap." };
+  }
+}
+
+// 9. Ambil Detail Absensi per Sesi (Laporan - Sort by Nama)
+export async function getDetailLaporan(sesiId: number) {
   try {
     return await prisma.absensi.findMany({
-      where: { acaraId },
+      where: { sesiId: sesiId },
+      include: { pengurus: true },
+      orderBy: { pengurus: { nama: 'asc' } }
+    });
+  } catch (error) {
+    console.error("DETAIL ERROR:", error);
+    return [];
+  }
+}
+
+// 10. Ambil Log Absensi per Sesi/Acara (Activity Stream)
+export async function getLogsByAcara(id: number, type: 'sesi' | 'acara' = 'sesi') {
+  try {
+    let targetSesiId = id;
+
+    if (type === 'acara') {
+        const activeSesi = await prisma.sesiAcara.findFirst({
+            where: { acaraId: id, status: "ONGOING" },
+            orderBy: { waktuMulai: 'desc' }
+        });
+        if (!activeSesi) return []; // Tidak ada sesi aktif = tidak ada log
+        targetSesiId = activeSesi.id;
+    }
+
+    return await prisma.absensi.findMany({
+      where: { sesiId: targetSesiId },
       include: { pengurus: true },
       orderBy: { tanggal: 'desc' }
     });

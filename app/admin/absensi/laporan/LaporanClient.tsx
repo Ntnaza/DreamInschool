@@ -62,22 +62,53 @@ export default function LaporanClient() {
   const handleExportExcel = (acara: any, details: any[]) => {
     if (!details || details.length === 0) return alert("Tidak ada data untuk di-export.");
 
-    const dataToExport = details.map((d, index) => ({
-      No: index + 1,
-      Nama: d.pengurus?.nama || "Tanpa Nama",
-      NIS: d.pengurus?.nis || "-",
-      Jabatan: d.pengurus?.jabatan || "-",
-      Status: d.status,
-      Waktu: new Date(d.tanggal).toLocaleTimeString('id-ID'),
-      Tanggal: new Date(d.tanggal).toLocaleDateString('id-ID'),
-      Kegiatan: acara.nama,
-      Lokasi: acara.lokasi
+    const fileName = `Laporan_Absensi_${acara.nama.replace(/\s+/g, '_')}.xlsx`;
+
+    // 1. Data Utama
+    const rows = details.map((d, index) => ({
+      'No': index + 1,
+      'Nama Pengurus': d.pengurus?.nama || "Tanpa Nama",
+      'NIS/NIP': d.pengurus?.nis || "-",
+      'Jabatan': d.pengurus?.jabatan || "-",
+      'Divisi': d.pengurus?.divisi || "-",
+      'Status': d.status,
+      'Waktu Scan': new Date(d.tanggal).toLocaleTimeString('id-ID'),
+      'Keterangan': d.keterangan || "-"
     }));
 
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    // 2. Tambah Baris Kosong sebagai pemisah
+    rows.push({} as any);
+
+    // 3. Tambah Rekapitulasi di bawah
+    const totalHadir = details.filter(d => d.status === 'HADIR').length;
+    const totalIzin = details.filter(d => d.status === 'IZIN').length;
+    const totalSakit = details.filter(d => d.status === 'SAKIT').length;
+    const totalAlpa = details.filter(d => d.status === 'ALPA').length;
+
+    rows.push({ 'Nama Pengurus': 'REKAPITULASI KEHADIRAN', 'Status': '' } as any);
+    rows.push({ 'Nama Pengurus': 'Total Hadir', 'Status': totalHadir } as any);
+    rows.push({ 'Nama Pengurus': 'Total Izin', 'Status': totalIzin } as any);
+    rows.push({ 'Nama Pengurus': 'Total Sakit', 'Status': totalSakit } as any);
+    rows.push({ 'Nama Pengurus': 'Total Alpa', 'Status': totalAlpa } as any);
+    rows.push({ 'Nama Pengurus': 'Total Anggota', 'Status': details.length } as any);
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Atur Lebar Kolom agar rapi
+    ws['!cols'] = [
+      { wch: 5 },  // No
+      { wch: 30 }, // Nama
+      { wch: 15 }, // NIS
+      { wch: 20 }, // Jabatan
+      { wch: 20 }, // Divisi
+      { wch: 10 }, // Status
+      { wch: 15 }, // Waktu
+      { wch: 25 }, // Keterangan
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Laporan Absensi");
-    XLSX.writeFile(wb, `Laporan_Absensi_${acara.nama.replace(/\s+/g, '_')}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+    XLSX.writeFile(wb, fileName);
   };
 
   useEffect(() => {
@@ -154,20 +185,42 @@ export default function LaporanClient() {
                                   </div>
                                   <div className="text-right shrink-0">
                                       <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{acara.persentase}%</span>
-                                      <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">Kehadiran</p>
+                                      <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">Hadir</p>
                                   </div>
                               </div>
+                              
+                              {/* STACKED PROGRESS BAR */}
                               <div className="flex items-center gap-4">
-                                  <div className="flex-1 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                  <div className="flex-1 h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden flex">
                                       <motion.div 
-                                        initial={{ width: 0 }} animate={{ width: `${acara.persentase}%` }}
-                                        className={`h-full ${acara.persentase > 80 ? 'bg-emerald-500' : acara.persentase > 50 ? 'bg-blue-500' : 'bg-rose-500'}`} 
+                                        initial={{ width: 0 }} animate={{ width: `${(acara.counts.HADIR / acara.totalAnggota) * 100}%` }}
+                                        className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" 
+                                      />
+                                      <motion.div 
+                                        initial={{ width: 0 }} animate={{ width: `${(acara.counts.IZIN / acara.totalAnggota) * 100}%` }}
+                                        className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]" 
+                                      />
+                                      <motion.div 
+                                        initial={{ width: 0 }} animate={{ width: `${(acara.counts.SAKIT / acara.totalAnggota) * 100}%` }}
+                                        className="h-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.3)]" 
+                                      />
+                                      <motion.div 
+                                        initial={{ width: 0 }} animate={{ width: `${(acara.counts.ALPA / acara.totalAnggota) * 100}%` }}
+                                        className="h-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.3)]" 
                                       />
                                   </div>
-                                  <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5">
-                                      <Users size={12}/> {acara.totalHadir}/{acara.totalAnggota}
+                                  <div className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                                      <Users size={12}/> {acara.counts.HADIR}/{acara.totalAnggota}
                                   </div>
                               </div>
+                              
+                              {/* MINI LEGEND */}
+                              <div className="mt-2.5 flex flex-wrap gap-2">
+                                  <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {acara.counts.HADIR}</div>
+                                  <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> {acara.counts.IZIN}</div>
+                                  <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase"><div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {acara.counts.SAKIT}</div>
+                                  <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase"><div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> {acara.counts.ALPA}</div>
+                                </div>
                           </div>
                       ))
                   )}

@@ -153,18 +153,33 @@ model Acara {
   nama              String
   deskripsi         String?  @db.Text
   tipe              TipeAcara @default(SEKALI_PAKAI)
+  hari              String?  // Untuk Rutinan: "Senin", "Selasa", dsb
   tanggal           DateTime @default(now())
   waktuMulai        DateTime? 
   waktuSelesai      DateTime?
-  waktuMulaiAktual  DateTime? // Kapan Admin klik START
-  waktuSelesaiAktual DateTime? // Kapan Admin klik STOP
+  waktuMulaiAktual  DateTime? // Kapan Admin klik START (Legacy/Sekali Pakai)
+  waktuSelesaiAktual DateTime? // Kapan Admin klik STOP (Legacy/Sekali Pakai)
   lokasi            String?  @default("Sekolah")
   status            StatusAcara @default(UPCOMING)
+  autoStart         Boolean  @default(false)
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   absensi           Absensi[]
+  sesi              SesiAcara[]
+}
+
+model SesiAcara {
+  id                Int      @id @default(autoincrement())
+  acaraId           Int
+  acara             Acara    @relation(fields: [acaraId], references: [id], onDelete: Cascade)
+  waktuMulai        DateTime @default(now())
+  waktuSelesai      DateTime?
+  status            StatusAcara @default(ONGOING)
+  
+  absensi           Absensi[]
+  createdAt         DateTime @default(now())
 }
 
 model Absensi {
@@ -174,6 +189,10 @@ model Absensi {
   // Relasi ke Acara
   acara       Acara    @relation(fields: [acaraId], references: [id], onDelete: Cascade)
   acaraId     Int
+
+  // Relasi ke Sesi (Untuk pengelompokan laporan)
+  sesi        SesiAcara? @relation(fields: [sesiId], references: [id], onDelete: SetNull)
+  sesiId      Int?
 
   // Kita tetap simpan kolom kegiatan (string) sebagai backup/denormalisasi jika perlu
   kegiatan    String   
