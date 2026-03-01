@@ -220,6 +220,19 @@ model Surat {
 // --------------------------------------------------------
 // 7. MODUL KAS & ANGGARAN (Keuangan)
 // --------------------------------------------------------
+model BukuKas {
+  id          Int         @id @default(autoincrement())
+  nama        String      @unique
+  deskripsi   String?     @db.Text
+  icon        String?     @default("Wallet")
+  color       String?     @default("blue")
+  
+  transaksi   Keuangan[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
 model Keuangan {
   id          Int      @id @default(autoincrement())
   judul       String
@@ -228,8 +241,21 @@ model Keuangan {
   kategori    String   // "Dana BOS", "Event: LDKS", dll
   tanggal     DateTime @default(now())
   buktiUrl    String?
+  
+  // FOTO BUKTI GANDA
+  fotoBarang  String?     @db.LongText
+  fotoNota    String?     @db.LongText
+
+  // DETAIL BARANG (Untuk Realisasi Lengkap)
+  kuantitas   Float?      @default(1)
+  satuan      String?     @default("pcs")
+
   keterangan  String?  @db.Text
   
+  // Relasi ke Buku Kas (Opsional untuk realisasi proker)
+  bukuKas     BukuKas?     @relation(fields: [bukuKasId], references: [id], onDelete: Cascade)
+  bukuKasId   Int?
+
   // Relasi Opsional ke Proker (biar tau ini uang buat event mana)
   proker      ProgramKerja? @relation(fields: [prokerId], references: [id])
   prokerId    Int?
@@ -385,4 +411,29 @@ model Visitor {
 
   @@index([createdAt])
   @@index([ip, path, createdAt]) // Index gabungan untuk pencarian cepat
+}
+
+// --------------------------------------------------------
+// 11. MANAJEMEN DIVISI (Dinamis)
+// --------------------------------------------------------
+model Divisi {
+  id        Int      @id @default(autoincrement())
+  nama      String   @unique
+  deskripsi String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jabatans  Jabatan[] // Relasi ke banyak Jabatan
+}
+
+model Jabatan {
+  id        Int      @id @default(autoincrement())
+  nama      String
+  divisiId  Int
+  divisi    Divisi   @relation(fields: [divisiId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([nama, divisiId]) // Gabungan nama jabatan dan divisi harus unik
 }

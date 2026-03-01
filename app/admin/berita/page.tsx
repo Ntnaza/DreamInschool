@@ -10,7 +10,6 @@ export default async function BeritaPage() {
   return (
     <BeritaClient
       initialPosts={posts}
-      createBerita={createBerita} // ✅ INI KUNCI
     />
   );
 }

@@ -17,7 +17,7 @@ import {
     scanAbsensi, createAcara, getDaftarAcara, getLogsByAcara, 
     updateStatusKehadiran, deleteAcara, updateAcara, 
     startAcaraSession, autoAlpaRemaining, inputManualAbsensi,
-    getDaftarPengurus, checkAndAutoStartAcara
+    getDaftarPengurus, checkAndAutoStartAcara, checkAndAutoStopAcara
 } from "@/lib/actions"; 
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -81,8 +81,11 @@ export default function ScanClient() {
   const loadData = useCallback(async (autoSelectLatest = false) => {
     setIsLoadingLogs(true);
     try {
-        // Cek dan Auto Start Sesi yang terjadwal
-        await checkAndAutoStartAcara();
+        // Cek Auto Start & Auto Stop setiap kali data dimuat/di-refresh
+        await Promise.all([
+            checkAndAutoStartAcara(),
+            checkAndAutoStopAcara()
+        ]);
 
         const [list, pengurus] = await Promise.all([
             getDaftarAcara(),
@@ -118,14 +121,25 @@ export default function ScanClient() {
     // Update Jam Real-time setiap detik
     const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
 
-    // Setup interval untuk Auto-Start (Cek setiap 1 menit)
-    const autoStartInterval = setInterval(() => {
-        if (viewMode === 'manage') checkAndAutoStartAcara().then(() => loadData());
-    }, 60000);
+    // Setup interval untuk Auto-Start & Auto-Stop (Cek setiap 30 detik)
+    const autoSyncInterval = setInterval(async () => {
+        // loadData sudah memanggil checkAndAutoStart dan checkAndAutoStop
+        await loadData();
+
+        // Cek jika sesi yang sedang dibuka scanner-nya sudah selesai
+        if (viewMode === 'scanning' && selectedAcaraId) {
+            const currentList = await getDaftarAcara();
+            const updatedAcara = currentList.find(a => a.id === selectedAcaraId);
+            if (updatedAcara && updatedAcara.status !== 'ONGOING') {
+                setViewMode('manage');
+                alert("Sesi absensi telah berakhir otomatis sesuai jadwal.");
+            }
+        }
+    }, 30000);
 
     return () => {
         clearInterval(timeInterval);
-        clearInterval(autoStartInterval);
+        clearInterval(autoSyncInterval);
     };
   }, [loadData, viewMode]);
 
@@ -221,8 +235,8 @@ export default function ScanClient() {
     setNewAcara({ ...newAcara, hari: newDays.join(',') });
   };
 
-  const handleStartSession = async () => { if(selectedAcaraId) await startAcaraSession(selectedAcaraId).then(loadData); };
-  const handleUpdateStatus = async (absensiId: number, status: string) => { await updateStatusKehadiran(absensiId, status).then(loadData); };
+  const handleStartSession = async () => { if(selectedAcaraId) await startAcaraSession(selectedAcaraId).then(() => loadData()); };
+  const handleUpdateStatus = async (absensiId: number, status: string) => { await updateStatusKehadiran(absensiId, status).then(() => loadData()); };
 
   const selectedAcara = daftarAcara.find(a => a.id === selectedAcaraId);
 
@@ -392,13 +406,20 @@ export default function ScanClient() {
                 </div>
             </div>
             <div className="flex-1 bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col overflow-hidden tour-activity-stream">
-                <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-transparent">
+                <div className="p-5 border-b border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 dark:bg-transparent">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-3"><Activity size={18} className="text-blue-600" /> Activity Stream {isLoadingLogs && <Loader2 size={14} className="animate-spin text-blue-500" />}</h3>
-                    {(selectedAcara?.sesi?.[0]?.waktuMulai || selectedAcara?.waktuMulaiAktual) && (
-                        <div className="text-sm font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-md flex items-center gap-1.5 shadow-sm border border-emerald-100">
-                            <Timer size={14}/> Started at {isClient ? new Date(selectedAcara?.sesi?.[0]?.waktuMulai || selectedAcara.waktuMulaiAktual).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : "--:--"}
-                        </div>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {(selectedAcara?.sesi?.[0]?.waktuMulai || selectedAcara?.waktuMulaiAktual) && (
+                            <div className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm border border-emerald-100 dark:border-emerald-500/20">
+                                <Timer size={14}/> Started at {isClient ? new Date(selectedAcara?.sesi?.[0]?.waktuMulai || selectedAcara.waktuMulaiAktual).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : "--:--"}
+                            </div>
+                        )}
+                        {selectedAcara?.waktuSelesai && (
+                            <div className="text-[11px] font-semibold text-rose-600 bg-rose-50 dark:bg-rose-500/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm border border-rose-100 dark:border-rose-500/20">
+                                <Clock size={14}/> Ends at {isClient ? new Date(selectedAcara.waktuSelesai).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : "--:--"}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     <AnimatePresence mode="popLayout">{logs.length === 0 ? (<div className="h-full flex flex-col items-center justify-center opacity-20 text-center"><History size={48} className="mb-3 mx-auto" /><p className="text-sm font-medium text-slate-500">Belum ada aktivitas yang tercatat</p></div>) : (logs.map((log) => (
@@ -427,7 +448,14 @@ export default function ScanClient() {
             </div>
             <div className="absolute top-8 left-0 w-full px-10 flex justify-between items-center z-[1000]">
                 <button onClick={() => setViewMode('manage')} className="p-4 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-200 dark:border-white/10 flex items-center gap-3 font-bold text-sm text-slate-600 dark:text-slate-300 hover:scale-105 active:scale-95 transition-all shadow-blue-500/10"><ArrowLeft size={20} /> Back</button>
-                <div className="px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-xl font-bold text-sm uppercase tracking-widest flex items-center gap-3"><Target size={18} className="animate-pulse" /> {selectedAcara?.nama}</div>
+                <div className="flex flex-col items-end gap-2">
+                    <div className="px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-xl font-bold text-sm uppercase tracking-widest flex items-center gap-3"><Target size={18} className="animate-pulse" /> {selectedAcara?.nama}</div>
+                    {selectedAcara?.waktuSelesai && (
+                        <div className="px-4 py-2 bg-rose-500 text-white rounded-xl shadow-lg font-bold text-[10px] uppercase tracking-wider flex items-center gap-2">
+                            <Clock size={14} /> Ends at {new Date(selectedAcara.waktuSelesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                    )}
+                </div>
             </div>
             <div className="relative w-full max-w-[500px] aspect-square group">
                 <div className="absolute inset-[-40px] bg-blue-500/10 blur-[100px] rounded-full opacity-60"></div>

@@ -11,7 +11,22 @@ async function main() {
   const hashedPasswordAdmin = await bcrypt.hash('admin123', 10)
   const hashedPasswordUser = await bcrypt.hash('password123', 10)
 
-  // 1. Buat Data Pengurus (DUMMY)
+  // 0. Buat Buku Kas Default (MULTI-LEDGER SUPPORT)
+  // ------------------------------------------
+  console.log('📚 Membuat kategori pembukuan...')
+  const kasUmum = await prisma.bukuKas.upsert({
+    where: { nama: 'Kas Umum' },
+    update: {},
+    create: { nama: 'Kas Umum', deskripsi: 'Operasional OSIS harian', icon: 'Wallet', color: 'blue' }
+  })
+  
+  await prisma.bukuKas.upsert({
+    where: { nama: 'Dana Sosial' },
+    update: {},
+    create: { nama: 'Dana Sosial', deskripsi: 'Dana santunan dan sumbangan', icon: 'Heart', color: 'rose' }
+  })
+
+  // 1. Buat Data Pengurus
   // ------------------------------------------
   console.log('👤 Membuat data Pengurus...')
   
@@ -57,20 +72,6 @@ async function main() {
     },
   })
 
-  const anggotaHumas = await prisma.pengurus.upsert({
-    where: { nis: '1003' },
-    update: {},
-    create: {
-      nama: 'Budi Santoso',
-      nis: '1003',
-      kelas: 'X DKV 1',
-      jabatan: 'Anggota',
-      divisi: 'Humas',
-      hp: '085678901234',
-      status: 'AKTIF'
-    },
-  })
-
   // 2. Buat Program Kerja
   // ------------------------------------------
   console.log('📋 Membuat Program Kerja...')
@@ -84,11 +85,11 @@ async function main() {
         deskripsi: 'Turnamen Mobile Legends & Valorant antar jurusan.',
         divisi: 'Olahraga',
         status: 'DONE',
-        pjId: anggotaHumas.id,
-        deadline: new Date('2026-02-02'), // Set tahun depan biar masuk agenda
+        pjId: ketua.id,
+        deadline: new Date('2026-02-02'),
         image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop',
         isFeatured: true,
-        lokasi: "Lab Komputer 3 & 4" // Lokasi Baru
+        lokasi: "Lab Komputer 3 & 4"
       },
       {
         nama: 'Gebyar Seni (PENSI)',
@@ -100,26 +101,6 @@ async function main() {
         image: 'https://images.unsplash.com/photo-1459749411177-287ce112a8bf?q=80&w=800&auto=format&fit=crop',
         isFeatured: false,
         lokasi: "Panggung Utama Lapangan"
-      },
-      {
-        nama: 'LDKS & Leadership',
-        deskripsi: 'Membentuk karakter pemimpin tangguh.',
-        divisi: 'Kaderisasi',
-        status: 'IN_PROGRESS',
-        pjId: ketua.id,
-        deadline: new Date('2026-01-15'),
-        image: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop',
-        isFeatured: false,
-        lokasi: "Villa Puncak Bogor"
-      },
-      {
-        nama: 'Rapat Kerja Triwulan 1',
-        deskripsi: 'Evaluasi kinerja pengurus OSIS/MPK.',
-        divisi: 'Inti',
-        status: 'TODO',
-        pjId: ketua.id,
-        deadline: new Date('2026-03-10'),
-        lokasi: "Ruang OSIS"
       }
     ]
   })
@@ -129,39 +110,28 @@ async function main() {
   console.log('📰 Membuat Berita...')
   
   await prisma.berita.deleteMany() 
+  const adminUser = await prisma.user.findUnique({ where: { username: 'admin' } })
 
-  const userEngkoh = await prisma.user.findUnique({ where: { username: 'engkoh' } })
-
-  if (userEngkoh) {
+  if (adminUser) {
     await prisma.berita.createMany({
       data: [
         {
           judul: 'Keseruan Classmeet 2025',
           slug: 'keseruan-classmeet-2025',
           konten: 'Classmeet tahun ini sangat meriah dengan berbagai lomba...',
-          penulisId: userEngkoh.id, 
+          penulisId: adminUser.id, 
           status: 'PUBLISHED',     
           views: 150,
-          kategori: 'Event' // ✅ NAH INI YANG KURANG TADI
-        },
-        {
-          judul: 'Info Pendaftaran OSIS Baru',
-          slug: 'info-pendaftaran-osis-baru',
-          konten: 'Bagi siswa kelas X yang berminat menjadi pengurus...',
-          penulisId: userEngkoh.id, 
-          status: 'PUBLISHED',
-          views: 342,
-          kategori: 'Pengumuman' // ✅ INI JUGA DITAMBAH
+          kategori: 'Event'
         }
       ]
     })
   }
 
-  // 4. Buat Keuangan (Kas)
+  // 4. Buat Keuangan
   // ------------------------------------------
   console.log('💰 Membuat Data Keuangan...')
-  
-  await prisma.keuangan.deleteMany() // Hapus data lama
+  await prisma.keuangan.deleteMany()
 
   await prisma.keuangan.createMany({
     data: [
@@ -170,150 +140,42 @@ async function main() {
         tipe: 'PEMASUKAN',
         nominal: 500000,
         kategori: 'Iuran Wajib',
-        keterangan: 'Iuran dari 50 pengurus.'
+        keterangan: 'Iuran dari 50 pengurus.',
+        bukuKasId: kasUmum.id
       },
       {
         judul: 'Beli Spanduk LDKS',
         tipe: 'PENGELUARAN',
         nominal: 150000,
         kategori: 'Perlengkapan',
-        keterangan: 'Cetak spanduk ukuran 3x1 meter.'
+        keterangan: 'Cetak spanduk ukuran 3x1 meter.',
+        bukuKasId: kasUmum.id
       }
     ]
   })
 
-  // 5. Buat Aspirasi (UPDATE DENGAN BALASAN)
+  // 5. Buat Data Leader
   // ------------------------------------------
-  console.log('📩 Membuat Data Aspirasi...')
-
-  await prisma.aspirasi.deleteMany()
-
-  await prisma.aspirasi.createMany({
-    data: [
-      {
-        pengirim: 'Anonim',
-        kelas: 'XII PPLG 2',
-        isi: 'Kak, tolong dong adain lagi party gitu kwkw, peminatnya banyak banget nih di kelas X.',
-        kategori: 'Kegiatan',
-        status: 'DITERIMA', // Status sudah diterima
-        balasan: 'Halo! Terima kasih masukannya. Kabar baik, proposal E-Sport sedang kami ajukan ke Waka Kesiswaan minggu ini. Ditunggu infonya ya! 🎮',
-        balasanAt: new Date()
-      },
-      {
-        pengirim: 'Rina Marlina',
-        kelas: 'XII AKL 2',
-        isi: 'Mushola perempuan mukenanya banyak yang kotor, mohon dikoordinasikan.',
-        kategori: 'Sarana',
-        status: 'SELESAI', // Status selesai ditangani
-        balasan: 'Siap Kak Rina! Sekbid 1 (Agama) sudah menjadwalkan laundry rutin setiap hari Jumat mulai minggu depan. Terima kasih laporannya! 🙏',
-        balasanAt: new Date()
-      },
-      {
-        pengirim: 'Budi (Anonim)',
-        kelas: '-',
-        isi: 'WC belakang airnya mati terus tiap istirahat kedua.',
-        kategori: 'Sarana',
-        status: 'PENDING',
-        balasan: null // Belum dibalas
-      }
-    ]
-  })
-
-  // 6. Buat Data Leader (Landing Page)
-  // ------------------------------------------
-  console.log('👑 Membuat Data Leader (Ketua OSIS & MPK)...')
-
-  await prisma.leader.deleteMany() // Hapus data lama biar gak duplikat
-
+  console.log('👑 Membuat Data Leader...')
+  await prisma.leader.deleteMany()
   await prisma.leader.createMany({
     data: [
       {
-        name: "Raka Aditya",
+        name: "Engkoh Raka",
         role: "Ketua OSIS",
         image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop",
         vision: "Aksi Nyata, Bukan Sekadar Janji",
-        mission: "OSIS adalah wajah kedisiplinan dan prestasi. Kami hadir untuk melayani, menginspirasi, dan membawa nama baik sekolah ke tingkat yang lebih tinggi.",
-        tags: "Kolaborasi,Digitalisasi,Prestasi" 
-      },
-      {
-        name: "Siti Aminah",
-        role: "Ketua MPK",
-        image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop",
-        vision: "Suara Anda, Amanah Kami",
-        mission: "MPK berdiri di atas prinsip transparansi dan keadilan. Kami memastikan setiap kebijakan sekolah berpihak pada siswa dan setiap suara didengar.",
-        tags: "Transparansi,Keadilan,Solutif"
+        mission: "OSIS adalah wajah kedisiplinan dan prestasi.",
+        tags: "Kolaborasi,Digitalisasi" 
       }
     ]
   })
   
-  console.log('✅ Seeding Selesai! Database sudah terisi.')
-
-  // 7. Buat Data Pembina (Advisor)
-  // ------------------------------------------
-  console.log('🎓 Membuat Data Pembina...')
-  
-  // Kita pakai upsert biar kalau dijalankan berkali-kali tidak duplikat (cek berdasarkan NIP)
-  await prisma.pengurus.upsert({
-    where: { nis: '19680101' }, // Anggap NIS ini sebagai NIP
-    update: {},
-    create: {
-      nama: 'Miftah Alfa Reza',
-      nis: '19680101', // NIP Pendek
-      kelas: '-',
-      jabatan: 'Kepala Sekolah',
-      divisi: 'Manajemen',
-      isAdvisor: true, // TANDAI SEBAGAI PEMBINA
-      fotoUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop'
-    }
-  })
-
-  await prisma.pengurus.upsert({
-    where: { nis: '19750505' },
-    update: {},
-    create: {
-      nama: 'Rubi Alamsyah',
-      nis: '19750505',
-      kelas: '-',
-      jabatan: 'Waka Kesiswaan',
-      divisi: 'Manajemen',
-      isAdvisor: true,
-      fotoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=800&auto=format&fit=crop'
-    }
-  })
-
-  await prisma.pengurus.upsert({
-    where: { nis: '19880808' },
-    update: {},
-    create: {
-      nama: 'M Nizar S.Kom.',
-      nis: '19880808',
-      kelas: '-',
-      jabatan: 'Pembina OSIS',
-      divisi: 'Manajemen',
-      isAdvisor: true,
-      fotoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop'
-    }
-  })
-
-  await prisma.pengurus.upsert({
-    where: { nis: '19901212' },
-    update: {},
-    create: {
-      nama: 'Rahmat Hidayat, S.T.',
-      nis: '19901212',
-      kelas: '-',
-      jabatan: 'Pembina MPK',
-      divisi: 'Manajemen',
-      isAdvisor: true,
-      fotoUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=800&auto=format&fit=crop'
-    }
-  })
+  console.log('✅ Seeding Selesai!')
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
+  .then(async () => { await prisma.$disconnect() })
   .catch(async (e) => {
     console.error(e)
     await prisma.$disconnect()

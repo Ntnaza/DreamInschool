@@ -12,15 +12,14 @@ export default function TourGuide({ steps }: TourGuideProps) {
   const [run, setRun] = useState(false);
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status } = data;
-    // Gunakan logika OR (||) agar TypeScript aman
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+    const { status, action } = data;
+    
+    // Pastikan tour berhenti jika sudah selesai, di-skip, atau ditutup (X)
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED || action === "close") {
       setRun(false);
     }
   };
 
-  // === INI RAHASIANYA: KOMPONEN TOOLTIP CUSTOM ===
-  // Kita bikin tampilan sendiri pakai Tailwind biar bebas kreasinya
   const CustomTooltip = ({
     continuous,
     index,
@@ -30,7 +29,7 @@ export default function TourGuide({ steps }: TourGuideProps) {
     primaryProps,
     tooltipProps,
     isLastStep,
-    size, // Jumlah total langkah
+    size,
   }: TooltipRenderProps) => {
     
     return (
@@ -38,35 +37,29 @@ export default function TourGuide({ steps }: TourGuideProps) {
         {...tooltipProps} 
         className="bg-white dark:bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 max-w-sm flex flex-col overflow-hidden font-sans"
       >
-        {/* 1. Header & Close Button */}
         <div className="flex justify-between items-start p-5 pb-0">
            <div className="flex items-center gap-2">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-[10px] font-black font-bold">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold">
                  {index + 1}
               </span>
-              <h4 className="text-sm font-black font-bold text-slate-900 dark:text-white">Panduan Sistem</h4>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">Panduan Sistem</h4>
            </div>
+           {/* Tombol X (Close) */}
            <button {...closeProps} className="text-slate-400 hover:text-red-500 transition-colors">
               <X size={16} />
            </button>
         </div>
 
-        {/* 2. Body Content */}
-        <div className="p-5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+        <div className="p-5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
            {step.content}
         </div>
 
-        {/* 3. Footer (Navigation) */}
         <div className="p-4 bg-slate-50 dark:bg-white/5 flex items-center justify-between border-t border-slate-100 dark:border-white/5">
-           
-           {/* Counter (1 dari 6) */}
            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Langkah {index + 1} dari {size}
            </span>
 
-           {/* Tombol Navigasi */}
            <div className="flex gap-2">
-              {/* Tombol Back (Hanya muncul jika bukan langkah pertama) */}
               {index > 0 && (
                 <button 
                   {...backProps} 
@@ -76,10 +69,9 @@ export default function TourGuide({ steps }: TourGuideProps) {
                 </button>
               )}
               
-              {/* Tombol Next / Finish */}
               <button 
                 {...primaryProps} 
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-lg shadow-blue-500/30 flex items-center gap-1 transition-transform active:scale-95"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-lg shadow-blue-500/20 flex items-center gap-1 transition-transform active:scale-95"
               >
                  {isLastStep ? "Selesai" : "Lanjut"} {!isLastStep && <ChevronRight size={14} />}
               </button>
@@ -91,7 +83,6 @@ export default function TourGuide({ steps }: TourGuideProps) {
 
   return (
     <>
-      {/* Trigger Button */}
       <div className="relative z-30">
         <button 
           onClick={() => setRun(true)}
@@ -116,15 +107,16 @@ export default function TourGuide({ steps }: TourGuideProps) {
         showProgress={true}
         showSkipButton={true}
         steps={steps}
-        tooltipComponent={CustomTooltip} // <--- KITA PASANG KOMPONEN CUSTOM DISINI
+        tooltipComponent={CustomTooltip}
+        disableScrollParentFix={true} // <--- PERBAIKAN: Jangan geser sidebar
+        disableScrolling={false}
         styles={{
           options: {
-            arrowColor: '#ffffff', // Sesuaikan warna panah dengan background card
-            overlayColor: 'rgba(0, 0, 0, 0.6)', // Backdrop gelap biar fokus
+            arrowColor: '#ffffff',
+            overlayColor: 'rgba(0, 0, 0, 0.6)',
             zIndex: 10000,
           },
         }}
-        // Locale gak perlu lagi karena teksnya sudah kita hardcode di CustomTooltip
       />
     </>
   );

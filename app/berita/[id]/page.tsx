@@ -23,8 +23,8 @@ export default async function DetailBeritaPage({
     where: { id: idBerita }
   });
 
-  // 5. Kalau berita gak ketemu
-  if (!post) {
+  // 5. Kalau berita gak ketemu atau statusnya DRAFT
+  if (!post || post.status !== "PUBLISHED") {
     notFound();
   }
 

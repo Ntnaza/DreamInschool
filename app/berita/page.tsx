@@ -5,8 +5,9 @@ import BeritaClient from "./BeritaClient";
 export const dynamic = "force-dynamic";
 
 export default async function BeritaPage() {
-  // 1. Ambil data berita dari database
+  // 1. Ambil data berita dari database (Hanya yang berstatus PUBLISHED)
   const posts = await prisma.berita.findMany({
+    where: { status: "PUBLISHED" },
     orderBy: { createdAt: 'desc' }
   });
 

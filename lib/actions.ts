@@ -188,7 +188,7 @@ export async function createBerita(formData: FormData) {
         kategori,
         gambar: gambar || null,
         penulisId: adminUser.id, 
-        status: "PUBLISHED",
+        status: (formData.get("status") as string) || "PUBLISHED",
         views: 0,
       },
     });
@@ -196,10 +196,10 @@ export async function createBerita(formData: FormData) {
     revalidatePath("/admin/berita");
     revalidatePath("/berita");
 
-    return { success: true, message: "Berita berhasil terbit! 📰" };
+    return { success: true, message: "Berita berhasil disimpan! 📰" };
   } catch (error) {
     console.error("CREATE BERITA ERROR:", error);
-    return { success: false, message: "Gagal menerbitkan berita." };
+    return { success: false, message: "Gagal menyimpan berita." };
   }
 }
 
@@ -215,6 +215,7 @@ export async function updateBerita(formData: FormData) {
   const judul = formData.get("judul") as string;
   const konten = formData.get("konten") as string;
   const kategori = formData.get("kategori") as string;
+  const status = formData.get("status") as string;
   const gambar = formData.get("gambar") as string | null;
 
   try {
@@ -224,11 +225,13 @@ export async function updateBerita(formData: FormData) {
         judul,
         konten,
         kategori,
+        status: status || "PUBLISHED",
         ...(gambar && { gambar }),
       },
     });
 
     revalidatePath("/admin/berita");
+    revalidatePath("/berita");
     return { success: true, message: "Berita berhasil diperbarui! 📝" };
   } catch (error) {
     console.error("UPDATE BERITA ERROR:", error);
@@ -611,7 +614,7 @@ export async function updateStatusKehadiran(absensiId: number, status: any) {
   }
 }
 
-// 2. Ambil Semua Acara (Terutama yang aktif/mendatang)
+// 2. Ambil Semua Acara (Prioritas RUTINAN di atas)
 export async function getDaftarAcara() {
   try {
     return await prisma.acara.findMany({
@@ -622,7 +625,10 @@ export async function getDaftarAcara() {
           orderBy: { waktuMulai: 'desc' }
         }
       },
-      orderBy: { createdAt: 'desc' } // Urutkan dari yang terbaru dibuat
+      orderBy: [
+        { tipe: 'desc' }, // 'RUTINAN' (R) vs 'SEKALI_PAKAI' (S), R lebih dulu jika desc (secara alfabetis S > R, jadi kita butuh logic lain atau pastikan ordernya benar)
+        { createdAt: 'desc' }
+      ]
     });
   } catch (error) {
     return [];
@@ -1004,6 +1010,52 @@ export async function checkAndAutoStartAcara() {
   }
 }
 
+// 14.5 Auto-Stop Sesi berdasarkan Waktu (Refined)
+export async function checkAndAutoStopAcara() {
+  const now = new Date();
+  
+  try {
+    const ongoingAcara = await prisma.acara.findMany({
+      where: { status: "ONGOING" }
+    });
+
+    if (ongoingAcara.length === 0) return { success: true, count: 0 };
+
+    let stoppedCount = 0;
+    for (const acara of ongoingAcara) {
+      if (!acara.waktuSelesai) continue;
+
+      let shouldStop = false;
+
+      if (acara.tipe === "SEKALI_PAKAI") {
+        // Bandingkan timestamp lengkap untuk akurasi maksimal
+        if (now >= acara.waktuSelesai) {
+          shouldStop = true;
+        }
+      } else {
+        // Untuk RUTINAN, bandingkan Jam & Menit hari ini
+        const currentVal = now.getHours() * 60 + now.getMinutes();
+        const endVal = acara.waktuSelesai.getHours() * 60 + acara.waktuSelesai.getMinutes();
+
+        if (currentVal >= endVal) {
+          shouldStop = true;
+        }
+      }
+
+      if (shouldStop) {
+        console.log(`[AUTO-STOP] Ending session: ${acara.nama}`);
+        await autoAlpaRemaining(acara.id);
+        stoppedCount++;
+      }
+    }
+    
+    return { success: true, count: stoppedCount };
+  } catch (error) {
+    console.error("AUTO STOP ERROR:", error);
+    return { success: false, message: String(error) };
+  }
+}
+
 // 15. Ambil Daftar Sesi (Untuk Laporan Per Sesi)
 export async function getDaftarSesi(acaraId: number) {
   try {
@@ -1061,7 +1113,7 @@ export async function getRekapAbsensi() {
     };
   } catch (error) {
     console.error("REKAP ERROR:", error);
-    return { success: false, message: "Gagal memuat rekap." };
+    return { success: false, message: "Gagal memuat rekap.", data: [] };
   }
 }
 
@@ -1107,17 +1159,37 @@ export async function getLogsByAcara(id: number, type: 'sesi' | 'acara' = 'sesi'
 
 
 /* ======================================================
-   8. MANAJEMEN KEUANGAN (KAS & ANGGARAN)
+   8. MANAJEMEN KEUANGAN (KAS & ANGGARAN - MULTI LEDGER)
 ====================================================== */
 
-// 1. Catat Transaksi Kas Umum
+// 1. Tambah Buku Kas (Kategori Pembukuan Baru)
+export async function createBukuKas(formData: FormData) {
+  const nama = formData.get("nama") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+  const color = formData.get("color") as string || "blue";
+  
+  try {
+    const buku = await prisma.bukuKas.create({
+      data: { nama, deskripsi, color }
+    });
+    revalidatePath("/admin/keuangan");
+    return { success: true, message: `Buku Kas ${nama} berhasil dibuat! 📚`, id: buku.id };
+  } catch (error) {
+    return { success: false, message: "Gagal membuat kategori pembukuan." };
+  }
+}
+
+// 2. Catat Transaksi Kas (Updated with bukuKasId)
 export async function createGeneralTrx(formData: FormData) {
   const judul = formData.get("title") as string;
   const nominal = Number(formData.get("amount"));
   const tipe = formData.get("type") as "PEMASUKAN" | "PENGELUARAN";
   const kategori = formData.get("category") as string;
   const dateStr = formData.get("date") as string;
-  const pic = formData.get("pic") as string; // Keterangan PIC
+  const pic = formData.get("pic") as string;
+  const bukuKasId = Number(formData.get("bukuKasId"));
+
+  if (!bukuKasId) return { success: false, message: "Pilih Buku Kas!" };
 
   try {
     await prisma.keuangan.create({
@@ -1127,7 +1199,8 @@ export async function createGeneralTrx(formData: FormData) {
         tipe,
         kategori,
         tanggal: new Date(dateStr),
-        keterangan: `PIC: ${pic}`, // Simpan PIC di keterangan
+        keterangan: `PIC: ${pic}`,
+        bukuKasId
       },
     });
     
@@ -1138,82 +1211,161 @@ export async function createGeneralTrx(formData: FormData) {
   }
 }
 
-// 2. Buka Anggaran Event Baru (Pindah Buku: Kas Umum -> Event)
+// 3. Buka Anggaran Event Baru (Pindah Buku / Alokasi)
 export async function createEventBudget(formData: FormData) {
   const namaEvent = formData.get("title") as string;
   const budget = Number(formData.get("amount"));
   const dateStr = formData.get("date") as string;
+  const prokerId = formData.get("prokerId") ? Number(formData.get("prokerId")) : null;
+  const isSubsidi = formData.get("isSubsidi") === "true"; 
+  const fromBukuId = formData.get("fromBukuId") ? Number(formData.get("fromBukuId")) : null; 
 
   try {
     await prisma.$transaction(async (tx) => {
-      // A. Catat PENGELUARAN di Kas Umum
-      await tx.keuangan.create({
-        data: {
-          judul: `Modal Event: ${namaEvent}`,
-          nominal: budget,
-          tipe: "PENGELUARAN",
-          kategori: "Anggaran Event",
-          tanggal: new Date(dateStr),
-          keterangan: "Alokasi dana ke event baru",
-        },
-      });
+      // A. Jika SUBSIDI, cek saldo terlebih dahulu
+      if (isSubsidi && fromBukuId) {
+        // Hitung saldo dompet sumber secara real-time
+        const transactions = await tx.keuangan.findMany({
+            where: { bukuKasId: fromBukuId }
+        });
+        const currentBalance = transactions.reduce((acc, curr) => 
+            curr.tipe === 'PEMASUKAN' ? acc + curr.nominal : acc - curr.nominal, 0
+        );
 
-      // B. Buat Data Proker Baru (Status: ACTIVE)
-      await tx.programKerja.create({
-        data: {
-          nama: namaEvent,
-          anggaran: budget,
-          anggaranTerpakai: 0,
-          status: "IN_PROGRESS", 
-          divisi: "Kepanitiaan", 
-          deadline: new Date(dateStr), 
+        if (budget > currentBalance) {
+            throw new Error(`Saldo tidak mencukupi! Tersedia: Rp ${currentBalance.toLocaleString('id-ID')}`);
         }
-      });
+
+        await tx.keuangan.create({
+          data: {
+            judul: `Subsidi Kas: ${namaEvent}`,
+            nominal: budget,
+            tipe: "PENGELUARAN",
+            kategori: "Dana Darurat Proker",
+            tanggal: new Date(dateStr),
+            keterangan: `Subsidi untuk Proker ID: ${prokerId || 'Baru'}`,
+            bukuKasId: fromBukuId
+          },
+        });
+      }
+
+      // B. Update atau Buat Data Proker/Kegiatan
+      if (prokerId) {
+        await tx.programKerja.update({
+          where: { id: prokerId },
+          data: { anggaran: { increment: budget }, status: "IN_PROGRESS" }
+        });
+      } else {
+        // Buat entitas anggaran baru (Standalone Event)
+        await tx.programKerja.create({
+          data: {
+            nama: namaEvent,
+            anggaran: budget,
+            anggaranTerpakai: 0,
+            status: "IN_PROGRESS", 
+            divisi: "Kegiatan Umum", // Default divisi untuk event non-proker
+            deadline: new Date(dateStr), 
+          }
+        });
+      }
     });
 
     revalidatePath("/admin/keuangan");
-    return { success: true, message: "Anggaran Event berhasil dibuka! 🎉" };
+    return { success: true, message: isSubsidi ? "Subsidi dana berhasil! 🛡️" : "Anggaran Sekolah dicatat! 🏫" };
   } catch (error) {
     console.error("CREATE EVENT BUDGET ERROR:", error);
-    return { success: false, message: "Gagal membuka anggaran." };
+    return { success: false, message: "Gagal memproses anggaran." };
   }
 }
 
-// 3. Catat Transaksi Pengeluaran Event
+// 4. Catat Transaksi Pengeluaran Event (Fixed: Match frontend key + Detail Barang)
 export async function createEventTrx(formData: FormData) {
-  const eventId = Number(formData.get("eventId"));
+  const prokerId = Number(formData.get("prokerId"));
   const judul = formData.get("title") as string;
   const nominal = Number(formData.get("amount"));
   const dateStr = formData.get("date") as string;
+  const fotoBarang = formData.get("fotoBarang") as string;
+  const fotoNota = formData.get("fotoNota") as string;
+  const kuantitas = Number(formData.get("kuantitas")) || 1;
+  const satuan = formData.get("satuan") as string || "pcs";
 
   try {
-    await prisma.$transaction(async (tx) => {
-      // A. Simpan Transaksi (Linked ke ProkerID)
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Ambil data Proker (Cek sisa anggaran)
+      const proker = await tx.programKerja.findUnique({ where: { id: prokerId } });
+      if (!proker) throw new Error("Proker tidak ditemukan.");
+
+      const sisaAnggaran = proker.anggaran - proker.anggaranTerpakai;
+      if (nominal > sisaAnggaran) {
+        throw new Error(`Anggaran tidak cukup! Sisa: Rp ${sisaAnggaran.toLocaleString('id-ID')}.`);
+      }
+
+      // 2. Catat Transaksi tanpa bukuKasId (Murni Realisasi Proker)
       await tx.keuangan.create({
         data: {
           judul,
           nominal,
           tipe: "PENGELUARAN",
-          kategori: "Pengeluaran Event",
+          kategori: "Realisasi Proker",
           tanggal: new Date(dateStr),
-          prokerId: eventId, 
+          prokerId: prokerId,
+          bukuKasId: null,
+          fotoBarang,
+          fotoNota,
+          kuantitas,
+          satuan
         },
       });
 
-      // B. Update 'anggaranTerpakai' di tabel Proker
-      await tx.programKerja.update({
-        where: { id: eventId },
-        data: {
-          anggaranTerpakai: { increment: nominal } 
-        }
+      // 3. Update realisasi pemakaian dana di Proker
+      return await tx.programKerja.update({
+        where: { id: prokerId },
+        data: { anggaranTerpakai: { increment: nominal } }
       });
     });
 
     revalidatePath("/admin/keuangan");
-    return { success: true, message: "Pengeluaran event dicatat! 🧾" };
-  } catch (error) {
-    console.error("CREATE EVENT TRX ERROR:", error);
-    return { success: false, message: "Gagal update data event." };
+    return { success: true, message: "Pengeluaran berhasil dicatat!" };
+  } catch (error: any) {
+    return { success: false, message: error.message || "Gagal mencatat pengeluaran." };
+  }
+}
+
+// 5. Selesaikan Anggaran Event & Kembalikan Sisa (Closing with Refund)
+export async function closeEventBudget(prokerId: number, targetBukuId: number) {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const proker = await tx.programKerja.findUnique({ where: { id: prokerId } });
+      if (!proker) throw new Error("Proker tidak ditemukan.");
+
+      const sisa = proker.anggaran - proker.anggaranTerpakai;
+
+      // Jika ada sisa, buat PEMASUKAN ke dompet tujuan
+      if (sisa > 0) {
+        await tx.keuangan.create({
+          data: {
+            judul: `Pengembalian Sisa: ${proker.nama}`,
+            nominal: sisa,
+            tipe: "PEMASUKAN",
+            kategori: "Sisa Anggaran Proker",
+            tanggal: new Date(),
+            bukuKasId: targetBukuId,
+            keterangan: `Sisa dana dari kegiatan ${proker.nama} dikembalikan.`
+          }
+        });
+      }
+
+      // Tutup Proker
+      await tx.programKerja.update({
+        where: { id: prokerId },
+        data: { status: "DONE" }
+      });
+    });
+
+    revalidatePath("/admin/keuangan");
+    return { success: true, message: "Anggaran ditutup & sisa dana dikembalikan! ✅" };
+  } catch (error: any) {
+    return { success: false, message: error.message };
   }
 }
 
@@ -1438,5 +1590,101 @@ export async function deleteGaleri(id: number) {
     return { success: true };
   } catch (error) {
     return { success: false };
+  }
+}
+
+/* ======================================================
+   12. MANAJEMEN DIVISI (Dinamis)
+====================================================== */
+
+export async function createDivisi(formData: FormData) {
+  const nama = formData.get("nama") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+
+  if (!nama) return { success: false, message: "Nama divisi wajib diisi!" };
+
+  try {
+    await prisma.divisi.create({
+      data: { nama, deskripsi }
+    });
+    revalidatePath("/admin/pengurus");
+    revalidatePath("/admin/proker");
+    return { success: true, message: "Divisi berhasil ditambahkan! 🏢" };
+  } catch (error) {
+    return { success: false, message: "Nama divisi sudah ada atau terjadi error." };
+  }
+}
+
+export async function updateDivisi(id: number, formData: FormData) {
+  const nama = formData.get("nama") as string;
+  const deskripsi = formData.get("deskripsi") as string;
+
+  try {
+    await prisma.divisi.update({
+      where: { id },
+      data: { nama, deskripsi }
+    });
+    revalidatePath("/admin/pengurus");
+    revalidatePath("/admin/proker");
+    return { success: true, message: "Divisi berhasil diperbarui! ✨" };
+  } catch (error) {
+    return { success: false, message: "Gagal memperbarui divisi." };
+  }
+}
+
+export async function deleteDivisi(id: number) {
+  try {
+    await prisma.divisi.delete({ where: { id } });
+    revalidatePath("/admin/pengurus");
+    revalidatePath("/admin/proker");
+    return { success: true, message: "Divisi berhasil dihapus." };
+  } catch (error) {
+    return { success: false, message: "Gagal menghapus divisi. Mungkin masih ada anggota di dalamnya." };
+  }
+}
+
+/* ======================================================
+   13. MANAJEMEN JABATAN (Relasi Divisi)
+====================================================== */
+
+export async function createJabatan(formData: FormData) {
+  const nama = formData.get("nama") as string;
+  const divisiId = Number(formData.get("divisiId"));
+
+  if (!nama || !divisiId) return { success: false, message: "Nama dan Divisi wajib diisi!" };
+
+  try {
+    await prisma.jabatan.create({
+      data: { nama, divisiId }
+    });
+    revalidatePath("/admin/pengurus");
+    return { success: true, message: "Jabatan berhasil ditambahkan! 🎖️" };
+  } catch (error) {
+    return { success: false, message: "Jabatan sudah ada di divisi ini." };
+  }
+}
+
+export async function updateJabatan(id: number, formData: FormData) {
+  const nama = formData.get("nama") as string;
+
+  try {
+    await prisma.jabatan.update({
+      where: { id },
+      data: { nama }
+    });
+    revalidatePath("/admin/pengurus");
+    return { success: true, message: "Jabatan diperbarui!" };
+  } catch (error) {
+    return { success: false, message: "Gagal memperbarui jabatan." };
+  }
+}
+
+export async function deleteJabatan(id: number) {
+  try {
+    await prisma.jabatan.delete({ where: { id } });
+    revalidatePath("/admin/pengurus");
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: "Gagal menghapus jabatan." };
   }
 }
