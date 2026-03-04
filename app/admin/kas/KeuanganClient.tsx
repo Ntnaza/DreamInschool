@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
 import { createGeneralTrx, createEventBudget, createEventTrx, createBukuKas, closeEventBudget } from "@/lib/actions";
+import { showToast } from "@/components/Toast";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -40,6 +41,7 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
   const [selectedLedgerId, setSelectedLedgerId] = useState<number>(ledgers[0]?.id || 1);
   const [expandedProkerId, setExpandedProkerId] = useState<number | null>(null);
   const [isClient, setIsClient] = useState(false); 
+  const [isDataLoading, setIsDataLoading] = useState(true);
   
   // STATE MODAL
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,13 +64,20 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
   const fileInputNota = useRef<HTMLInputElement>(null);
   const lpjRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setIsClient(true); }, []);
+  useEffect(() => { 
+    setIsClient(true); 
+    // Beri delay halus untuk transisi skeleton awal
+    const timer = setTimeout(() => setIsDataLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleTabChange = (tab: 'general' | 'events') => {
+    setIsDataLoading(true); // Tampilkan skeleton saat pindah tab
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams);
     params.set("tab", tab);
     router.replace(`${pathname}?${params.toString()}`);
+    setTimeout(() => setIsDataLoading(false), 400);
   };
 
   const currentLedger = ledgers.find(l => l.id === selectedLedgerId) || ledgers[0];
@@ -229,7 +238,7 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
         pdf.save(`LPJ_RESMI_${activeEvent?.name.replace(/\s+/g, '_')}.pdf`);
     } catch (error) {
         console.error(error);
-        alert("⚠️ Gagal membuat PDF. Gunakan Chrome untuk hasil terbaik.");
+        showToast("Gagal membuat PDF. Gunakan Chrome untuk hasil terbaik.", "error");
     } finally {
         setIsExporting(false);
     }
@@ -268,11 +277,12 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
         }
 
         if (result?.success) {
+            showToast("Data keuangan berhasil diperbarui.", "success");
             setIsModalOpen(false);
             router.refresh();
             setFormData((prev: any) => ({ ...prev, title: "", amount: "", fotoBarang: "", fotoNota: "", hargaSatuan: "", kuantitas: 1 }));
-        } else { alert("❌ " + result?.message); }
-    } catch (e) { alert("⚠️ Kesalahan sistem."); } finally { setIsSubmitting(false); }
+        } else { showToast("Gagal: " + result?.message, "error"); }
+    } catch (e) { showToast("Terjadi kesalahan sistem.", "error"); } finally { setIsSubmitting(false); }
   };
 
   const toggleProker = (id: number) => {
@@ -320,20 +330,32 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
-                    {ledgers.map(l => (
-                        <div key={l.id} onClick={() => setSelectedLedgerId(l.id)} className={`p-4 rounded-xl cursor-pointer transition-all border relative ${selectedLedgerId === l.id ? 'bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'}`}>
-                            {selectedLedgerId === l.id && <motion.div layoutId="ledgerActive" className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full" />}
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${selectedLedgerId === l.id ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
-                                    {l.icon === 'Heart' ? <Heart size={16}/> : l.icon === 'Users' ? <Users size={16}/> : l.icon === 'BookOpen' ? <BookOpen size={16}/> : <Wallet size={16}/>}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <h4 className={`text-xs font-bold truncate ${selectedLedgerId === l.id ? 'text-blue-900 dark:text-blue-100' : 'text-slate-700 dark:text-slate-300'}`}>{l.nama}</h4>
-                                    <p className="text-[10px] font-medium text-slate-400 truncate">{l.deskripsi}</p>
+                    {isDataLoading ? (
+                        [1, 2, 3].map(i => (
+                            <div key={i} className="p-4 rounded-xl border border-transparent bg-slate-50/50 dark:bg-white/5 animate-pulse flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                                    <div className="h-2 w-24 bg-slate-100 dark:bg-slate-800/50 rounded" />
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    ) : (
+                        ledgers.map(l => (
+                            <div key={l.id} onClick={() => setSelectedLedgerId(l.id)} className={`p-4 rounded-xl cursor-pointer transition-all border relative ${selectedLedgerId === l.id ? 'bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'}`}>
+                                {selectedLedgerId === l.id && <motion.div layoutId="ledgerActive" className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full" />}
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${selectedLedgerId === l.id ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
+                                        {l.icon === 'Heart' ? <Heart size={16}/> : l.icon === 'Users' ? <Users size={16}/> : l.icon === 'BookOpen' ? <BookOpen size={16}/> : <Wallet size={16}/>}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <h4 className={`text-xs font-bold truncate ${selectedLedgerId === l.id ? 'text-blue-900 dark:text-blue-100' : 'text-slate-700 dark:text-slate-300'}`}>{l.nama}</h4>
+                                        <p className="text-[10px] font-medium text-slate-400 truncate">{l.deskripsi}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -367,7 +389,15 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
                                 <tr><th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-6">Tanggal</th><th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan</th><th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right pr-6">Nominal</th></tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                                {ledgerTransactions.length === 0 ? ( <tr><td colSpan={3} className="p-12 text-center text-slate-400 text-xs font-medium">Belum ada riwayat transaksi.</td></tr> ) : (
+                                {isDataLoading ? (
+                                    [1, 2, 3, 4, 5].map(i => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td className="p-4 pl-6"><div className="h-3 w-12 bg-slate-100 dark:bg-slate-800 rounded" /></td>
+                                            <td className="p-4"><div className="space-y-2"><div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded" /><div className="h-2 w-20 bg-slate-100 dark:bg-slate-800/50 rounded" /></div></td>
+                                            <td className="p-4 pr-6"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></td>
+                                        </tr>
+                                    ))
+                                ) : ledgerTransactions.length === 0 ? ( <tr><td colSpan={3} className="p-12 text-center text-slate-400 text-xs font-medium">Belum ada riwayat transaksi.</td></tr> ) : (
                                     ledgerTransactions.map((t:any) => (
                                         <tr key={t.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors">
                                             <td className="p-4 text-[11px] font-medium text-slate-500 pl-6">{new Date(t.tanggal).toLocaleDateString('id-ID', { day:'2-digit', month:'short' })}</td>

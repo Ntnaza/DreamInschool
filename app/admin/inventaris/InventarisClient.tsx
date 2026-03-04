@@ -12,6 +12,7 @@ import {
 import TourGuide from "@/components/TourGuide";
 // Import Server Actions
 import { saveInventaris, deleteInventaris, pinjamBarang, kembalikanBarang } from "@/lib/actions";
+import { showToast } from "@/components/Toast";
 
 // DEFINISI LANGKAH TUR (DIKEMBALIKAN LENGKAP)
 const inventarisTourSteps = [
@@ -76,7 +77,7 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
       XLSX.writeFile(workbook, `Laporan_Inventaris_${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (error) {
       console.error(error);
-      alert("Gagal export Excel. Pastikan library 'xlsx' terinstall (npm install xlsx).");
+      showToast("Gagal export Excel. Pastikan library 'xlsx' terinstall.", "error");
     } finally {
       setIsExporting(false);
     }
@@ -86,7 +87,7 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) return alert("File max 2MB!");
+      if (file.size > 2 * 1024 * 1024) return showToast("File maksimal 2MB!", "error");
       const reader = new FileReader();
       reader.onloadend = () => setNewItem({ ...newItem, image: reader.result as string });
       reader.readAsDataURL(file);
@@ -107,23 +108,35 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
     formData.append("serial", newItem.serial || "");
     if(newItem.image) formData.append("image", newItem.image);
 
-    const res = await saveInventaris(formData);
-    if(res.success) {
-        alert(res.message);
-        setIsAddModalOpen(false);
-        window.location.reload();
-    } else {
-        alert("Gagal: " + res.message);
+    try {
+      const res = await saveInventaris(formData);
+      if(res.success) {
+          showToast(isEditing ? "Aset diperbarui." : "Aset berhasil ditambahkan.", "success");
+          setIsAddModalOpen(false);
+          window.location.reload();
+      } else {
+          showToast("Gagal: " + res.message, "error");
+      }
+    } catch (err) {
+      showToast("Terjadi kesalahan sistem.", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm("Yakin hapus aset ini?")) {
-      const res = await deleteInventaris(id);
-      if(!res.success) alert("Gagal menghapus.");
-      else window.location.reload();
+      try {
+        const res = await deleteInventaris(id);
+        if(!res.success) showToast("Gagal menghapus.", "error");
+        else {
+          showToast("Aset berhasil dihapus.", "success");
+          window.location.reload();
+        }
+      } catch (err) {
+        showToast("Terjadi kesalahan sistem.", "error");
+      }
     }
   };
 
@@ -134,14 +147,20 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
     formData.append("id", borrowModal.id.toString());
     formData.append("borrower", borrowerName);
 
-    const res = await pinjamBarang(formData);
-    if(res.success) {
-        setBorrowModal(null);
-        window.location.reload();
-    } else {
-        alert("Gagal: " + res.message);
+    try {
+      const res = await pinjamBarang(formData);
+      if(res.success) {
+          showToast("Peminjaman berhasil dicatat.", "success");
+          setBorrowModal(null);
+          window.location.reload();
+      } else {
+          showToast("Gagal: " + res.message, "error");
+      }
+    } catch (err) {
+      showToast("Terjadi kesalahan sistem.", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleReturnSubmit = async (e: React.FormEvent) => {
@@ -151,14 +170,20 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
     formData.append("id", returnModal.id.toString());
     formData.append("condition", returnCondition);
 
-    const res = await kembalikanBarang(formData);
-    if(res.success) {
-        setReturnModal(null);
-        window.location.reload();
-    } else {
-        alert("Gagal: " + res.message);
+    try {
+      const res = await kembalikanBarang(formData);
+      if(res.success) {
+          showToast("Pengembalian berhasil divalidasi.", "success");
+          setReturnModal(null);
+          window.location.reload();
+      } else {
+          showToast("Gagal: " + res.message, "error");
+      }
+    } catch (err) {
+      showToast("Terjadi kesalahan sistem.", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   // --- HELPER OPEN EDIT ---

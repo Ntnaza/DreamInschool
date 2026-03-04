@@ -19,6 +19,7 @@ import {
     startAcaraSession, autoAlpaRemaining, inputManualAbsensi,
     getDaftarPengurus, checkAndAutoStartAcara, checkAndAutoStopAcara
 } from "@/lib/actions"; 
+import { showToast } from "@/components/Toast";
 import { Html5Qrcode } from "html5-qrcode";
 
 const DAYS_LIST = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
@@ -132,7 +133,7 @@ export default function ScanClient() {
             const updatedAcara = currentList.find(a => a.id === selectedAcaraId);
             if (updatedAcara && updatedAcara.status !== 'ONGOING') {
                 setViewMode('manage');
-                alert("Sesi absensi telah berakhir otomatis sesuai jadwal.");
+                showToast("Sesi absensi telah berakhir otomatis sesuai jadwal.", "info", "Sesi Selesai");
             }
         }
     }, 30000);
@@ -210,7 +211,7 @@ export default function ScanClient() {
         setIsSubmitting(true);
         const res = await autoAlpaRemaining(selectedAcaraId);
         if (res.success) {
-            alert(`Sesi ditutup! ${res.count} pengurus otomatis dianggap ALPA.`);
+            showToast(`Sesi ditutup! ${res.count} pengurus otomatis dianggap ALPA.`, "success", "Sesi Berakhir");
             loadData();
         }
         setIsSubmitting(false);
@@ -248,66 +249,84 @@ export default function ScanClient() {
                 <button onClick={() => { setModalMode('create'); setIsModalOpen(true); }} className="p-1.5 bg-blue-600 text-white rounded-lg hover:scale-105 active:scale-95 transition-all shadow-sm"><Plus size={14} strokeWidth={3} /></button>
             </div>
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                {daftarAcara.map((acara) => (
-                    <div 
-                        key={acara.id} 
-                        onClick={() => setSelectedAcaraId(acara.id)} 
-                        className={`p-4 rounded-xl cursor-pointer transition-all border group relative ${
-                            selectedAcaraId === acara.id 
-                            ? 'bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' 
-                            : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'
-                        }`}
-                    >
-                        {/* Animated Selected Indicator */}
-                        {selectedAcaraId === acara.id && (
-                            <motion.div 
-                                layoutId="activeAcaraIndicator"
-                                className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full z-10"
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            />
-                        )}
-
-                        <div className="flex justify-between items-start mb-2">
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
-                                selectedAcaraId === acara.id 
-                                ? 'bg-blue-100/50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400' 
-                                : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'
-                            }`}>
-                                {acara.tipe === 'RUTINAN' ? 'Rutinan' : 'Sekali Pakai'}
-                            </span>
-                            <div className={`flex gap-1 transition-all ${selectedAcaraId === acara.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <button onClick={(e) => { e.stopPropagation(); setModalMode('edit'); setNewAcara({ nama: acara.nama, tanggal: new Date(acara.tanggal).toISOString().split('T')[0], lokasi: acara.lokasi, waktuMulai: acara.waktuMulai ? new Date(acara.waktuMulai).toTimeString().slice(0,5) : "07:00", waktuSelesai: acara.waktuSelesai ? new Date(acara.waktuSelesai).toTimeString().slice(0,5) : "15:00", tipe: acara.tipe || "SEKALI_PAKAI", hari: acara.hari || "", autoStart: acara.autoStart || false }); setSelectedAcaraId(acara.id); setIsModalOpen(true); }} className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-blue-600 shadow-sm"><Edit2 size={12}/></button>
-                                <button onClick={(e) => { e.stopPropagation(); if(confirm("Hapus?")) deleteAcara(acara.id).then(() => loadData(true)); }} className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-rose-600 shadow-sm"><Trash2 size={12}/></button>
+                {isLoadingLogs ? (
+                    <div className="space-y-2 animate-pulse">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="p-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 space-y-3">
+                                <div className="flex justify-between">
+                                    <div className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded" />
+                                    <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                </div>
+                                <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="flex justify-between">
+                                    <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                    <div className="h-3 w-12 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                </div>
                             </div>
-                        </div>
-                        
-                        <h4 className={`text-sm font-semibold truncate mb-1.5 ${selectedAcaraId === acara.id ? 'text-blue-900 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
-                            {acara.nama}
-                        </h4>
-                        
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5">
-                                    <Calendar size={12} className="opacity-70" /> 
-                                    {new Date(acara.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                                </p>
-                                {acara.waktuMulai && (
-                                    <p className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5 border-l border-slate-200 dark:border-white/10 pl-3">
-                                        <Clock size={12} className="opacity-70" /> 
-                                        {new Date(acara.waktuMulai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                )}
-                            </div>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
-                                acara.status === 'ONGOING' 
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' 
-                                : 'bg-slate-50 text-slate-400 border-slate-100 dark:bg-white/5 dark:border-white/10'
-                            }`}>
-                                {acara.status}
-                            </span>
-                        </div>
+                        ))}
                     </div>
-                ))}
+                ) : (
+                    daftarAcara.map((acara) => (
+                        <div 
+                            key={acara.id} 
+                            onClick={() => setSelectedAcaraId(acara.id)} 
+                            className={`p-4 rounded-xl cursor-pointer transition-all border group relative ${
+                                selectedAcaraId === acara.id 
+                                ? 'bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' 
+                                : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'
+                            }`}
+                        >
+                            {/* Animated Selected Indicator */}
+                            {selectedAcaraId === acara.id && (
+                                <motion.div 
+                                    layoutId="activeAcaraIndicator"
+                                    className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full z-10"
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                />
+                            )}
+
+                            <div className="flex justify-between items-start mb-2">
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                    selectedAcaraId === acara.id 
+                                    ? 'bg-blue-100/50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400' 
+                                    : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'
+                                }`}>
+                                    {acara.tipe === 'RUTINAN' ? 'Rutinan' : 'Sekali Pakai'}
+                                </span>
+                                <div className={`flex gap-1 transition-all ${selectedAcaraId === acara.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                    <button onClick={(e) => { e.stopPropagation(); setModalMode('edit'); setNewAcara({ nama: acara.nama, tanggal: new Date(acara.tanggal).toISOString().split('T')[0], lokasi: acara.lokasi, waktuMulai: acara.waktuMulai ? new Date(acara.waktuMulai).toTimeString().slice(0,5) : "07:00", waktuSelesai: acara.waktuSelesai ? new Date(acara.waktuSelesai).toTimeString().slice(0,5) : "15:00", tipe: acara.tipe || "SEKALI_PAKAI", hari: acara.hari || "", autoStart: acara.autoStart || false }); setSelectedAcaraId(acara.id); setIsModalOpen(true); }} className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-blue-600 shadow-sm"><Edit2 size={12}/></button>
+                                    <button onClick={(e) => { e.stopPropagation(); if(confirm("Hapus?")) deleteAcara(acara.id).then(() => loadData(true)); }} className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 text-slate-500 hover:text-rose-600 shadow-sm"><Trash2 size={12}/></button>
+                                </div>
+                            </div>
+                            
+                            <h4 className={`text-sm font-semibold truncate mb-1.5 ${selectedAcaraId === acara.id ? 'text-blue-900 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
+                                {acara.nama}
+                            </h4>
+                            
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5">
+                                        <Calendar size={12} className="opacity-70" /> 
+                                        {new Date(acara.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                    </p>
+                                    {acara.waktuMulai && (
+                                        <p className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5 border-l border-slate-200 dark:border-white/10 pl-3">
+                                            <Clock size={12} className="opacity-70" /> 
+                                            {new Date(acara.waktuMulai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    )}
+                                </div>
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                                    acara.status === 'ONGOING' 
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' 
+                                    : 'bg-slate-50 text-slate-400 border-slate-100 dark:bg-white/5 dark:border-white/10'
+                                }`}>
+                                    {acara.status}
+                                </span>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
         <div className="flex-1 flex flex-col gap-6 overflow-hidden">
@@ -407,7 +426,7 @@ export default function ScanClient() {
             </div>
             <div className="flex-1 bg-white dark:bg-[#0f172a] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm flex flex-col overflow-hidden tour-activity-stream">
                 <div className="p-5 border-b border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 dark:bg-transparent">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-3"><Activity size={18} className="text-blue-600" /> Activity Stream {isLoadingLogs && <Loader2 size={14} className="animate-spin text-blue-500" />}</h3>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-3"><Activity size={18} className="text-blue-600" /> Activity Stream</h3>
                     <div className="flex flex-wrap items-center gap-2">
                         {(selectedAcara?.sesi?.[0]?.waktuMulai || selectedAcara?.waktuMulaiAktual) && (
                             <div className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm border border-emerald-100 dark:border-emerald-500/20">
@@ -422,9 +441,46 @@ export default function ScanClient() {
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                    <AnimatePresence mode="popLayout">{logs.length === 0 ? (<div className="h-full flex flex-col items-center justify-center opacity-20 text-center"><History size={48} className="mb-3 mx-auto" /><p className="text-sm font-medium text-slate-500">Belum ada aktivitas yang tercatat</p></div>) : (logs.map((log) => (
-                        <motion.div key={log.scanId} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 p-3 rounded-xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 shadow-sm group"><div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-100 dark:border-white/10"><Image src={log.image || "https://source.unsplash.com/random/100x100/?portrait"} alt={log.name} fill className="object-cover" /></div><div className="flex-1 min-w-0"><h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{log.name}</h4><p className="text-sm font-medium text-slate-500">{log.role}</p></div><div className="flex items-center gap-3"><select value={log.status} onChange={(e) => handleUpdateStatus(log.dbId, e.target.value)} className={`text-xs font-bold px-3 py-1.5 rounded-lg outline-none border transition-all ${log.status === 'HADIR' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : log.status === 'IZIN' ? 'bg-blue-50 text-blue-600 border-blue-100' : log.status === 'SAKIT' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}><option value="HADIR">HADIR</option><option value="IZIN">IZIN</option><option value="SAKIT">SAKIT</option><option value="ALPA">ALPA</option></select><div className="text-right min-w-[60px]"><p className="text-sm font-medium text-slate-400">{log.time}</p></div></div></motion.div>
-                    )))}</AnimatePresence>
+                    {isLoadingLogs ? (
+                        <div className="space-y-3 animate-pulse">
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <div key={i} className="flex items-center gap-4 p-3 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+                                    <div className="w-11 h-11 rounded-lg bg-slate-200 dark:bg-slate-800" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                                        <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                    </div>
+                                    <div className="h-8 w-20 bg-slate-100 dark:bg-slate-800/50 rounded-lg" />
+                                    <div className="h-4 w-12 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <AnimatePresence mode="popLayout">
+                            {logs.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center opacity-20 text-center">
+                                    <History size={48} className="mb-3 mx-auto" />
+                                    <p className="text-sm font-medium text-slate-500">Belum ada aktivitas yang tercatat</p>
+                                </div>
+                            ) : (
+                                logs.map((log) => (
+                                    <motion.div key={log.scanId} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 p-3 rounded-xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 shadow-sm group">
+                                        <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-100 dark:border-white/10">
+                                            <Image src={log.image || "https://source.unsplash.com/random/100x100/?portrait"} alt={log.name} fill className="object-cover" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{log.name}</h4>
+                                            <p className="text-sm font-medium text-slate-500">{log.role}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <select value={log.status} onChange={(e) => handleUpdateStatus(log.dbId, e.target.value)} className={`text-xs font-bold px-3 py-1.5 rounded-lg outline-none border transition-all ${log.status === 'HADIR' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : log.status === 'IZIN' ? 'bg-blue-50 text-blue-600 border-blue-100' : log.status === 'SAKIT' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}><option value="HADIR">HADIR</option><option value="IZIN">IZIN</option><option value="SAKIT">SAKIT</option><option value="ALPA">ALPA</option></select>
+                                            <div className="text-right min-w-[60px]"><p className="text-sm font-medium text-slate-400">{log.time}</p></div>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
+                        </AnimatePresence>
+                    )}
                 </div>
             </div>
         </div>

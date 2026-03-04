@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Image as ImageIcon, Plus, Trash2, Search, 
-  Calendar, Tag, X, Loader2, Edit, UploadCloud
+  Calendar, Tag, X, Loader2, Edit, UploadCloud, Settings
 } from "lucide-react";
-import { saveGaleri, deleteGaleri } from "@/lib/actions";
+import { saveGaleri, deleteGaleri, createKategoriGaleri, updateKategoriGaleri, deleteKategoriGaleri } from "@/lib/actions";
 import TourGuide from "@/components/TourGuide";
+import { showToast } from "@/components/Toast";
 
 const galeriTourSteps = [
     { target: '.tour-galeri-header', content: 'Manajemen dokumentasi kegiatan.', disableBeacon: true },
@@ -16,8 +18,9 @@ const galeriTourSteps = [
     { target: '.tour-gallery-card', content: 'Kelola (Edit/Hapus) album di sini.' },
 ];
 
-export default function GaleriClient({ initialData }: { initialData: any[] }) {
+export default function GaleriClient({ initialData, categories, fullCategories }: { initialData: any[], categories: string[], fullCategories: any[] }) {
   const [items, setItems] = useState(initialData);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [filterKategori, setFilterKategori] = useState("Semua");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false); 
@@ -25,18 +28,26 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
   const [isClient, setIsClient] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setIsClient(true); setItems(initialData); }, [initialData]);
+  // Management Kategori State
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [editingCatId, setEditingCatId] = useState<number | null>(null);
+
+  useEffect(() => { 
+    setIsClient(true); 
+    setItems(initialData);
+    const timer = setTimeout(() => setIsDataLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, [initialData]);
 
   // Form State
   const [form, setForm] = useState<{ id?: number, judul: string, kategori: string, tanggal: string, images: string[], deskripsi: string }>({
     judul: "",
-    kategori: "Event",
+    kategori: categories[0] || "Umum",
     tanggal: new Date().toISOString().split('T')[0],
     images: [], 
     deskripsi: ""
   });
-
-  const categories = ["Rapat", "Upacara", "Event", "Pensi", "Sosial", "Kunjungan", "Karya"];
 
   // --- 🔥 FUNGSI KOMPRES GAMBAR (VERSI HD) 🔥 ---
   const compressImage = (file: File): Promise<string> => {
@@ -114,11 +125,16 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
 
   // --- MODAL & FORM ---
   const openEditModal = (item: any) => {
+    // Pastikan tanggal diproses sebagai string ISO untuk input date
+    const safeDate = item.tanggal instanceof Date 
+      ? item.tanggal.toISOString().split('T')[0] 
+      : new Date(item.tanggal).toISOString().split('T')[0];
+
     setForm({
         id: item.id,
         judul: item.judul,
         kategori: item.kategori,
-        tanggal: item.tanggal.split('T')[0],
+        tanggal: safeDate,
         images: item.images || [], 
         deskripsi: item.deskripsi || ""
     });
@@ -174,16 +190,21 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
       <div className="flex flex-col md:flex-row justify-between items-end gap-4 shrink-0">
          <div>
             <div className="flex items-center gap-4">
-                <h1 className="text-3xl font-black font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-galeri-header">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3 tour-galeri-header">
                 Galeri Kegiatan <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">📸</span>
                 </h1>
                 {isClient && <TourGuide steps={galeriTourSteps} />}
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Dokumentasi momen seru organisasi.</p>
          </div>
-         <button onClick={() => { resetForm(); setIsModalOpen(true); }} className="tour-upload-btn px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-lg flex items-center gap-2 transition-transform active:scale-95">
-            <Plus size={16}/> Upload Album Baru
-         </button>
+         <div className="flex gap-2">
+            <button onClick={() => setIsCatModalOpen(true)} className="px-4 py-2.5 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-2 transition-all hover:bg-slate-50">
+                <Settings size={16} /> Kategori
+            </button>
+            <button onClick={() => { resetForm(); setIsModalOpen(true); }} className="tour-upload-btn px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-lg flex items-center gap-2 transition-transform active:scale-95">
+                <Plus size={16}/> Upload Album Baru
+            </button>
+         </div>
       </div>
 
       {/* FILTER BAR */}
@@ -196,7 +217,23 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
 
       {/* GALLERY GRID */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
-         {filteredItems.length === 0 ? (
+         {isDataLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <div key={i} className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-white/5 overflow-hidden">
+                        <div className="aspect-[4/3] bg-slate-200 dark:bg-slate-800" />
+                        <div className="p-4">
+                            <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+                            <div className="h-3 w-1/2 bg-slate-100 dark:bg-slate-800/50 rounded mb-4" />
+                            <div className="space-y-2">
+                                <div className="h-2 w-full bg-slate-50 dark:bg-slate-800/30 rounded" />
+                                <div className="h-2 w-2/3 bg-slate-50 dark:bg-slate-800/30 rounded" />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+         ) : filteredItems.length === 0 ? (
             <div className="h-64 flex flex-col items-center justify-center text-slate-400">
                <ImageIcon size={48} className="mb-2 opacity-50"/>
                <p className="text-sm font-bold">Belum ada foto di kategori ini.</p>
@@ -243,6 +280,49 @@ export default function GaleriClient({ initialData }: { initialData: any[] }) {
             </div>
          )}
       </div>
+
+      {/* MODAL KATEGORI */}
+      <AnimatePresence>
+        {isCatModalOpen && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCatModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
+                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10 p-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-black font-bold text-slate-900 dark:text-white">Atur Kategori</h2>
+                        <button onClick={() => setIsCatModalOpen(false)}><X size={24} className="text-slate-400" /></button>
+                    </div>
+                    <div className="flex gap-2 mb-6">
+                        <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Nama kategori..." className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold dark:text-white" />
+                        <button onClick={async () => {
+                            if(!newCatName) return;
+                            const fd = new FormData(); 
+                            fd.append("nama", newCatName);
+                            const res = editingCatId ? await updateKategoriGaleri(editingCatId, fd) : await createKategoriGaleri(fd);
+                            if(res.success) { showToast(res.message, "success"); window.location.reload(); }
+                        }} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm transition-all active:scale-95">
+                            {editingCatId ? "Update" : "Tambah"}
+                        </button>
+                    </div>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {fullCategories.map(cat => (
+                            <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{cat.nama}</span>
+                                <div className="flex gap-2">
+                                    <button onClick={() => { setEditingCatId(cat.id); setNewCatName(cat.nama); }} className="p-1.5 text-slate-400 hover:text-blue-500 transition-colors"><Edit size={14}/></button>
+                                    <button onClick={async () => {
+                                        if(confirm("Hapus kategori ini?")) {
+                                            const res = await deleteKategoriGaleri(cat.id);
+                                            if(res.success) { showToast(res.message, "success"); window.location.reload(); }
+                                        }
+                                    }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
 
       {/* MODAL UPLOAD / EDIT */}
       {isModalOpen && (

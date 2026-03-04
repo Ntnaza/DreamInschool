@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, Filter, Trash2, CheckCircle, MessageSquare, 
-  AlertCircle, MoreHorizontal, Send, X, Reply,
-  Inbox, ChevronRight, User, Calendar, Tag, Clock, Loader2,
+  AlertCircle, Send, Reply,
+  Inbox, User, Calendar, Tag, Clock, Loader2,
   CheckCircle2, Info
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
 import { deleteAspirasi, replyAspirasi } from "@/lib/actions"; 
+import { showToast } from "@/components/Toast";
 
 // Helper Warna Tag
 const tagColorMap: any = {
@@ -52,7 +53,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
 
   useEffect(() => { 
     setIsClient(true); 
-    // Simulasi loading skeleton sebentar agar terasa lebih smooth dan profesional
     const timer = setTimeout(() => {
         setIsLoading(false);
     }, 800);
@@ -63,7 +63,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
     return () => clearTimeout(timer);
   }, [initialData, selectedId]);
 
-  // Filter Logic
   const filteredMessages = messages.filter((msg) => {
     const isDone = msg.status === 'SELESAI';
     const matchesTab = 
@@ -80,34 +79,26 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
 
   const selectedMsg = messages.find(m => m.id === selectedId);
 
-  // Komponen Skeleton (Bayangan Loading)
-  const SkeletonItem = () => (
-    <div className="p-4 rounded-2xl border border-slate-100 dark:border-white/5 bg-white/50 dark:bg-white/5 animate-pulse">
-       <div className="flex justify-between mb-3">
-          <div className="flex items-center gap-2">
-             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700" />
-             <div className="space-y-1.5">
-                <div className="h-2.5 w-20 bg-slate-200 dark:bg-slate-700 rounded" />
-                <div className="h-2 w-12 bg-slate-100 dark:bg-slate-800 rounded" />
-             </div>
-          </div>
-          <div className="h-2 w-10 bg-slate-100 dark:bg-slate-800 rounded" />
-       </div>
-       <div className="space-y-2">
-          <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded" />
-          <div className="h-2 w-2/3 bg-slate-100 dark:bg-slate-800 rounded" />
-       </div>
-    </div>
-  );
-
   const handleDelete = async (id: number) => {
-    if(confirm("Hapus pesan ini permanen?")) {
+    if(confirm("Hapus pesan ini secara permanen?")) {
+      const originalMessages = [...messages];
       const newMessages = messages.filter(m => m.id !== id);
       setMessages(newMessages);
       if (selectedId === id) {
         setSelectedId(newMessages.length > 0 ? newMessages[0].id : null);
       }
-      await deleteAspirasi(id);
+      try {
+        const res = await deleteAspirasi(id);
+        if (res.success) {
+          showToast("Aspirasi telah dihapus.", "success");
+        } else {
+          setMessages(originalMessages);
+          showToast(res.message, "error");
+        }
+      } catch (err) {
+        setMessages(originalMessages);
+        showToast("Gagal menghapus aspirasi.", "error");
+      }
     }
   };
 
@@ -119,17 +110,20 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
     formData.append("id", selectedId.toString());
     formData.append("balasan", replyText);
 
-    const res = await replyAspirasi(formData);
-
-    if (res.success) {
-        setMessages(messages.map(m => m.id === selectedId ? { ...m, status: "SELESAI", balasan: replyText, balasanAt: new Date() } : m));
-        setReplyText("");
-        alert("Balasan terkirim! ✅");
-    } else {
-        alert("Gagal: " + res.message);
+    try {
+      const res = await replyAspirasi(formData);
+      if (res.success) {
+          setMessages(messages.map(m => m.id === selectedId ? { ...m, status: "SELESAI", balasan: replyText, balasanAt: new Date() } : m));
+          setReplyText("");
+          showToast("Balasan terkirim! ✅", "success");
+      } else {
+          showToast("Gagal: " + res.message, "error");
+      }
+    } catch (err) {
+      showToast("Terjadi kesalahan sistem.", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsSubmitting(false);
   };
 
   const inboxTourSteps = [
@@ -140,27 +134,8 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
   ];
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col font-sans relative overflow-hidden">
-      
-      {/* HEADER */}
-      <div className="tour-inbox-header flex-shrink-0 mb-6">
-          <div className="flex items-center gap-3">
-             <h1 className="text-3xl font-black font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-               Inbox Aspirasi <span className="text-2xl p-2 bg-pink-100 dark:bg-pink-900/30 rounded-full">📩</span>
-             </h1>
-             {isClient && <TourGuide steps={inboxTourSteps} />}
-          </div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1 ml-1">
-            Respon aspirasi dan keluhan siswa secara profesional.
-          </p>
-      </div>
-
-      {/* MAIN CONTAINER (MODERN TWO COLUMN) */}
-      <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
-        
-        {/* COLUMN 1: SIDEBAR & LIST (Diperlebar menjadi 420px) */}
+    <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
         <div className="w-full md:w-[420px] flex flex-col gap-4 flex-shrink-0">
-           {/* SEARCH & FILTER */}
            <div className="tour-tab-nav space-y-4">
               <div className="relative group">
                  <input 
@@ -196,13 +171,9 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
               </div>
            </div>
 
-           {/* MESSAGE LIST */}
            <div className="tour-message-list flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
               <AnimatePresence mode="popLayout">
-                 {isLoading ? (
-                    // Tampilkan 4 Skeleton saat loading
-                    [1,2,3,4].map(i => <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SkeletonItem /></motion.div>)
-                 ) : filteredMessages.length > 0 ? (
+                 {filteredMessages.length > 0 ? (
                    filteredMessages.map((msg) => (
                      <motion.div 
                        key={msg.id}
@@ -218,7 +189,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                          }
                        `}
                      >
-                        {/* Fix Notif Badge - Tidak terpotong border */}
                         {msg.status === 'PENDING' && (
                           <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm z-10" />
                         )}
@@ -252,7 +222,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
            </div>
         </div>
 
-        {/* COLUMN 2: MESSAGE DETAIL PREVIEW (Min-w-0 ditambahkan) */}
         <div className="tour-message-detail hidden md:flex flex-1 bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] shadow-sm flex flex-col relative min-w-0">
            <AnimatePresence mode="wait">
               {selectedMsg ? (
@@ -263,7 +232,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                    exit={{ opacity: 0, y: -10 }}
                    className="flex-1 flex flex-col min-h-0"
                  >
-                    {/* DETAIL HEADER */}
                     <div className="p-8 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex-shrink-0">
                        <div className="flex justify-between items-start mb-6">
                           <div className="flex items-center gap-4">
@@ -302,7 +270,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                        </div>
                     </div>
 
-                    {/* DETAIL CONTENT (Scrollable) */}
                     <div className="flex-1 p-8 overflow-y-auto custom-scrollbar space-y-8 min-h-0">
                        <div className="bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 relative">
                           <div className="absolute -top-3 left-6 px-3 py-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/10 rounded-lg text-[10px] font-black font-bold text-slate-400 uppercase tracking-widest">Aspirasi</div>
@@ -325,7 +292,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                          </div>
                        )}
 
-                       {/* REPLY PANEL - Padding bawah agar tidak terpotong */}
                        {selectedMsg.status !== 'SELESAI' && (
                           <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 pb-10">
                              <div className="flex items-center gap-2 mb-4">
@@ -369,6 +335,5 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
            </AnimatePresence>
         </div>
       </div>
-    </div>
   );
 }

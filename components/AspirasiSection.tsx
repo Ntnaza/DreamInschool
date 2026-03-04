@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { submitAspirasi } from "@/lib/actions"; // Import Server Action tadi
+import { showToast } from "@/components/Toast";
 
 export default function AspirasiSection() {
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -18,18 +19,22 @@ export default function AspirasiSection() {
     // Tambahkan status anonim ke data yang dikirim
     formData.append("isAnonim", isAnonymous.toString());
 
-    // Panggil Server Action
-    const result = await submitAspirasi(formData);
+    try {
+      // Panggil Server Action
+      const result = await submitAspirasi(formData);
 
-    if (result.success) {
-      alert(result.message); // Tampilkan pesan sukses
-      form.reset(); // Kosongkan form
-      setIsAnonymous(false); // Reset toggle anonim
-    } else {
-      alert(result.message); // Tampilkan error
+      if (result.success) {
+        showToast("Aspirasi terkirim! Terima kasih atas masukannya.", "success");
+        form.reset(); // Kosongkan form
+        setIsAnonymous(false); // Reset toggle anonim
+      } else {
+        showToast(result.message, "error");
+      }
+    } catch (err) {
+      showToast("Terjadi kesalahan sistem.", "error");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }
 
   return (

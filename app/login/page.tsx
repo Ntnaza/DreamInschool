@@ -10,6 +10,7 @@ import {
   Atom, Pi, Sigma, Microscope, Search
 } from "lucide-react";
 import { loginAction } from "@/lib/auth";
+import { showToast } from "@/components/Toast";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,15 +27,21 @@ export default function LoginPage() {
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const result = await loginAction(formData);
+    try {
+      const result = await loginAction(formData);
 
-    if (result.success) {
-       setTimeout(() => {
-         router.push("/admin");
-       }, 1000);
-    } else {
-       alert(result.message);
-       setIsLoading(false);
+      if (result.success) {
+         showToast("Login berhasil! Mengalihkan ke dashboard...", "success");
+         setTimeout(() => {
+           router.push("/admin");
+         }, 1000);
+      } else {
+         showToast(result.message, "error", "Gagal Masuk");
+         setIsLoading(false);
+      }
+    } catch (err) {
+      showToast("Terjadi kesalahan sistem.", "error");
+      setIsLoading(false);
     }
   };
 

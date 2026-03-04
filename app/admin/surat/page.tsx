@@ -7,6 +7,7 @@ import {
   PenTool, Sparkles, ZoomIn, ZoomOut, RefreshCcw
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
+import { showToast } from "@/components/Toast";
 
 // TEMPLATE OPTIONS
 const templates = [
@@ -115,10 +116,11 @@ export default function MagicLetterPage() {
 
       await html2pdf().set(opt).from(clone).save();
       document.body.removeChild(container);
+      showToast("Surat berhasil diunduh!", "success");
 
     } catch (error) {
       console.error("PDF Error:", error);
-      alert("Gagal membuat PDF.");
+      showToast("Gagal membuat PDF. Coba gunakan Chrome.", "error");
     } finally {
       setIsGenerating(false);
     }

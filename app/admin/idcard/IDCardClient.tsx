@@ -23,6 +23,7 @@ const idCardTourSteps = [
 // ✅ 3. Terima props 'initialBackImage' dari server
 export default function IDCardClient({ initialMembers, initialBackImage }: { initialMembers: any[], initialBackImage: string | null }) {
   const [memberList, setMemberList] = useState(initialMembers);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number>(initialMembers[0]?.id || 0);
   const [selectedPrintIds, setSelectedPrintIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,6 +46,10 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
 
   useEffect(() => {
     setIsClient(true);
+    setMemberList(initialMembers);
+    // Beri delay halus untuk transisi skeleton
+    const timer = setTimeout(() => setIsDataLoading(false), 500);
+    
     const handleResize = () => {
       if (canvasRef.current) {
         const parent = canvasRef.current.parentElement;
@@ -59,8 +64,11 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
     };
     handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [selectedId, activeSide]);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [selectedId, activeSide, initialMembers]);
 
   const selectedMember = memberList.find(m => m.id === selectedId) || memberList[0];
 
@@ -265,7 +273,7 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
 
        <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
            {/* LEFT: MEMBER LIST */}
-           <div className="tour-member-list w-full md:w-80 shrink-0 flex flex-col gap-4 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/5 rounded-[2rem] p-4 shadow-sm h-full overflow-hidden">
+           <div className="tour-member-list w-full md:w-80 shrink-0 flex flex-col gap-4 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/5 rounded-3xl p-4 shadow-sm h-full overflow-hidden">
                <div className="p-2 border-b border-slate-100 dark:border-white/5 pb-4">
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2"><Users className="text-blue-600" size={20} /> Daftar Anggota</h2>
                   <div className="flex justify-between items-end mt-2">
@@ -278,22 +286,37 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
                   <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                </div>
                <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                  {filteredMembers.map((member) => (
-                     <div key={member.id} onClick={() => setSelectedId(member.id)} className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left cursor-pointer group border relative ${selectedId === member.id ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-500/30 shadow-sm" : "bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5"}`}>
-                        <div onClick={(e) => togglePrintSelect(member.id, e)} className={`shrink-0 w-8 h-8 flex items-center justify-center transition-all ${selectedId === member.id || selectedPrintIds.includes(member.id) ? 'text-blue-600' : 'text-slate-300 hover:text-blue-600'}`}>
-                           {selectedPrintIds.includes(member.id) ? <CheckSquare size={18} /> : <Square size={18}/>}
+                  {isDataLoading ? (
+                    <div className="space-y-2 animate-pulse">
+                      {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent bg-slate-50/50 dark:bg-white/5 h-[54px]">
+                          <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0" />
+                          <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                            <div className="h-2 w-16 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                          </div>
                         </div>
-                        <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-white/10 shrink-0">
-                            <Image src={member.image || "https://source.unsplash.com/random/100x100/?student"} alt={member.name} fill className="object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                           <h4 className={`text-xs font-bold truncate ${selectedId === member.id ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>{member.name}</h4>
-                           <p className={`text-[10px] font-medium truncate ${selectedId === member.id ? 'text-blue-500' : 'text-slate-400'}`}>{member.role}</p>
-                        </div>
-                     </div>
-                  ))}
+                      ))}
+                    </div>
+                  ) : (
+                    filteredMembers.map((member) => (
+                      <div key={member.id} onClick={() => setSelectedId(member.id)} className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left cursor-pointer group border relative ${selectedId === member.id ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-500/30 shadow-sm" : "bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5"}`}>
+                          <div onClick={(e) => togglePrintSelect(member.id, e)} className={`shrink-0 w-8 h-8 flex items-center justify-center transition-all ${selectedId === member.id || selectedPrintIds.includes(member.id) ? 'text-blue-600' : 'text-slate-300 hover:text-blue-600'}`}>
+                            {selectedPrintIds.includes(member.id) ? <CheckSquare size={18} /> : <Square size={18}/>}
+                          </div>
+                          <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-white/10 shrink-0">
+                              <Image src={member.image || "https://source.unsplash.com/random/100x100/?student"} alt={member.name} fill className="object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`text-xs font-bold truncate ${selectedId === member.id ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>{member.name}</h4>
+                            <p className={`text-[10px] font-medium truncate ${selectedId === member.id ? 'text-blue-500' : 'text-slate-400'}`}>{member.role}</p>
+                          </div>
+                      </div>
+                    ))
+                  )}
                </div>
-               <button onClick={() => setIsPrintModalOpen(true)} disabled={selectedPrintIds.length === 0} className="w-full py-3.5 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-black text-xs shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 tour-print-btn uppercase tracking-widest"><Printer size={16}/> CETAK {selectedPrintIds.length} KARTU</button>
+               <button onClick={() => setIsPrintModalOpen(true)} disabled={selectedPrintIds.length === 0} className="w-full py-3.5 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 tour-print-btn uppercase tracking-widest"><Printer size={16}/> CETAK {selectedPrintIds.length} KARTU</button>
            </div>
 
            {/* RIGHT: EDITOR */}

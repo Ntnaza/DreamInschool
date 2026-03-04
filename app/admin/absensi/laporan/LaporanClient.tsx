@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getRekapAbsensi, getDetailLaporan } from "@/lib/actions";
+import { showToast } from "@/components/Toast";
 import * as XLSX from 'xlsx';
 
 export default function LaporanClient() {
@@ -60,7 +61,7 @@ export default function LaporanClient() {
   };
 
   const handleExportExcel = (acara: any, details: any[]) => {
-    if (!details || details.length === 0) return alert("Tidak ada data untuk di-export.");
+    if (!details || details.length === 0) return showToast("Tidak ada data untuk di-export.", "warning");
 
     const fileName = `Laporan_Absensi_${acara.nama.replace(/\s+/g, '_')}.xlsx`;
 
@@ -119,8 +120,6 @@ export default function LaporanClient() {
     setFilteredData(filtered);
   }, [searchQuery, rekapData]);
 
-  if (!isClient) return null;
-
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col gap-6 font-sans">
       
@@ -163,8 +162,28 @@ export default function LaporanClient() {
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
                   {isLoading ? (
-                      <div className="h-full flex items-center justify-center text-slate-400">
-                          <Loader2 size={32} className="animate-spin" />
+                      <div className="space-y-3 animate-pulse">
+                          {[1, 2, 3, 4, 5].map(i => (
+                              <div key={i} className="p-5 rounded-2xl border border-slate-100 dark:border-white/5 space-y-4">
+                                  <div className="flex justify-between items-start">
+                                      <div className="space-y-2">
+                                          <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                                          <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                      </div>
+                                      <div className="text-right space-y-1">
+                                          <div className="h-4 w-8 bg-slate-200 dark:bg-slate-800 rounded ml-auto" />
+                                          <div className="h-2 w-10 bg-slate-100 dark:bg-slate-800/50 rounded ml-auto" />
+                                      </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                      <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                                      <div className="h-3 w-12 bg-slate-100 dark:bg-slate-800 rounded" />
+                                  </div>
+                                  <div className="flex gap-2">
+                                      {[1, 2, 3, 4].map(j => <div key={j} className="h-2.5 w-8 bg-slate-50 dark:bg-slate-800/30 rounded" />)}
+                                  </div>
+                              </div>
+                          ))}
                       </div>
                   ) : filteredData.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center opacity-30">
@@ -240,13 +259,21 @@ export default function LaporanClient() {
                       <motion.div key="detail" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex flex-col overflow-hidden">
                           {/* DETAIL HEADER */}
                           <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-transparent">
-                              <div>
-                                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{selectedAcara.nama}</h3>
-                                  <p className="text-[10px] font-medium text-slate-500 flex items-center gap-1 mt-0.5"><Calendar size={12}/> {new Date(selectedAcara.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                              </div>
+                              {isDetailLoading ? (
+                                  <div className="space-y-2 animate-pulse">
+                                      <div className="h-5 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+                                      <div className="h-3 w-32 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                  </div>
+                              ) : (
+                                  <div>
+                                      <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{selectedAcara.nama}</h3>
+                                      <p className="text-[10px] font-medium text-slate-500 flex items-center gap-1 mt-0.5"><Calendar size={12}/> {new Date(selectedAcara.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                  </div>
+                              )}
                               <button 
                                 onClick={() => handleExportExcel(selectedAcara, detailData)}
-                                className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-105 transition-all"
+                                disabled={isDetailLoading}
+                                className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-105 transition-all disabled:opacity-50"
                               >
                                   <FileSpreadsheet size={16} /> Excel
                               </button>
@@ -254,28 +281,54 @@ export default function LaporanClient() {
 
                           {/* STATS STRIP */}
                           <div className="grid grid-cols-4 border-b border-slate-100 dark:border-white/5">
-                              <div className="p-4 border-r border-slate-100 dark:border-white/5 text-center">
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Hadir</p>
-                                  <p className="text-xl font-bold text-emerald-600">{detailData.filter(d => d.status === 'HADIR').length}</p>
-                              </div>
-                              <div className="p-4 border-r border-slate-100 dark:border-white/5 text-center">
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Izin</p>
-                                  <p className="text-xl font-bold text-blue-600">{detailData.filter(d => d.status === 'IZIN').length}</p>
-                              </div>
-                              <div className="p-4 border-r border-slate-100 dark:border-white/5 text-center">
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sakit</p>
-                                  <p className="text-xl font-bold text-amber-600">{detailData.filter(d => d.status === 'SAKIT').length}</p>
-                              </div>
-                              <div className="p-4 text-center">
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alpa</p>
-                                  <p className="text-xl font-bold text-rose-600">{detailData.filter(d => d.status === 'ALPA').length}</p>
-                              </div>
+                              {['Hadir', 'Izin', 'Sakit', 'Alpa'].map((label, idx) => (
+                                  <div key={label} className={`p-4 ${idx < 3 ? 'border-r' : ''} border-slate-100 dark:border-white/5 text-center`}>
+                                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                                      {isDetailLoading ? (
+                                          <div className="h-7 w-8 bg-slate-100 dark:bg-slate-800/50 rounded mx-auto animate-pulse" />
+                                      ) : (
+                                          <p className={`text-xl font-bold ${label === 'Hadir' ? 'text-emerald-600' : label === 'Izin' ? 'text-blue-600' : label === 'Sakit' ? 'text-amber-600' : 'text-rose-600'}`}>
+                                              {detailData.filter(d => d.status === label.toUpperCase()).length}
+                                          </p>
+                                      )}
+                                  </div>
+                              ))}
                           </div>
 
                           {/* DATA TABLE */}
                           <div className="flex-1 overflow-y-auto custom-scrollbar">
                               {isDetailLoading ? (
-                                  <div className="h-full flex items-center justify-center text-slate-400"><Loader2 size={32} className="animate-spin" /></div>
+                                  <table className="w-full text-left animate-pulse">
+                                      <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10">
+                                          <tr>
+                                              <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pengurus</th>
+                                              <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
+                                              <th className="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Waktu</th>
+                                          </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                                          {[1, 2, 3, 4, 5, 6].map(i => (
+                                              <tr key={i}>
+                                                  <td className="px-6 py-4">
+                                                      <div className="flex items-center gap-3">
+                                                          <div className="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0" />
+                                                          <div className="space-y-2 flex-1">
+                                                              <div className="h-3 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                                                              <div className="h-2 w-20 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                                                          </div>
+                                                      </div>
+                                                  </td>
+                                                  <td className="px-6 py-4 text-center">
+                                                      <div className="h-6 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg mx-auto" />
+                                                  </td>
+                                                  <td className="px-6 py-4 text-right">
+                                                      <div className="h-3 w-12 bg-slate-100 dark:bg-slate-800 rounded ml-auto mb-1" />
+                                                      <div className="h-2 w-8 bg-slate-50 dark:bg-slate-800/50 rounded ml-auto" />
+                                                  </td>
+                                              </tr>
+                                          ))}
+                                      </tbody>
+                                  </table>
                               ) : detailData.length === 0 ? (
                                   <div className="h-full flex flex-col items-center justify-center opacity-20"><Info size={48} className="mb-2" /><p className="text-sm font-medium">Belum ada data hadir</p></div>
                               ) : (
@@ -292,7 +345,6 @@ export default function LaporanClient() {
                                               <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
                                                   <td className="px-6 py-4">
                                                       <div className="flex items-center gap-3">
-                                                          {/* FIX: Parent MUST be relative for next/image with fill */}
                                                           <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0 border border-slate-100 dark:border-white/10 shadow-sm">
                                                               <Image src={item.pengurus?.fotoUrl || "https://source.unsplash.com/random/100x100/?portrait"} alt="" fill className="object-cover" />
                                                           </div>

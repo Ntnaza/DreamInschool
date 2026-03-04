@@ -1688,3 +1688,47 @@ export async function deleteJabatan(id: number) {
     return { success: false, message: "Gagal menghapus jabatan." };
   }
 }
+
+/* ======================================================
+   14. MANAJEMEN KATEGORI GALERI (Dinamis)
+====================================================== */
+
+export async function createKategoriGaleri(formData: FormData) {
+  const nama = formData.get("nama") as string;
+  if (!nama) return { success: false, message: "Nama kategori wajib diisi!" };
+
+  try {
+    await prisma.kategoriGaleri.create({ data: { nama } });
+    revalidatePath("/admin/galeri");
+    revalidatePath("/galeri");
+    return { success: true, message: "Kategori berhasil ditambahkan! 📁" };
+  } catch (error) {
+    return { success: false, message: "Kategori sudah ada atau terjadi error." };
+  }
+}
+
+export async function updateKategoriGaleri(id: number, formData: FormData) {
+  const nama = formData.get("nama") as string;
+  try {
+    await prisma.kategoriGaleri.update({
+      where: { id },
+      data: { nama }
+    });
+    revalidatePath("/admin/galeri");
+    revalidatePath("/galeri");
+    return { success: true, message: "Kategori berhasil diperbarui! ✨" };
+  } catch (error) {
+    return { success: false, message: "Gagal memperbarui kategori." };
+  }
+}
+
+export async function deleteKategoriGaleri(id: number) {
+  try {
+    await prisma.kategoriGaleri.delete({ where: { id } });
+    revalidatePath("/admin/galeri");
+    revalidatePath("/galeri");
+    return { success: true, message: "Kategori berhasil dihapus." };
+  } catch (error) {
+    return { success: false, message: "Gagal menghapus kategori." };
+  }
+}

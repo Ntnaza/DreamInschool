@@ -437,3 +437,13 @@ model Jabatan {
 
   @@unique([nama, divisiId]) // Gabungan nama jabatan dan divisi harus unik
 }
+
+// --------------------------------------------------------
+// 12. MANAJEMEN KATEGORI GALERI (Dinamis)
+// --------------------------------------------------------
+model KategoriGaleri {
+  id        Int      @id @default(autoincrement())
+  nama      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
