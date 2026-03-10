@@ -1,9 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/admin/absensi/laporan/page": "app/admin/absensi/laporan/page.js",
-  "/admin/absensi/page": "app/admin/absensi/page.js",
   "/admin/aspirasi/page": "app/admin/aspirasi/page.js",
-  "/admin/bantuan/page": "app/admin/bantuan/page.js",
   "/admin/berita/page": "app/admin/berita/page.js",
   "/admin/galeri/page": "app/admin/galeri/page.js",
   "/admin/idcard/page": "app/admin/idcard/page.js",
@@ -15,7 +11,6 @@
   "/admin/surat/page": "app/admin/surat/page.js",
   "/berita/page": "app/berita/page.js",
   "/galeri/page": "app/galeri/page.js",
-  "/login/page": "app/login/page.js",
   "/page": "app/page.js",
   "/pengurus/page": "app/pengurus/page.js",
   "/program/page": "app/program/page.js"

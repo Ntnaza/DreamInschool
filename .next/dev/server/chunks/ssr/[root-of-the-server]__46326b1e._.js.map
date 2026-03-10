@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 28, "column": 0}, "map": {"version":3,"sources":["file:///C:/xampp/htdocs/osis-mpk-web/app/admin/absensi/laporan/page.tsx"],"sourcesContent":["import LaporanClient from \"./LaporanClient\";\r\n\r\nexport default function LaporanAbsensiPage() {\r\n  return <LaporanClient />;\r\n}"],"names":[],"mappings":";;;;;AAAA;;;AAEe,SAAS;IACtB,qBAAO,8OAAC,+JAAa;;;;;AACvB"}}]
-}

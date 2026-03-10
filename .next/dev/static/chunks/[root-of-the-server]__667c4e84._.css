@@ -6678,6 +6678,10 @@ html {
   color: rgb(234 179 8 / var(--tw-text-opacity, 1));
 }
 
+.dark\:opacity-0:is(.dark *) {
+  opacity: 0;
+}
+
 .dark\:opacity-100:is(.dark *) {
   opacity: 1;
 }
@@ -6696,10 +6700,6 @@ html {
 
 .dark\:opacity-\[0\.10\]:is(.dark *) {
   opacity: .1;
-}
-
-.dark\:opacity-0:is(.dark *) {
-  opacity: 0;
 }
 
 .dark\:shadow-\[0_0_20px_rgba\(255\,255\,255\,0\.3\)\]:is(.dark *) {

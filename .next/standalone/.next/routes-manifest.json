@@ -1,0 +1,191 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/berita/[id]",
+      "regex": "^/berita/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/berita/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/admin/absensi",
+      "regex": "^/admin/absensi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/absensi(?:/)?$"
+    },
+    {
+      "page": "/admin/absensi/laporan",
+      "regex": "^/admin/absensi/laporan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/absensi/laporan(?:/)?$"
+    },
+    {
+      "page": "/admin/aspirasi",
+      "regex": "^/admin/aspirasi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/aspirasi(?:/)?$"
+    },
+    {
+      "page": "/admin/bantuan",
+      "regex": "^/admin/bantuan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/bantuan(?:/)?$"
+    },
+    {
+      "page": "/admin/berita",
+      "regex": "^/admin/berita(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/berita(?:/)?$"
+    },
+    {
+      "page": "/admin/galeri",
+      "regex": "^/admin/galeri(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/galeri(?:/)?$"
+    },
+    {
+      "page": "/admin/idcard",
+      "regex": "^/admin/idcard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/idcard(?:/)?$"
+    },
+    {
+      "page": "/admin/inventaris",
+      "regex": "^/admin/inventaris(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/inventaris(?:/)?$"
+    },
+    {
+      "page": "/admin/kas",
+      "regex": "^/admin/kas(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/kas(?:/)?$"
+    },
+    {
+      "page": "/admin/pengurus",
+      "regex": "^/admin/pengurus(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/pengurus(?:/)?$"
+    },
+    {
+      "page": "/admin/proker",
+      "regex": "^/admin/proker(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/proker(?:/)?$"
+    },
+    {
+      "page": "/admin/surat",
+      "regex": "^/admin/surat(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/surat(?:/)?$"
+    },
+    {
+      "page": "/api/leaders",
+      "regex": "^/api/leaders(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/leaders(?:/)?$"
+    },
+    {
+      "page": "/berita",
+      "regex": "^/berita(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/berita(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/galeri",
+      "regex": "^/galeri(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/galeri(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/pengurus",
+      "regex": "^/pengurus(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/pengurus(?:/)?$"
+    },
+    {
+      "page": "/program",
+      "regex": "^/program(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/program(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
