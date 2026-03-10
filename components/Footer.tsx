@@ -26,7 +26,7 @@ export default function Footer() {
             <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
               <span className="text-blue-600">OSIS</span> MPK
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-bold">
               Wadah aspirasi dan kreasi siswa SMK Nurul Islam Cianjur. Membangun karakter kepemimpinan yang berakhlak mulia dan berdaya saing global.
             </p>
             <div className="flex items-center gap-4 pt-2">

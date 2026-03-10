@@ -40,7 +40,7 @@ export default async function AdvisorSection() {
           <div className="w-20 h-1 bg-blue-600 dark:bg-slate-500 mx-auto rounded-full" />
           
           {/* 🔥 UBAH P JADI DIV BIAR AMAN DARI HYDRATION ERROR 🔥 */}
-          <div className="mt-4 text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+          <div className="mt-4 text-slate-600 dark:text-slate-400 font-bold leading-relaxed">
             Membimbing dengan hati, mengarahkan dengan visi. Sosok inspiratif di balik kemajuan OSIS & MPK.
           </div>
         </div>

@@ -79,7 +79,7 @@ export default async function Home() {
                 </span>
               </h1>
               
-              <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed border-l-2 border-blue-600/50 dark:border-white/40 pl-5 max-w-md mx-auto lg:mx-0 font-medium dark:font-normal">
+              <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed border-l-2 border-blue-600/50 dark:border-white/40 pl-5 max-w-md mx-auto lg:mx-0 font-bold">
                 Selamat datang di portal resmi kami. Saat ini dipimpin oleh <b>{ketuaNama}</b> beserta {totalPengurus} pengurus lainnya.
               </p>
 
@@ -111,7 +111,9 @@ export default async function Home() {
           SECTION BAWAHNYA (Masih Static/Aman)
           ================================================== */}
       
-      <LeaderSection />
+      <div suppressHydrationWarning>
+        <LeaderSection />
+      </div>
 
       <ProgramSection />
 

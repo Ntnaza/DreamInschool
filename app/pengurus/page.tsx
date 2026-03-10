@@ -5,9 +5,12 @@ import PengurusClient from "./PengurusClient";
 export const dynamic = "force-dynamic";
 
 export default async function PengurusPage() {
-  // 1. Ambil Data dari Database
+  // 1. Ambil Data dari Database beserta Visi Misi, Sosmed, dan Program Kerja
   const rawMembers = await prisma.pengurus.findMany({
-    orderBy: { id: 'asc' }
+    orderBy: { id: 'asc' },
+    include: {
+      programKerja: true // Tarik data proker yang ditugaskan ke pengurus ini
+    }
   });
 
   // 2. Logic Sorting: Urutkan berdasarkan hierarki jabatan
@@ -17,7 +20,7 @@ export default async function PengurusPage() {
 
     // Daftar prioritas urutan tampil
     const priority = [
-      'ketua osis', 'ketua mpk', 
+      'ketua osis', 'ketua mpk',
       'wakil ketua osis', 'wakil osis', 'wakil ketua mpk', 'wakil mpk',
       'sekretaris', 'bendahara'
     ];
@@ -29,11 +32,11 @@ export default async function PengurusPage() {
     if (idxA !== -1 && idxB !== -1) return idxA - idxB;
     if (idxA !== -1) return -1;
     if (idxB !== -1) return 1;
-    
+
     return a.jabatan.localeCompare(b.jabatan);
   });
 
-  // 3. Logic Coloring: Warna border berdasarkan divisi/jabatan
+  // 3. Logic Coloring: Warna border & aksen berdasarkan divisi/jabatan
   const getRoleColor = (jabatan: string) => {
     const j = jabatan.toLowerCase();
     if (j.includes('ketua osis')) return 'blue';
@@ -43,22 +46,26 @@ export default async function PengurusPage() {
     if (j.includes('bendahara')) return 'orange';
     if (j.includes('agama') || j.includes('rohani')) return 'green';
     if (j.includes('seni') || j.includes('kreatif')) return 'pink';
-    if (j.includes('tik') || j.includes('multi')) return 'blue'; 
+    if (j.includes('tik') || j.includes('multi')) return 'blue';
     if (j.includes('humas')) return 'yellow';
-    return 'slate'; 
+    return 'slate';
   };
 
-  // 4. Format Data untuk Client
+  // 4. Format Data untuk Client (Kirim Semua Atribut Penting)
   const formattedMembers = sortedMembers.map((m: any) => ({
     id: m.id,
     name: m.nama,
     role: m.jabatan.toUpperCase(),
-    
-    // 🔥 PERBAIKAN FINAL DI SINI:
-    // Pakai 'fotoUrl' sesuai nama kolom di database!
-    img: m.fotoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=800&auto=format&fit=crop", 
-    
-    color: getRoleColor(m.jabatan)
+    divisi: m.divisi,
+    img: m.fotoUrl || "https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=800&auto=format&fit=crop",
+    color: getRoleColor(m.jabatan),
+    visi: m.visi,
+    misi: m.misi,
+    motto: m.motto,
+    instagram: m.instagram,
+    tiktok: m.tiktok,
+    email: m.email,
+    programKerja: m.programKerja || [],
   }));
 
   // Judul Angkatan

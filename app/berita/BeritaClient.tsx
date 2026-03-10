@@ -42,7 +42,7 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
           <h1 className="text-4xl md:text-6xl font-black mt-4 mb-6 pb-2 text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
             Berita & Artikel
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">
+          <p className="text-slate-600 dark:text-slate-400 text-lg font-bold">
             Informasi terkini, prestasi, dan cerita inspiratif dari warga sekolah.
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
                   {featuredPost.judul}
                 </h2>
                 <div 
-                   className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed line-clamp-4" // Naikkan clamp jadi 4 biar pas sama foto tinggi
+                   className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed line-clamp-4 font-bold" // Naikkan clamp jadi 4 biar pas sama foto tinggi
                    dangerouslySetInnerHTML={{ __html: featuredPost.konten.substring(0, 200) + "..." }} 
                 />
                 
@@ -171,7 +171,7 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
                     {post.judul}
                     </h3>
                     <div 
-                       className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3"
+                       className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3 font-bold"
                        dangerouslySetInnerHTML={{ __html: post.konten.substring(0, 100) + "..." }}
                     />
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-800">

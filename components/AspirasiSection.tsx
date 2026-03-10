@@ -63,13 +63,13 @@ export default function AspirasiSection() {
               </span>
             </h2>
             
-            <p className="text-slate-600 dark:text-slate-400 text-lg">
+            <p className="text-slate-600 dark:text-slate-400 text-lg font-bold">
               Jangan ragu untuk menyampaikan aspirasi, kritik, atau saran untuk kemajuan OSIS & SMK Nurul Islam. Identitasmu aman bersama kami.
             </p>
             
             <div className="flex flex-col gap-3 pt-4">
               {['Privasi Terjaga', 'Langsung Didengar Pengurus', 'Bebas & Bertanggung Jawab'].map((text, i) => (
-                <div key={i} className="flex items-center gap-3 justify-center lg:justify-start text-slate-700 dark:text-slate-300 font-medium">
+                <div key={i} className="flex items-center gap-3 justify-center lg:justify-start text-slate-700 dark:text-slate-300 font-bold">
                   <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 text-xs">✓</div>
                   {text}
                 </div>

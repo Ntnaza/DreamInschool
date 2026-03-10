@@ -94,7 +94,7 @@ export default function MajorsClient({ majors }: { majors: any[] }) {
                             style={{ backgroundColor: activeMajor.MysteriousColor, boxShadow: `0 0 15px ${activeMajor.MysteriousColor}` }}
                         />
 
-                        <p className="text-sm md:text-base text-slate-300 leading-relaxed drop-shadow-md font-medium max-w-md">
+                        <p className="text-sm md:text-base text-slate-300 leading-relaxed drop-shadow-md font-bold max-w-md">
                             {activeMajor.description}
                         </p>
 

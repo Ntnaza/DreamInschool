@@ -67,7 +67,7 @@ export default async function AgendaSection() {
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
             Agenda <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">Mendatang</span>
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 font-medium">
+          <p className="text-slate-600 dark:text-slate-400 font-bold">
             Jadwal kegiatan akademik dan non-akademik yang telah terencana. 
             <br className="hidden md:block" />
             Manajemen waktu yang baik adalah kunci kesuksesan organisasi.
@@ -113,7 +113,7 @@ export default async function AgendaSection() {
                         {item.nama}
                       </h3>
                       
-                      <div className={`flex flex-col gap-1 text-sm text-slate-500 dark:text-slate-400 mb-3 font-medium
+                      <div className={`flex flex-col gap-1 text-sm text-slate-500 dark:text-slate-400 mb-3 font-bold
                          ${index % 2 === 0 ? 'md:items-end' : 'md:items-start'}
                       `}>
                         <span className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export default async function AgendaSection() {
                         </span>
                       </div>
 
-                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-bold">
                         {item.deskripsi}
                       </p>
 

@@ -2,8 +2,22 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { 
+  Ruler, 
+  Pencil, 
+  Eraser, 
+  BookOpen, 
+  GraduationCap, 
+  Calculator, 
+  School, 
+  Palette, 
+  Atom, 
+  Sigma,
+  Library,
+  Compass
+} from "lucide-react";
 
-// --- KOMPONEN KARTU TIMELINE (Sama persis kayak sebelumnya) ---
+// --- KOMPONEN KARTU TIMELINE ---
 const TimelineItem = ({ data, index }: { data: any, index: number }) => {
   const isLeft = index % 2 === 0;
 
@@ -69,7 +83,7 @@ const TimelineItem = ({ data, index }: { data: any, index: number }) => {
           <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 leading-tight relative z-10">
             {data.nama}
           </h3>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 leading-relaxed relative z-10 line-clamp-3">
+          <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 leading-relaxed relative z-10 line-clamp-3 font-bold">
             {data.deskripsi || "Tidak ada deskripsi."}
           </p>
           
@@ -100,9 +114,14 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
 
   const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
 
-  // --- BACKGROUND STARS ---
+  // --- BACKGROUND STARS (Dark Mode) ---
   const [stars, setStars] = useState<{ width: string, height: string, top: string, left: string, animation: string }[]>([]);
+  
+  // --- DECORATIVE ICONS (Light Mode) ---
+  const [decorIcons, setDecorIcons] = useState<{ iconIdx: number, style: any }[]>([]);
+
   useEffect(() => {
+    // Generate Stars
     const generatedStars = Array.from({ length: 40 }).map(() => ({
       width: Math.random() * 3 + 'px',
       height: Math.random() * 3 + 'px',
@@ -111,24 +130,76 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
       animation: `pulse ${Math.random() * 3 + 2}s infinite`
     }));
     setStars(generatedStars);
+
+    // Generate School Icons
+    const generatedIcons = Array.from({ length: 20 }).map(() => ({
+      iconIdx: Math.floor(Math.random() * 12),
+      style: {
+        top: Math.random() * 100 + '%',
+        left: Math.random() * 100 + '%',
+        rotate: Math.random() * 360,
+        scale: Math.random() * 0.5 + 0.5,
+        duration: Math.random() * 10 + 10,
+        delay: Math.random() * 5
+      }
+    }));
+    setDecorIcons(generatedIcons);
   }, []);
+
+  const schoolIcons = [
+    Ruler, Pencil, Eraser, BookOpen, GraduationCap, Calculator, 
+    School, Palette, Atom, Sigma, Library, Compass
+  ];
 
   return (
     <main className="min-h-screen relative transition-colors duration-700 pt-24 pb-24 bg-slate-50 dark:bg-[#020617]">
       
       {/* === BACKGROUND HYBRID === */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-         {/* Stars Overlay (Dark Mode Only) */}
+      <div className="absolute inset-0 z-0 pointer-events-none min-h-full overflow-hidden">
+         
+         {/* 1. School Icons Overlay (Light Mode Only) */}
+         <div className="absolute inset-0 dark:opacity-0 transition-opacity duration-700">
+            {decorIcons.map((item, i) => {
+              const IconComponent = schoolIcons[item.iconIdx];
+              return (
+                <motion.div
+                  key={`light-decor-${i}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: [0.03, 0.08, 0.03],
+                    y: [0, -30, 0],
+                    rotate: [item.style.rotate, item.style.rotate + 10, item.style.rotate]
+                  }}
+                  transition={{ 
+                    duration: item.style.duration, 
+                    repeat: Infinity, 
+                    delay: item.style.delay,
+                    ease: "easeInOut"
+                  }}
+                  className="absolute text-blue-900"
+                  style={{ 
+                    top: item.style.top, 
+                    left: item.style.left,
+                    scale: item.style.scale
+                  }}
+                >
+                  <IconComponent size={40} strokeWidth={1.5} />
+                </motion.div>
+              );
+            })}
+         </div>
+
+         {/* 2. Stars Overlay (Dark Mode Only) */}
          <div className="absolute inset-0 opacity-0 dark:opacity-100 transition-opacity duration-700">
             {stars.map((style, i) => (
               <div key={i} className="absolute bg-white rounded-full opacity-30" style={style} />
             ))}
             {/* Aurora Blobs */}
-            <div className="absolute top-[-20%] right-[0%] w-[700px] h-[700px] bg-purple-900/20 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-900/20 rounded-full blur-[100px]" />
+            <div className="absolute top-[-5%] right-[0%] w-[700px] h-[700px] bg-purple-900/20 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-[5%] left-[-10%] w-[600px] h-[600px] bg-blue-900/20 rounded-full blur-[100px]" />
          </div>
 
-         {/* Noise Overlay */}
+         {/* 3. Noise Overlay */}
          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.10] mix-blend-overlay" />
       </div>
 

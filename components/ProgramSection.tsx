@@ -43,7 +43,7 @@ export default async function ProgramSection() {
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white">
             Program <span className="text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-slate-200 dark:to-slate-500">Unggulan</span>
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 font-medium">
+          <p className="text-slate-600 dark:text-slate-400 font-bold">
             Inovasi kegiatan untuk mengembangkan bakat, minat, dan karakter siswa SMK Nurul Islam Cianjur.
           </p>
         </div>
@@ -112,7 +112,7 @@ export default async function ProgramSection() {
                     {program.nama}
                   </h3>
                   
-                  <p className={`${subTextColor} ${isMain ? 'text-sm md:text-base max-w-lg line-clamp-2' : 'text-xs font-medium line-clamp-2'}`}>
+                  <p className={`${subTextColor} ${isMain ? 'text-sm md:text-base max-w-lg line-clamp-2' : 'text-xs font-bold line-clamp-2'}`}>
                     {program.deskripsi}
                   </p>
                 </div>

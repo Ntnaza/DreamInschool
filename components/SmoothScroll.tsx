@@ -13,17 +13,21 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [contentHeight, setContentHeight] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Jangan aktifkan di halaman admin/login
   const isDisabled = pathname === "/login" || pathname?.startsWith("/admin");
 
   const { scrollY } = useScroll();
   
-  // Tuning ulang agar lebih stabil: mass rendah, damping pas
   const smoothY = useSpring(scrollY, {
-    mass: 0.1,
-    stiffness: 45,
-    damping: 15,
+    mass: 0.8,
+    stiffness: 70,
+    damping: 30,
     restDelta: 0.001
   });
 
@@ -35,52 +39,50 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  // Reset Scroll ke atas saat pindah halaman
   useEffect(() => {
-    if (isDisabled) return;
+    if (isDisabled || !mounted) return;
     window.scrollTo(0, 0);
-  }, [pathname, isDisabled]);
+  }, [pathname, isDisabled, mounted]);
 
   useEffect(() => {
-    if (isDisabled) return;
+    if (isDisabled || !mounted) return;
 
     handleResize();
-    const resizeObserver = new ResizeObserver(handleResize);
+    const resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(handleResize);
+    });
+
     if (scrollRef.current) {
       resizeObserver.observe(scrollRef.current);
     }
 
-    // Interval kecil untuk jaga-jaga jika ada gambar yang loading lambat
-    const timer = setInterval(handleResize, 1000);
-
     return () => {
       resizeObserver.disconnect();
-      clearInterval(timer);
     };
-  }, [handleResize, isDisabled, children]);
+  }, [handleResize, isDisabled, children, mounted]);
 
-  if (isDisabled) {
-    return <>{children}</>;
-  }
-
+  // SOLUSI HIDRASI: Struktur HTML HARUS sama antara server dan client sejak awal.
+  // Kita selalu render motion.div, tapi animasi (y) hanya aktif jika mounted & !isDisabled.
   return (
     <>
       <motion.div
         ref={scrollRef}
-        style={{ y }}
-        className="fixed top-0 left-0 w-full overflow-hidden will-change-transform z-10"
+        style={{ y: mounted && !isDisabled ? y : 0 }}
+        className={`${!isDisabled ? 'fixed top-0 left-0 w-full overflow-hidden will-change-transform z-10 bg-[#050811]' : ''}`}
       >
         {children}
       </motion.div>
-      {/* Spacer untuk memberikan tinggi halaman asli */}
-      <div style={{ height: contentHeight }} className="absolute top-0 left-0 w-full pointer-events-none" />
+
+      {/* Spacer hanya muncul jika smooth scroll aktif */}
+      {!isDisabled && (
+        <div style={{ height: contentHeight }} className="absolute top-0 left-0 w-full pointer-events-none" />
+      )}
       
-      {/* Style untuk menghilangkan scrollbar default agar tidak double */}
       <style jsx global>{`
         body {
           overflow-x: hidden;
+          background-color: #050811;
         }
-        /* Sembunyikan scrollbar tapi tetap bisa di-scroll */
         ::-webkit-scrollbar {
           width: 0px;
           background: transparent;

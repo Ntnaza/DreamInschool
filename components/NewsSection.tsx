@@ -81,7 +81,7 @@ export default async function NewsSection() {
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white">
                Berita & <span className="text-blue-600">Artikel</span>
               </h2>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-slate-600 dark:text-slate-400 font-bold">
                Informasi terkini mengenai prestasi, kegiatan akademik, dan pengumuman sekolah.
               </p>
           </div>
