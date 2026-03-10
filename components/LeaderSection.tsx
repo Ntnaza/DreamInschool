@@ -53,7 +53,7 @@ function LeaderCard({ leader, isEven }: { leader: any, isEven: boolean }) {
 }
 
 export default async function LeaderSection() {
-  let leaders = [];
+  let leaders: any[] = [];
   try {
     const data = await prisma.pengurus.findMany({
       where: { jabatan: { contains: "Ketua" } }

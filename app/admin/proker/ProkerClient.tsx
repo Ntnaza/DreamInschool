@@ -132,7 +132,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
       try {
         const res = await deleteProgramKerja(id);
         if (res.success) { showToast("Proker telah dihapus.", "success"); } 
-        else { setProkers(originalProkers); showToast(res.message, "error"); }
+        else { setProkers(originalProkers); showToast(res.message || "Gagal menghapus proker", "error"); }
       } catch (err) { setProkers(originalProkers); showToast("Gagal menghapus proker.", "error"); }
     }
   };

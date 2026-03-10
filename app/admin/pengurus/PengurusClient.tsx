@@ -124,7 +124,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     try {
       const res = isEditing ? await updatePengurus(formData) : await createPengurus(formData);
       if (res.success) { showToast("Berhasil!", "success"); window.location.reload(); }
-      else showToast(res.message, "error");
+      else showToast(res.message || "Terjadi kesalahan", "error");
     } catch (err) { showToast("Error!", "error"); }
     finally { setIsSubmitting(false); }
   };
@@ -138,7 +138,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     try {
       const res = selectedDivId ? await updateDivisi(selectedDivId, formData) : await createDivisi(formData);
       if (res.success) { showToast("Simpan Divisi!", "success"); window.location.reload(); }
-      else showToast(res.message, "error");
+      else showToast(res.message || "Terjadi kesalahan", "error");
     } catch (error) { showToast("Gagal!", "error"); }
     finally { setIsSubmitting(false); }
   };
@@ -152,9 +152,27 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     try {
       const res = await createJabatan(formData);
       if (res.success) { setJabatanFormName(""); showToast("Jabatan!", "success"); window.location.reload(); }
-      else showToast(res.message, "error");
+      else showToast(res.message || "Terjadi kesalahan", "error");
     } catch (error) { showToast("Gagal!", "error"); }
     finally { setIsSubmitting(false); }
+  };
+
+  const handleDeleteDivisi = async (id: number) => {
+    if (!confirm("Hapus divisi ini? Anggota di dalamnya mungkin akan kehilangan referensi divisi.")) return;
+    try {
+      const res = await deleteDivisi(id);
+      if (res.success) { showToast("Divisi dihapus", "success"); window.location.reload(); }
+      else showToast(res.message || "Terjadi kesalahan", "error");
+    } catch (error) { showToast("Gagal!", "error"); }
+  };
+
+  const handleDeleteJabatan = async (id: number) => {
+    if (!confirm("Hapus jabatan ini?")) return;
+    try {
+      const res = await deleteJabatan(id);
+      if (res.success) { showToast("Jabatan dihapus", "success"); window.location.reload(); }
+      else showToast(res.message || "Terjadi kesalahan", "error");
+    } catch (error) { showToast("Gagal!", "error"); }
   };
 
   const filteredMembers = members.filter((m) => {

@@ -281,7 +281,7 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
             setIsModalOpen(false);
             router.refresh();
             setFormData((prev: any) => ({ ...prev, title: "", amount: "", fotoBarang: "", fotoNota: "", hargaSatuan: "", kuantitas: 1 }));
-        } else { showToast("Gagal: " + result?.message, "error"); }
+        } else { showToast("Gagal: " + (result?.message || "Kesalahan tidak diketahui"), "error"); }
     } catch (e) { showToast("Terjadi kesalahan sistem.", "error"); } finally { setIsSubmitting(false); }
   };
 
@@ -291,6 +291,35 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
         setExpandedProkerId(id);
         setFormData({ ...formData, prokerId: id, amount: "", title: "", fotoBarang: "", fotoNota: "", hargaSatuan: "", kuantitas: 1 });
     }
+  };
+
+  const handleOpenGeneralModal = (type: 'in' | 'out') => {
+    setModalType(type === 'in' ? 'general_in' : 'general_out');
+    setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'barang' | 'nota') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Convert to base64 for simplicity in this demo/local env
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setFormData((prev: any) => ({
+        ...prev,
+        [field === 'barang' ? 'fotoBarang' : 'fotoNota']: base64String
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const isAllocationValid = () => {
+    if (modalType === 'new_event') {
+      if (formData.isSubsidi && !formData.fromBukuId) return false;
+      if (!formData.prokerId && !formData.title) return false;
+    }
+    return true;
   };
 
   return (

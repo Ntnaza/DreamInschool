@@ -298,7 +298,7 @@ export default function GaleriClient({ initialData, categories, fullCategories }
                             const fd = new FormData(); 
                             fd.append("nama", newCatName);
                             const res = editingCatId ? await updateKategoriGaleri(editingCatId, fd) : await createKategoriGaleri(fd);
-                            if(res.success) { showToast(res.message, "success"); window.location.reload(); }
+                            if(res.success) { showToast(res.message || "Berhasil!", "success"); window.location.reload(); }
                         }} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm transition-all active:scale-95">
                             {editingCatId ? "Update" : "Tambah"}
                         </button>
@@ -312,7 +312,7 @@ export default function GaleriClient({ initialData, categories, fullCategories }
                                     <button onClick={async () => {
                                         if(confirm("Hapus kategori ini?")) {
                                             const res = await deleteKategoriGaleri(cat.id);
-                                            if(res.success) { showToast(res.message, "success"); window.location.reload(); }
+                                            if(res.success) { showToast(res.message || "Berhasil!", "success"); window.location.reload(); }
                                         }
                                     }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
                                 </div>

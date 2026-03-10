@@ -93,7 +93,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
           showToast("Aspirasi telah dihapus.", "success");
         } else {
           setMessages(originalMessages);
-          showToast(res.message, "error");
+          showToast(res.message || "Gagal memproses permintaan", "error");
         }
       } catch (err) {
         setMessages(originalMessages);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 // 🔥 IMPORT SIHIR 3D KITA
 import AuroraBackground from "./AuroraBackground"; 
@@ -24,13 +24,13 @@ export default function MajorsClient({ majors }: { majors: any[] }) {
   }, [activeIndex, isPaused]);
 
   // === ANIMASI KONTEN (Teks & Logo) ===
-  const textVariants = {
+  const textVariants: Variants = {
     hidden: { opacity: 0, x: -30 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: "easeOut" } },
     exit: { opacity: 0, x: -30, transition: { duration: 0.5 } }
   };
 
-  const logoVariants = {
+  const logoVariants: Variants = {
     hidden: { opacity: 0, x: 50, scale: 0.9 },
     visible: { 
         opacity: 0.5, // Hantu Mode (50%)
