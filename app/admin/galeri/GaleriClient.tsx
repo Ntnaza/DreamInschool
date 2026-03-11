@@ -10,6 +10,7 @@ import {
 import { saveGaleri, deleteGaleri, createKategoriGaleri, updateKategoriGaleri, deleteKategoriGaleri } from "@/lib/actions";
 import TourGuide from "@/components/TourGuide";
 import { showToast } from "@/components/Toast";
+import { showConfirm } from "@/components/ConfirmDialog";
 
 const galeriTourSteps = [
     { target: '.tour-galeri-header', content: 'Manajemen dokumentasi kegiatan.', disableBeacon: true },
@@ -164,21 +165,32 @@ export default function GaleriClient({ initialData, categories, fullCategories }
 
     const res = await saveGaleri(formData);
     if(res.success) {
-        alert(res.message);
+        showToast(res.message, "success", isEditing ? "Album Diperbarui" : "Album Terposting");
         resetForm();
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
     } else {
-        alert("Gagal: " + res.message);
+        showToast(res.message, "error", "Gagal Simpan");
     }
     setIsSubmitting(false);
   };
 
   // --- DELETE ---
   const handleDelete = async (id: number) => {
-    if(confirm("Hapus seluruh album kegiatan ini?")) {
-        await deleteGaleri(id);
-        window.location.reload();
-    }
+    showConfirm({
+        title: "Hapus Album?",
+        message: "Seluruh foto dalam album ini akan dihapus permanen dari sistem.",
+        confirmText: "Ya, Hapus",
+        type: "danger",
+        onConfirm: async () => {
+            const res = await deleteGaleri(id);
+            if(res.success) {
+                showToast("Album galeri berhasil dihapus.", "success", "Album Dihapus");
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast("Gagal menghapus album.", "error");
+            }
+        }
+    });
   }
 
   const filteredItems = items.filter(item => filterKategori === "Semua" ? true : item.kategori === filterKategori);

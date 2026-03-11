@@ -13,6 +13,7 @@ import TourGuide from "@/components/TourGuide";
 // Import Server Actions
 import { saveInventaris, deleteInventaris, pinjamBarang, kembalikanBarang } from "@/lib/actions";
 import { showToast } from "@/components/Toast";
+import { showConfirm } from "@/components/ConfirmDialog";
 
 // DEFINISI LANGKAH TUR (DIKEMBALIKAN LENGKAP)
 const inventarisTourSteps = [
@@ -126,18 +127,24 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Yakin hapus aset ini?")) {
-      try {
-        const res = await deleteInventaris(id);
-        if(!res.success) showToast("Gagal menghapus.", "error");
-        else {
-          showToast("Aset berhasil dihapus.", "success");
-          window.location.reload();
+    showConfirm({
+      title: "Hapus Aset?",
+      message: "Data barang ini akan dihapus permanen dari inventaris organisasi.",
+      confirmText: "Ya, Hapus",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await deleteInventaris(id);
+          if(!res.success) showToast("Gagal menghapus.", "error");
+          else {
+            showToast("Aset berhasil dihapus.", "success");
+            window.location.reload();
+          }
+        } catch (err) {
+          showToast("Terjadi kesalahan sistem.", "error");
         }
-      } catch (err) {
-        showToast("Terjadi kesalahan sistem.", "error");
       }
-    }
+    });
   };
 
   const handleBorrowSubmit = async (e: React.FormEvent) => {

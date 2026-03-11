@@ -225,7 +225,7 @@ export default function PengurusClient({ members, angkatanTitle }: { members: an
               <span className="text-blue-300 text-xs font-bold tracking-[0.2em] uppercase">Struktur Organisasi</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 uppercase tracking-tight leading-tight mb-6 drop-shadow-sm">
+            <h1 className="text-4xl md:text-5xl font-black mt-4 mb-6 pb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-slate-100 dark:via-slate-300 dark:to-slate-500 uppercase tracking-tight">
               {angkatanTitle}
             </h1>
 

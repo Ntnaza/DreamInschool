@@ -82,13 +82,22 @@ export default function BeritaClient({ initialPosts, dynamicCategories }: { init
   });
 
   const handleDelete = async (id: number) => {
-    if(confirm("Hapus berita ini secara permanen?")) {
-      try {
-        const res = await deleteBerita(id);
-        if (res.success) { showToast("Berita telah dihapus.", "success"); window.location.reload(); } 
-        else { showToast("Gagal menghapus.", "error"); }
-      } catch (err) { showToast("Terjadi kesalahan sistem.", "error"); }
-    }
+    showConfirm({
+      title: "Hapus Berita?",
+      message: "Artikel ini akan dihapus secara permanen dari website.",
+      confirmText: "Ya, Hapus",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await deleteBerita(id);
+          if (res.success) { 
+            showToast("Berita telah dihapus.", "success", "Terhapus"); 
+            setTimeout(() => window.location.reload(), 1000); 
+          } 
+          else { showToast("Gagal menghapus.", "error"); }
+        } catch (err) { showToast("Terjadi kesalahan sistem.", "error"); }
+      }
+    });
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

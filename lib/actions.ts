@@ -449,8 +449,22 @@ export async function checkAndAutoStopAcara() { return { success: true, message:
 
 export async function createBukuKas(formData: FormData) {
   try {
-    await prisma.bukuKas.create({ data: { nama: formData.get("nama") as string, deskripsi: formData.get("deskripsi") as string, color: "blue", icon: "Wallet" } });
+    await prisma.bukuKas.create({ data: { nama: formData.get("nama") as string, deskripsi: formData.get("deskripsi") as string, color: formData.get("color") as string || "blue", icon: formData.get("icon") as string || "Wallet" } });
     revalidatePath("/admin/keuangan"); return { success: true, message: "Buku Kas dibuat!" };
+  } catch (error) { return { success: false, message: "Gagal." }; }
+}
+
+export async function updateBukuKas(id: number, formData: FormData) {
+  try {
+    await prisma.bukuKas.update({ where: { id }, data: { nama: formData.get("nama") as string, deskripsi: formData.get("deskripsi") as string, color: formData.get("color") as string, icon: formData.get("icon") as string } });
+    revalidatePath("/admin/keuangan"); return { success: true, message: "Buku Kas diperbarui!" };
+  } catch (error) { return { success: false, message: "Gagal." }; }
+}
+
+export async function deleteBukuKas(id: number) {
+  try {
+    await prisma.bukuKas.delete({ where: { id } });
+    revalidatePath("/admin/keuangan"); return { success: true, message: "Buku Kas dihapus!" };
   } catch (error) { return { success: false, message: "Gagal." }; }
 }
 
@@ -491,9 +505,25 @@ export async function closeEventBudget(prokerId: number, targetBukuId: number) {
 
 export async function saveInventaris(formData: FormData) {
   try {
-    await prisma.inventaris.create({ data: { nama: formData.get("name") as string, kode: formData.get("code") as string, kategori: "Umum", kondisi: "Baik", status: "AVAILABLE" } });
-    revalidatePath("/admin/inventaris"); return { success: true, message: "Aset disimpan!" };
-  } catch (error) { return { success: false, message: "Gagal." }; }
+    const id = formData.get("id");
+    const data = {
+      nama: formData.get("name") as string,
+      kode: formData.get("code") as string,
+      kategori: formData.get("category") as string || "Umum",
+      kondisi: formData.get("condition") as string || "Baik",
+      status: (formData.get("status") as any) || "AVAILABLE"
+    };
+
+    if (id) {
+      await prisma.inventaris.update({ where: { id: Number(id) }, data });
+      revalidatePath("/admin/inventaris");
+      return { success: true, message: "Aset diperbarui!" };
+    } else {
+      await prisma.inventaris.create({ data });
+      revalidatePath("/admin/inventaris");
+      return { success: true, message: "Aset disimpan!" };
+    }
+  } catch (error) { return { success: false, message: "Gagal menyimpan aset." }; }
 }
 
 export async function deleteInventaris(id: number) {
@@ -523,9 +553,32 @@ export async function kembalikanBarang(formData: FormData) {
 
 export async function saveGaleri(formData: FormData) {
   try {
-    await prisma.galeri.create({ data: { judul: formData.get("judul") as string, kategori: "Umum", images: formData.get("images") as string, deskripsi: "" } });
-    revalidatePath("/admin/galeri"); return { success: true, message: "Galeri disimpan!" };
-  } catch (error) { return { success: false, message: "Gagal." }; }
+    const id = formData.get("id");
+    const tanggalStr = formData.get("tanggal") as string;
+    
+    const data = {
+      judul: formData.get("judul") as string,
+      kategori: formData.get("kategori") as string || "Umum",
+      images: formData.get("images") as string,
+      deskripsi: formData.get("deskripsi") as string || "",
+      tanggal: tanggalStr ? new Date(tanggalStr) : new Date()
+    };
+
+    if (id) {
+      await prisma.galeri.update({ where: { id: Number(id) }, data });
+      revalidatePath("/admin/galeri");
+      revalidatePath("/galeri");
+      return { success: true, message: "Galeri diperbarui!" };
+    } else {
+      await prisma.galeri.create({ data });
+      revalidatePath("/admin/galeri");
+      revalidatePath("/galeri");
+      return { success: true, message: "Galeri disimpan!" };
+    }
+  } catch (error) { 
+    console.error("Save Galeri Error:", error);
+    return { success: false, message: "Gagal menyimpan galeri." }; 
+  }
 }
 
 export async function deleteGaleri(id: number) {

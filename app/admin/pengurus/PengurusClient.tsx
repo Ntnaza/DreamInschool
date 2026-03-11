@@ -12,7 +12,8 @@ import {
   Video, Globe, Trash, Check
 } from "lucide-react";
 import { showToast } from "@/components/Toast";
-import TourGuide from "@/components/TourGuide";
+import { showConfirm } from "@/components/ConfirmDialog";
+import TourGuide from "@/components/TourGuide"; 
 import {
   createPengurus, updatePengurus, deletePengurus,
   createDivisi, updateDivisi, deleteDivisi,
@@ -158,21 +159,35 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
   };
 
   const handleDeleteDivisi = async (id: number) => {
-    if (!confirm("Hapus divisi ini? Anggota di dalamnya mungkin akan kehilangan referensi divisi.")) return;
-    try {
-      const res = await deleteDivisi(id);
-      if (res.success) { showToast("Divisi dihapus", "success"); window.location.reload(); }
-      else showToast(res.message || "Terjadi kesalahan", "error");
-    } catch (error) { showToast("Gagal!", "error"); }
+    showConfirm({
+      title: "Hapus Divisi?",
+      message: "Seluruh jabatan dalam divisi ini akan ikut terpengaruh. Anggota mungkin kehilangan referensi divisi.",
+      confirmText: "Ya, Hapus",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await deleteDivisi(id);
+          if (res.success) { showToast("Divisi dihapus", "success"); window.location.reload(); }
+          else showToast(res.message || "Terjadi kesalahan", "error");
+        } catch (error) { showToast("Gagal!", "error"); }
+      }
+    });
   };
 
   const handleDeleteJabatan = async (id: number) => {
-    if (!confirm("Hapus jabatan ini?")) return;
-    try {
-      const res = await deleteJabatan(id);
-      if (res.success) { showToast("Jabatan dihapus", "success"); window.location.reload(); }
-      else showToast(res.message || "Terjadi kesalahan", "error");
-    } catch (error) { showToast("Gagal!", "error"); }
+    showConfirm({
+      title: "Hapus Jabatan?",
+      message: "Jabatan ini akan dihapus dari daftar divisi terkait.",
+      confirmText: "Hapus",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await deleteJabatan(id);
+          if (res.success) { showToast("Jabatan dihapus", "success"); window.location.reload(); }
+          else showToast(res.message || "Terjadi kesalahan", "error");
+        } catch (error) { showToast("Gagal!", "error"); }
+      }
+    });
   };
 
   const filteredMembers = members.filter((m) => {
@@ -297,7 +312,17 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
                         </div>
                         <div className="flex gap-1">
                           <button onClick={() => openEditMember(member)} className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all"><Edit3 size={16} /></button>
-                          <button onClick={() => { if (confirm("Hapus?")) deletePengurus(member.id).then(res => window.location.reload()); }} className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"><Trash2 size={16} /></button>
+                          <button onClick={() => { 
+                            showConfirm({
+                              title: "Hapus Anggota?",
+                              message: `Akun dan data pengurus ${member.nama} akan dihapus permanen.`,
+                              onConfirm: async () => {
+                                await deletePengurus(member.id);
+                                showToast("Anggota dihapus.", "success");
+                                window.location.reload();
+                              }
+                            });
+                          }} className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"><Trash2 size={16} /></button>
                         </div>
                       </div>
                     </>
@@ -309,7 +334,17 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => openEditMember(member)} className="p-2 text-slate-400 hover:text-blue-600"><Edit3 size={16} /></button>
-                        <button onClick={() => { if (confirm("Hapus?")) deletePengurus(member.id).then(res => window.location.reload()); }} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={16} /></button>
+                        <button onClick={() => { 
+                           showConfirm({
+                              title: "Hapus Anggota?",
+                              message: `Hapus ${member.nama} dari daftar pengurus?`,
+                              onConfirm: async () => {
+                                await deletePengurus(member.id);
+                                showToast("Anggota dihapus.", "success");
+                                window.location.reload();
+                              }
+                           });
+                        }} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={16} /></button>
                       </div>
                     </>
                   )}

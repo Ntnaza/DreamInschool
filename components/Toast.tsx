@@ -14,7 +14,7 @@ interface Toast {
   title?: string;
 }
 
-// EVENT SYSTEM (Agar bisa dipanggil dari mana saja tanpa Context yang berat)
+// EVENT SYSTEM
 let toastCount = 0;
 const observers: ((toast: Toast) => void)[] = [];
 
@@ -29,7 +29,6 @@ export default function ToastContainer() {
 
   const addToast = useCallback((toast: Toast) => {
     setToasts((prev) => [...prev, toast]);
-    // Auto remove setelah 5 detik
     setTimeout(() => removeToast(toast.id), 5000);
   }, []);
 
@@ -47,61 +46,66 @@ export default function ToastContainer() {
 
   const icons = {
     success: <CheckCircle2 className="text-emerald-500" size={20} />,
-    error: <XCircle className="text-red-500" size={20} />,
+    error: <XCircle className="text-rose-500" size={20} />,
     warning: <AlertTriangle className="text-amber-500" size={20} />,
-    info: <Info className="text-blue-500" size={20} />,
+    info: <Info className="text-sky-500" size={20} />,
   };
 
-  const colors = {
-    success: "border-emerald-500/20 bg-emerald-50/80 dark:bg-emerald-500/5",
-    error: "border-red-500/20 bg-red-50/80 dark:bg-red-500/5",
-    warning: "border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/5",
-    info: "border-blue-500/20 bg-blue-50/80 dark:bg-blue-500/5",
+  const glows = {
+    success: "shadow-emerald-500/10 dark:shadow-emerald-500/5",
+    error: "shadow-rose-500/10 dark:shadow-rose-500/5",
+    warning: "shadow-amber-500/10 dark:shadow-amber-500/5",
+    info: "shadow-sky-500/10 dark:shadow-sky-500/5",
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none sm:min-w-[320px] max-w-[400px]">
+    <div className="fixed top-6 right-6 z-[99999] flex flex-col gap-3 pointer-events-none w-[calc(100%-48px)] max-w-[380px]">
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
             layout
-            initial={{ opacity: 0, x: 20, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 10, scale: 0.95, transition: { duration: 0.2 } }}
-            className={`pointer-events-auto relative group flex items-start gap-3 p-4 rounded-2xl border backdrop-blur-xl shadow-lg transition-all ${colors[toast.type]}`}
+            initial={{ opacity: 0, y: -20, x: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.9, transition: { duration: 0.2 } }}
+            className={`pointer-events-auto relative flex items-center gap-4 p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl ${glows[toast.type]}`}
           >
-            <div className="mt-0.5 shrink-0">{icons[toast.type]}</div>
+            {/* ICON WRAPPER (Neutral BG, Colored Icon) */}
+            <div className="shrink-0 w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center border border-slate-100 dark:border-white/5">
+                {icons[toast.type]}
+            </div>
             
-            <div className="flex-1 pr-4">
-              {toast.title && (
-                <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-0.5">
-                  {toast.title}
-                </h4>
-              )}
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-relaxed">
+            {/* TEXT CONTENT */}
+            <div className="flex-1 min-w-0 py-0.5">
+              <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-0.5">
+                {toast.title || (toast.type === 'success' ? 'Berhasil' : toast.type === 'error' ? 'Gagal' : 'Informasi')}
+              </h4>
+              <p className="text-[13px] font-bold text-slate-700 dark:text-slate-200 leading-tight truncate">
                 {toast.message}
               </p>
             </div>
 
+            {/* CLOSE BUTTON */}
             <button
               onClick={() => removeToast(toast.id)}
-              className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors"
+              className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all"
             >
               <X size={14} />
             </button>
             
-            {/* PROGRESS BAR (Visual feedback untuk auto-remove) */}
-            <motion.div 
-              initial={{ scaleX: 1 }}
-              animate={{ scaleX: 0 }}
-              transition={{ duration: 5, ease: "linear" }}
-              className={`absolute bottom-0 left-4 right-4 h-[2px] rounded-full origin-left opacity-30 ${
-                toast.type === "success" ? "bg-emerald-500" :
-                toast.type === "error" ? "bg-red-500" :
-                toast.type === "warning" ? "bg-amber-500" : "bg-blue-500"
-              }`}
-            />
+            {/* ACCENT PROGRESS BAR (Indikator Warna Tetap Ada di Sini) */}
+            <div className="absolute bottom-0 left-4 right-4 h-[2px] overflow-hidden rounded-full bg-slate-100 dark:bg-white/5">
+                <motion.div 
+                    initial={{ scaleX: 1 }}
+                    animate={{ scaleX: 0 }}
+                    transition={{ duration: 5, ease: "linear" }}
+                    className={`h-full origin-left ${
+                        toast.type === "success" ? "bg-emerald-500" :
+                        toast.type === "error" ? "bg-rose-500" :
+                        toast.type === "warning" ? "bg-amber-500" : "bg-sky-500"
+                    }`}
+                />
+            </div>
           </motion.div>
         ))}
       </AnimatePresence>

@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle"; 
 import { logoutAction } from "@/lib/auth";
+import ToastContainer from "@/components/Toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { 
   LayoutDashboard, Inbox, Newspaper, CalendarDays, Users, 
   ChevronLeft, ChevronRight, LogOut, Rocket, Menu, Settings,
@@ -280,6 +282,9 @@ export default function AdminLayout({
             {children}
          </div>
       </main>
+
+      <ToastContainer />
+      <ConfirmDialog />
 
       <style jsx global>{`
         .sidebar-no-transition *,

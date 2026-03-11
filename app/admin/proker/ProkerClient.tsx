@@ -9,6 +9,7 @@ import {
   Image as ImageIcon, Star
 } from "lucide-react";
 import { showToast } from "@/components/Toast";
+import { showConfirm } from "@/components/ConfirmDialog";
 import TourGuide from "@/components/TourGuide"; 
 import { createProgramKerja, updateProgramKerja, deleteProgramKerja } from "@/lib/actions"; 
 
@@ -126,15 +127,29 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
   };
 
   const handleDelete = async (id: number) => {
-    if(confirm("Yakin ingin menghapus proker ini permanen?")) {
-      const originalProkers = [...prokers];
-      setProkers(prokers.filter(p => p.id !== id));
-      try {
-        const res = await deleteProgramKerja(id);
-        if (res.success) { showToast("Proker telah dihapus.", "success"); } 
-        else { setProkers(originalProkers); showToast(res.message || "Gagal menghapus proker", "error"); }
-      } catch (err) { setProkers(originalProkers); showToast("Gagal menghapus proker.", "error"); }
-    }
+    showConfirm({
+      title: "Hapus Proker?",
+      message: "Data proker ini akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.",
+      confirmText: "Ya, Hapus",
+      type: "danger",
+      onConfirm: async () => {
+        const originalProkers = [...prokers];
+        setProkers(prokers.filter(p => p.id !== id));
+        try {
+          const res = await deleteProgramKerja(id);
+          if (res.success) { 
+            showToast("Proker telah dihapus.", "success", "Terhapus"); 
+          } 
+          else { 
+            setProkers(originalProkers); 
+            showToast(res.message || "Gagal menghapus proker", "error"); 
+          }
+        } catch (err) { 
+          setProkers(originalProkers); 
+          showToast("Gagal menghapus proker.", "error"); 
+        }
+      }
+    });
   };
 
   const filteredProkers = prokers.filter((item) => {

@@ -39,7 +39,9 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
           <span className="px-4 py-2 rounded-full bg-blue-100 dark:bg-white/10 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-widest border border-blue-200 dark:border-white/10">
             Mading Digital 📰
           </span>
-          <h1 className="text-4xl md:text-6xl font-black mt-4 mb-6 pb-2 text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
+          <h1 className="text-4xl md:text-5xl font-black mt-4 mb-6 pb-2 
+            text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700
+            dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
             Berita & Artikel
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-lg font-bold">

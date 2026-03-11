@@ -11,6 +11,7 @@ import {
 import TourGuide from "@/components/TourGuide";
 import { deleteAspirasi, replyAspirasi } from "@/lib/actions"; 
 import { showToast } from "@/components/Toast";
+import { showConfirm } from "@/components/ConfirmDialog";
 
 // Helper Warna Tag
 const tagColorMap: any = {
@@ -80,26 +81,32 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
   const selectedMsg = messages.find(m => m.id === selectedId);
 
   const handleDelete = async (id: number) => {
-    if(confirm("Hapus pesan ini secara permanen?")) {
-      const originalMessages = [...messages];
-      const newMessages = messages.filter(m => m.id !== id);
-      setMessages(newMessages);
-      if (selectedId === id) {
-        setSelectedId(newMessages.length > 0 ? newMessages[0].id : null);
-      }
-      try {
-        const res = await deleteAspirasi(id);
-        if (res.success) {
-          showToast("Aspirasi telah dihapus.", "success");
-        } else {
-          setMessages(originalMessages);
-          showToast(res.message || "Gagal memproses permintaan", "error");
+    showConfirm({
+      title: "Hapus Aspirasi?",
+      message: "Pesan ini akan dihapus secara permanen dari sistem dan tidak dapat dikembalikan.",
+      confirmText: "Ya, Hapus",
+      type: "danger",
+      onConfirm: async () => {
+        const originalMessages = [...messages];
+        const newMessages = messages.filter(m => m.id !== id);
+        setMessages(newMessages);
+        if (selectedId === id) {
+          setSelectedId(newMessages.length > 0 ? newMessages[0].id : null);
         }
-      } catch (err) {
-        setMessages(originalMessages);
-        showToast("Gagal menghapus aspirasi.", "error");
+        try {
+          const res = await deleteAspirasi(id);
+          if (res.success) {
+            showToast("Aspirasi telah dihapus.", "success");
+          } else {
+            setMessages(originalMessages);
+            showToast(res.message || "Gagal memproses permintaan", "error");
+          }
+        } catch (err) {
+          setMessages(originalMessages);
+          showToast("Gagal menghapus aspirasi.", "error");
+        }
       }
-    }
+    });
   };
 
   const handleSendReply = async () => {

@@ -157,18 +157,18 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
       {/* === BACKGROUND HYBRID === */}
       <div className="absolute inset-0 z-0 pointer-events-none min-h-full overflow-hidden">
          
-         {/* 1. School Icons Overlay (Light Mode Only) */}
-         <div className="absolute inset-0 dark:opacity-0 transition-opacity duration-700">
+         {/* 1. School Icons Overlay (Hybrid Mode) */}
+         <div className="absolute inset-0 opacity-100 transition-opacity duration-700">
             {decorIcons.map((item, i) => {
               const IconComponent = schoolIcons[item.iconIdx];
               return (
                 <motion.div
-                  key={`light-decor-${i}`}
+                  key={`decor-${i}`}
                   initial={{ opacity: 0 }}
                   animate={{ 
-                    opacity: [0.03, 0.08, 0.03],
-                    y: [0, -30, 0],
-                    rotate: [item.style.rotate, item.style.rotate + 10, item.style.rotate]
+                    opacity: [0.4, 0.8, 0.4],
+                    y: [0, -60, 0],
+                    rotate: [item.style.rotate, item.style.rotate + 20, item.style.rotate]
                   }}
                   transition={{ 
                     duration: item.style.duration, 
@@ -176,14 +176,14 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
                     delay: item.style.delay,
                     ease: "easeInOut"
                   }}
-                  className="absolute text-blue-900"
+                  className="absolute text-blue-200 dark:text-blue-900/40"
                   style={{ 
                     top: item.style.top, 
                     left: item.style.left,
                     scale: item.style.scale
                   }}
                 >
-                  <IconComponent size={40} strokeWidth={1.5} />
+                  <IconComponent size={60} strokeWidth={1.5} />
                 </motion.div>
               );
             })}
@@ -211,10 +211,9 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
             Roadmap 2024/2025 🗺️
           </span>
           
-          <h1 className="text-4xl md:text-6xl font-black mt-4 mb-6 pb-2
-            text-blue-600 
-            dark:text-transparent dark:bg-clip-text 
-            dark:bg-gradient-to-r dark:from-slate-100 dark:via-slate-300 dark:to-slate-500"
+          <h1 className="text-4xl md:text-5xl font-black mt-4 mb-6 pb-2
+            text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700
+            dark:from-slate-100 dark:via-slate-300 dark:to-slate-500"
           >
             Program Kerja
           </h1>
