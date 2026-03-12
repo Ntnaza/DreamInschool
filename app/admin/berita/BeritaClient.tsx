@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { createBerita, deleteBerita, updateBerita } from "@/lib/actions";
 import { showToast } from "@/components/Toast";
+import { showConfirm } from "@/components/ConfirmDialog";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 export default function BeritaClient({ initialPosts, dynamicCategories }: { initialPosts: any[], dynamicCategories: string[] }) {

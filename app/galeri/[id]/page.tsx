@@ -4,8 +4,13 @@ import DetailGaleriClient from "./DetailGaleriClient";
 
 // Tambahkan generateStaticParams agar Next.js tahu rute apa saja yang ada
 export async function generateStaticParams() {
-  const items = await prisma.galeri.findMany({ select: { id: true } });
-  return items.map((item) => ({ id: item.id.toString() }));
+  try {
+    const items = await prisma.galeri.findMany({ select: { id: true } });
+    return items.map((item) => ({ id: item.id.toString() }));
+  } catch (error) {
+    console.warn("Prisma: Gagal mengambil data galeri untuk static generation saat build (DATABASE mungkin offline).");
+    return [];
+  }
 }
 
 export default async function DetailGaleriPage({ params }: { params: Promise<{ id: string }> }) {
