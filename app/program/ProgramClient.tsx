@@ -42,13 +42,16 @@ const TimelineItem = ({ data, index }: { data: any, index: number }) => {
       {/* 1. SPACE KOSONG (ZigZag) */}
       <div className="hidden md:block w-5/12" />
 
-      {/* 2. TITIK TENGAH (NODE) */}
-      <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-         <div className={`w-8 h-8 rounded-full border-4 border-slate-50 dark:border-[#020617] shadow-lg z-10 flex items-center justify-center transition-colors duration-500
-           ${data.status === 'DONE' ? 'bg-green-500' : 
-             data.status === 'IN_PROGRESS' ? 'bg-yellow-400 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'}
-         `}>
-           {data.status === 'DONE' && <span className="text-white text-[10px]">✓</span>}
+      {/* 2. TITIK TENGAH (NODE) - Glowing White Style (Optimized for both modes) */}
+      <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center z-20">
+         <div className={`w-7 h-7 rounded-full border-4 border-white dark:border-[#020617] bg-white shadow-lg dark:shadow-[0_0_20px_rgba(255,255,255,0.6)] animate-pulse flex items-center justify-center transition-all duration-500`}>
+           {data.status === 'DONE' ? (
+             <span className="text-green-600 font-bold text-xs">✓</span>
+           ) : data.status === 'IN_PROGRESS' ? (
+             <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-ping" />
+           ) : (
+             <div className="w-1 h-1 rounded-full bg-blue-400 opacity-50" />
+           )}
          </div>
       </div>
 

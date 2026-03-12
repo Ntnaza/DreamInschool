@@ -3,11 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Image as ImageIcon, Plus, Trash2, Search, 
+import { Image as ImageIcon, Plus, Trash2, Search, 
   Calendar, Tag, X, Loader2, Edit, UploadCloud, Settings
 } from "lucide-react";
-import { saveGaleri, deleteGaleri, createKategoriGaleri, updateKategoriGaleri, deleteKategoriGaleri } from "@/lib/actions";
+import { useRouter } from "next/navigation";
+import { saveGaleri, deleteGaleri, createKategoriGaleri, updateKategoriGaleri, deleteKategoriGaleri } from "@/lib/actions"; 
 import TourGuide from "@/components/TourGuide";
 import { showToast } from "@/components/Toast";
 import { showConfirm } from "@/components/ConfirmDialog";
@@ -20,6 +20,7 @@ const galeriTourSteps = [
 ];
 
 export default function GaleriClient({ initialData, categories, fullCategories }: { initialData: any[], categories: string[], fullCategories: any[] }) {
+  const router = useRouter();
   const [items, setItems] = useState(initialData);
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [filterKategori, setFilterKategori] = useState("Semua");
@@ -167,7 +168,7 @@ export default function GaleriClient({ initialData, categories, fullCategories }
     if(res.success) {
         showToast(res.message, "success", isEditing ? "Album Diperbarui" : "Album Terposting");
         resetForm();
-        setTimeout(() => window.location.reload(), 1500);
+        router.refresh();
     } else {
         showToast(res.message, "error", "Gagal Simpan");
     }
@@ -185,7 +186,7 @@ export default function GaleriClient({ initialData, categories, fullCategories }
             const res = await deleteGaleri(id);
             if(res.success) {
                 showToast("Album galeri berhasil dihapus.", "success", "Album Dihapus");
-                setTimeout(() => window.location.reload(), 1500);
+                router.refresh();
             } else {
                 showToast("Gagal menghapus album.", "error");
             }
@@ -310,13 +311,13 @@ export default function GaleriClient({ initialData, categories, fullCategories }
                             const fd = new FormData(); 
                             fd.append("nama", newCatName);
                             const res = editingCatId ? await updateKategoriGaleri(editingCatId, fd) : await createKategoriGaleri(fd);
-                            if(res.success) { showToast(res.message || "Berhasil!", "success"); window.location.reload(); }
-                        }} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm transition-all active:scale-95">
+                            if(res.success) { showToast(res.message || "Berhasil!", "success"); router.refresh(); }
+                            }} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm transition-all active:scale-95">
                             {editingCatId ? "Update" : "Tambah"}
-                        </button>
-                    </div>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                        {fullCategories.map(cat => (
+                            </button>
+                            </div>
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                            {fullCategories.map(cat => (
                             <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{cat.nama}</span>
                                 <div className="flex gap-2">
@@ -324,14 +325,13 @@ export default function GaleriClient({ initialData, categories, fullCategories }
                                     <button onClick={async () => {
                                         if(confirm("Hapus kategori ini?")) {
                                             const res = await deleteKategoriGaleri(cat.id);
-                                            if(res.success) { showToast(res.message || "Berhasil!", "success"); window.location.reload(); }
+                                            if(res.success) { showToast(res.message || "Berhasil!", "success"); router.refresh(); }
                                         }
                                     }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={14}/></button>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                </motion.div>
+                            ))}
+                            </div>                </motion.div>
             </div>
         )}
       </AnimatePresence>

@@ -652,3 +652,70 @@ export async function deleteJabatan(id: number) {
 export async function updateStatusKehadiran(absensiId: number, status: any) {
   try { await prisma.absensi.update({ where: { id: absensiId }, data: { status } }); revalidatePath("/admin/absensi"); return { success: true, message: "Status diperbarui" }; } catch (error) { return { success: false, message: "Gagal." }; }
 }
+
+/* ======================================================
+   10. PUSAT BANTUAN & TIKET
+====================================================== */
+
+export async function saveHelpVideo(formData: FormData) {
+  try {
+    const id = formData.get("id");
+    const data = {
+      title: formData.get("title") as string,
+      youtubeId: formData.get("youtubeId") as string,
+      duration: formData.get("duration") as string || "00:00",
+      desc: formData.get("desc") as string || "",
+      thumbnail: formData.get("thumbnail") as string || null,
+    };
+
+    if (id) {
+      await prisma.helpVideo.update({ where: { id: Number(id) }, data });
+    } else {
+      await prisma.helpVideo.create({ data });
+    }
+    revalidatePath("/admin/bantuan");
+    return { success: true, message: "Video tutorial disimpan!" };
+  } catch (error) { return { success: false, message: "Gagal menyimpan video." }; }
+}
+
+export async function deleteHelpVideo(id: number) {
+  try {
+    await prisma.helpVideo.delete({ where: { id } });
+    revalidatePath("/admin/bantuan");
+    return { success: true, message: "Video dihapus." };
+  } catch (error) { return { success: false, message: "Gagal hapus video." }; }
+}
+
+export async function submitHelpTicket(formData: FormData) {
+  try {
+    const subject = formData.get("subject") as string;
+    const description = formData.get("description") as string;
+    const fotoBukti = formData.get("fotoBukti") as string || null;
+
+    if (!subject || !description) return { success: false, message: "Subjek dan Deskripsi wajib diisi." };
+
+    await prisma.helpTicket.create({
+      data: { subject, description, fotoBukti, status: "OPEN" }
+    });
+    
+    revalidatePath("/admin/bantuan");
+    revalidatePath("/admin/bantuan/inbox");
+    return { success: true, message: "Laporan berhasil dikirim! Tim developer akan segera mengecek." };
+  } catch (error) { return { success: false, message: "Gagal mengirim laporan." }; }
+}
+
+export async function updateTicketStatus(id: number, status: any) {
+  try {
+    await prisma.helpTicket.update({ where: { id }, data: { status } });
+    revalidatePath("/admin/bantuan/inbox");
+    return { success: true, message: "Status tiket diperbarui." };
+  } catch (error) { return { success: false, message: "Gagal update status." }; }
+}
+
+export async function deleteHelpTicket(id: number) {
+  try {
+    await prisma.helpTicket.delete({ where: { id } });
+    revalidatePath("/admin/bantuan/inbox");
+    return { success: true, message: "Tiket dihapus." };
+  } catch (error) { return { success: false, message: "Gagal hapus tiket." }; }
+}

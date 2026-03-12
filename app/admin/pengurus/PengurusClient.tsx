@@ -11,6 +11,7 @@ import {
   Layers, Briefcase, Camera,
   Video, Globe, Trash, Check
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { showToast } from "@/components/Toast";
 import { showConfirm } from "@/components/ConfirmDialog";
 import TourGuide from "@/components/TourGuide"; 
@@ -31,6 +32,7 @@ const pengurusTourSteps = [
 ];
 
 export default function PengurusClient({ initialData, initialDivisi }: { initialData: any[], initialDivisi: any[] }) {
+  const router = useRouter();
   const [members, setMembers] = useState(initialData);
   const [divisions, setDivisions] = useState(initialDivisi);
   const [isDataLoading, setIsDataLoading] = useState(true);
@@ -124,7 +126,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     Object.entries(form).forEach(([key, value]) => formData.append(key, value.toString()));
     try {
       const res = isEditing ? await updatePengurus(formData) : await createPengurus(formData);
-      if (res.success) { showToast("Berhasil!", "success"); window.location.reload(); }
+      if (res.success) { showToast("Berhasil!", "success"); router.refresh(); setIsModalPengurusOpen(false); }
       else showToast(res.message || "Terjadi kesalahan", "error");
     } catch (err) { showToast("Error!", "error"); }
     finally { setIsSubmitting(false); }
@@ -138,7 +140,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     formData.append("deskripsi", divisiForm.deskripsi);
     try {
       const res = selectedDivId ? await updateDivisi(selectedDivId, formData) : await createDivisi(formData);
-      if (res.success) { showToast("Simpan Divisi!", "success"); window.location.reload(); }
+      if (res.success) { showToast("Simpan Divisi!", "success"); router.refresh(); }
       else showToast(res.message || "Terjadi kesalahan", "error");
     } catch (error) { showToast("Gagal!", "error"); }
     finally { setIsSubmitting(false); }
@@ -152,7 +154,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     formData.append("divisiId", selectedDivId.toString());
     try {
       const res = await createJabatan(formData);
-      if (res.success) { setJabatanFormName(""); showToast("Jabatan!", "success"); window.location.reload(); }
+      if (res.success) { setJabatanFormName(""); showToast("Jabatan!", "success"); router.refresh(); }
       else showToast(res.message || "Terjadi kesalahan", "error");
     } catch (error) { showToast("Gagal!", "error"); }
     finally { setIsSubmitting(false); }
@@ -167,7 +169,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
       onConfirm: async () => {
         try {
           const res = await deleteDivisi(id);
-          if (res.success) { showToast("Divisi dihapus", "success"); window.location.reload(); }
+          if (res.success) { showToast("Divisi dihapus", "success"); router.refresh(); }
           else showToast(res.message || "Terjadi kesalahan", "error");
         } catch (error) { showToast("Gagal!", "error"); }
       }
@@ -183,7 +185,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
       onConfirm: async () => {
         try {
           const res = await deleteJabatan(id);
-          if (res.success) { showToast("Jabatan dihapus", "success"); window.location.reload(); }
+          if (res.success) { showToast("Jabatan dihapus", "success"); router.refresh(); }
           else showToast(res.message || "Terjadi kesalahan", "error");
         } catch (error) { showToast("Gagal!", "error"); }
       }

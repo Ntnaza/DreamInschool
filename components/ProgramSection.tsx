@@ -59,14 +59,14 @@ export default async function ProgramSection() {
             let subTextColor = "";
 
             if (index === 0) { // BLUE THEME (MAIN)
-               gradientColor = "from-slate-900 via-slate-900/40 to-transparent";
+               gradientColor = "from-slate-900 via-slate-900/60 to-transparent";
                badgeColor = "bg-blue-600 shadow-blue-600/50";
                subTextColor = "text-slate-200";
             } else if (index === 1) { // PURPLE THEME
-               gradientColor = "from-purple-900/90 via-purple-900/20 to-transparent";
+               gradientColor = "from-purple-900/80 via-purple-900/40 to-transparent";
                subTextColor = "text-purple-200";
             } else { // ORANGE THEME
-               gradientColor = "from-orange-900/90 via-orange-900/20 to-transparent";
+               gradientColor = "from-orange-900/80 via-orange-900/40 to-transparent";
                subTextColor = "text-orange-200";
             }
 
@@ -74,15 +74,14 @@ export default async function ProgramSection() {
             const displayImage = program.image || "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800&auto=format&fit=crop";
 
             return (
-              // 🔥 UBAH KE DIV (Bukan Link Langsung) UNTUK MENGHINDARI HYDRATION ERROR
               <div 
                 key={program.id}
-                className={`group relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 cursor-pointer
+                className={`group relative rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 cursor-pointer min-h-[300px] md:min-h-0
                   ${isMain ? 'col-span-1 md:col-span-2 md:row-span-2' : 'col-span-1 md:col-span-1 md:row-span-1'}
                 `}
               >
-                {/* 🔥 LINK SEBAGAI OVERLAY (Teknik Stretched Link) */}
-                <Link href="/program" className="absolute inset-0 z-20">
+                {/* LINK SEBAGAI OVERLAY */}
+                <Link href="/program" className="absolute inset-0 z-30">
                    <span className="sr-only">Lihat Detail Program</span>
                 </Link>
 
@@ -92,27 +91,27 @@ export default async function ProgramSection() {
                       src={displayImage} 
                       alt={program.nama}
                       fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 dark:opacity-70"
+                      className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-100 dark:opacity-80"
                    />
-                   {/* Gradient Overlay */}
-                   <div className={`absolute inset-0 bg-gradient-to-t ${gradientColor}`} />
+                   {/* Gradient Overlay - Memastikan teks terbaca */}
+                   <div className={`absolute inset-0 bg-gradient-to-t ${gradientColor} z-10`} />
                 </div>
                 
                 {/* CONTENT */}
-                <div className={`absolute bottom-0 left-0 w-full z-10 ${isMain ? 'p-8' : 'p-6'}`}>
+                <div className={`absolute bottom-0 left-0 w-full z-20 ${isMain ? 'p-6 md:p-10' : 'p-6'}`}>
                   
                   {/* Badge hanya untuk yang utama */}
                   {isMain && (
-                    <span className={`px-3 py-1 rounded-full text-white text-xs font-bold tracking-wider mb-3 inline-block shadow-lg ${badgeColor}`}>
+                    <span className={`px-3 py-1 rounded-full text-white text-[10px] md:text-xs font-bold tracking-wider mb-3 inline-block shadow-lg ${badgeColor}`}>
                       TRENDING 🔥
                     </span>
                   )}
 
-                  <h3 className={`${isMain ? 'text-2xl md:text-4xl' : 'text-xl'} font-black text-white mb-2 leading-tight`}>
+                  <h3 className={`${isMain ? 'text-2xl md:text-4xl' : 'text-lg md:text-xl'} font-black text-white mb-2 leading-tight drop-shadow-md`}>
                     {program.nama}
                   </h3>
                   
-                  <p className={`${subTextColor} ${isMain ? 'text-sm md:text-base max-w-lg line-clamp-2' : 'text-xs font-bold line-clamp-2'}`}>
+                  <p className={`${subTextColor} ${isMain ? 'text-xs md:text-base max-w-lg line-clamp-2 md:line-clamp-none' : 'text-[10px] md:text-xs font-bold line-clamp-2'} drop-shadow-sm`}>
                     {program.deskripsi}
                   </p>
                 </div>

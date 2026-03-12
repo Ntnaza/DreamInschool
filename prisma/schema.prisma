@@ -447,3 +447,33 @@ model KategoriGaleri {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// --------------------------------------------------------
+// 13. PUSAT BANTUAN & TIKET (Dinamis)
+// --------------------------------------------------------
+model HelpVideo {
+  id        Int      @id @default(autoincrement())
+  title     String
+  youtubeId String   @unique
+  duration  String?
+  desc      String?  @db.Text
+  thumbnail String?  @db.LongText
+  createdAt DateTime @default(now())
+}
+
+model HelpTicket {
+  id          Int      @id @default(autoincrement())
+  subject     String
+  description String   @db.Text
+  fotoBukti   String?  @db.LongText
+  status      StatusTicket @default(OPEN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum StatusTicket {
+  OPEN      // Baru masuk
+  ON_REVIEW // Sedang dicek
+  FIXED     // Selesai diperbaiki
+  CLOSED    // Ditutup
+}

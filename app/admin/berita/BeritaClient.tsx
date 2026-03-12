@@ -131,10 +131,16 @@ export default function BeritaClient({ initialPosts, dynamicCategories }: { init
 
       if (result.success) {
         showToast(editingPost ? "Artikel diperbarui!" : "Artikel diterbitkan!", "success");
-        setTimeout(() => {
-            closeEditor();
-            window.location.reload();
-        }, 500);
+        
+        // Tutup editor dan hapus parameter URL dulu
+        closeEditor();
+        
+        // Refresh data dari server tanpa reload seluruh halaman
+        router.refresh();
+
+        // Opsional: Jika data tetap tidak update otomatis (tergantung caching server), 
+        // gunakan reload manual setelah rute benar-benar pindah.
+        // Namun router.refresh biasanya sudah cukup.
       } else {
         showToast(result.message || "Gagal menyimpan berita.", "error"); 
       }
@@ -271,8 +277,9 @@ export default function BeritaClient({ initialPosts, dynamicCategories }: { init
                             </div>
                             <button type="button" onClick={handleRandomImage} className="w-full py-2 bg-slate-100 dark:bg-white/5 text-slate-600 text-[10px] font-bold rounded-lg border hover:bg-slate-200 transition-all flex items-center justify-center gap-2"><RefreshCw size={12}/> Gambar Acak</button>
                          </div>
-                         <button disabled={isSubmitting} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg active:scale-95 disabled:opacity-50">
-                            {isSubmitting ? <RefreshCw className="animate-spin" size={14} /> : <Save size={14} />} {isSubmitting ? "Menyimpan..." : "Simpan Berita"}
+                         <button disabled={isSubmitting} type="submit" className="w-full h-12 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 transition-all">
+                            {isSubmitting ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />} 
+                            <span>{isSubmitting ? "Menyimpan..." : "Simpan Berita"}</span>
                          </button>
                       </div>
                       <div className="bg-blue-600 text-white rounded-3xl p-6 space-y-4 shadow-xl">

@@ -52,29 +52,30 @@ export default function GaleriPublicClient({ galleryItems }: { galleryItems: any
           ))}
         </div>
 
-        {/* MASONRY GRID */}
-        <motion.div layout className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6 p-2">
+        {/* MASONRY GRID - PINTEREST STYLE (2 COL MOBILE, 4 COL DESKTOP) */}
+        <motion.div layout className="columns-2 md:columns-3 lg:columns-4 gap-4 md:gap-6 space-y-4 md:space-y-6 p-2">
           <AnimatePresence>
             {filteredImages.map((item) => (
               <motion.div
                 layout
-                initial={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4 }}
                 key={item.id}
               >
-                <Link href={`/galeri/${item.id}`} className="break-inside-avoid relative group block rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl dark:shadow-none transition-all">
-                  <div className="relative w-full">
-                    <Image src={item.album[0]} alt={item.title} width={500} height={500} className="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-110" />
+                <Link href={`/galeri/${item.id}`} className="break-inside-avoid relative group block rounded-xl md:rounded-2xl overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-700 border border-slate-100 dark:border-white/5">
+                  <div className="relative w-full overflow-hidden bg-slate-50 dark:bg-slate-900">
+                    <Image src={item.album[0]} alt={item.title} width={600} height={600} className="w-full h-auto object-cover transform transition-transform duration-[1.5s] ease-out group-hover:scale-110" />
                     
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                      <span className="inline-block px-2 py-1 bg-blue-600 text-white text-[10px] font-bold rounded mb-2 w-fit">{item.category}</span>
-                      <h3 className="text-white font-bold text-lg leading-tight">{item.title}</h3>
+                    {/* Dark Overlay with Info - Permanent on Mobile, Hover on Desktop */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6 z-10">
+                      <span className="inline-block px-2 py-0.5 bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded mb-2 w-fit">{item.category}</span>
+                      <h3 className="text-white font-bold text-sm md:text-lg leading-tight line-clamp-2 drop-shadow-lg">{item.title}</h3>
                       <div className="flex items-center justify-between mt-2">
-                        <p className="text-white/70 text-xs flex items-center gap-1"><Calendar size={12}/> {item.date}</p>
+                        <p className="text-white/70 text-[10px] flex items-center gap-1 font-medium drop-shadow-md"><Calendar size={10}/> {item.date}</p>
                         {item.album.length > 1 && (
-                          <span className="text-white/90 text-[10px] font-bold uppercase tracking-wider border border-white/30 px-2 py-0.5 rounded-full backdrop-blur-sm flex items-center gap-1">
+                          <span className="text-white/90 text-[9px] font-bold uppercase tracking-wider border border-white/30 px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
                             <ImageIcon size={10}/> +{item.album.length}
                           </span>
                         )}

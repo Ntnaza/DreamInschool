@@ -11,6 +11,7 @@ import {
 import { showToast } from "@/components/Toast";
 import { showConfirm } from "@/components/ConfirmDialog";
 import TourGuide from "@/components/TourGuide"; 
+import { useRouter } from "next/navigation";
 import { createProgramKerja, updateProgramKerja, deleteProgramKerja } from "@/lib/actions"; 
 
 const tourSteps = [
@@ -35,6 +36,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
   const [isSaving, setIsSaving] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const [formState, setFormState] = useState({
     title: "", description: "", sekbid: "Inti", priority: "Medium", 
@@ -115,7 +117,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
         if (result.success) {
             showToast(isEditing ? "Program kerja diperbarui." : "Program kerja baru berhasil ditambahkan.", "success");
             setIsModalOpen(false);
-            window.location.reload(); 
+            router.refresh(); 
         } else {
             showToast("Gagal: " + result.message, "error");
         }

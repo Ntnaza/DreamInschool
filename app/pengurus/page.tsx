@@ -69,7 +69,7 @@ export default async function PengurusPage() {
   }));
 
   // Judul Angkatan
-  const angkatanTitle = "JIVA ABISATYA";
+  const angkatanTitle = "Jiva Abisatya";
 
   return <PengurusClient members={formattedMembers} angkatanTitle={angkatanTitle} />;
 }

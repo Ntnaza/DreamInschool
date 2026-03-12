@@ -3,7 +3,25 @@
 import { useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Instagram, Mail, CheckCircle2, Circle, ClipboardList } from "lucide-react";
+import { 
+  Instagram, 
+  Mail, 
+  CheckCircle2, 
+  Circle, 
+  ClipboardList,
+  Pencil,
+  BookOpen,
+  GraduationCap,
+  Calculator,
+  Ruler,
+  Eraser,
+  School,
+  Palette,
+  Atom,
+  Sigma,
+  Library,
+  Compass
+} from "lucide-react";
 // Gunakan icon dari react-icons untuk WhatsApp karena lucide tidak punya
 import { FaWhatsapp } from "react-icons/fa";
 
@@ -36,8 +54,8 @@ function ProfileCard({ data, index }: { data: any, index: number }) {
       {/* Garis Koneksi Timeline (Hanya desktop) */}
       <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-white/5 hidden xl:block" />
 
-      {/* Titik Timeline */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#0a0f1c] border-4 hidden xl:block z-10" style={{ borderColor: theme.hex }} />
+      {/* Titik Timeline (Bercahaya Putih) */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-4 border-[#0a0f1c] hidden xl:block z-20 shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-pulse" />
 
       {/* --- KOLOM FOTO --- */}
       <div className="w-full xl:w-1/2 flex justify-center py-4" style={{ justifyContent: typeof window !== 'undefined' && window.innerWidth < 1280 ? 'center' : (isEven ? 'flex-end' : 'flex-start') }}>
@@ -55,11 +73,11 @@ function ProfileCard({ data, index }: { data: any, index: number }) {
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10" />
 
           <div className="absolute bottom-0 left-0 w-full p-5 md:p-6 z-20">
-            <span className={`inline-block px-2.5 py-1 mb-2 rounded-full text-[10px] font-bold uppercase tracking-widest ${theme.bg} ${theme.text} border ${theme.border} backdrop-blur-md`}>
+            <span className={`inline-block px-2.5 py-1 mb-2 rounded-full text-[10px] font-bold uppercase tracking-widest ${theme.bg} text-slate-100 border ${theme.border} backdrop-blur-md`}>
               {data.role}
             </span>
             <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-1">{data.name}</h2>
-            <p className="text-slate-300 font-bold tracking-wide text-sm flex items-center gap-2">
+            <p className="text-slate-200 font-bold tracking-wide text-sm flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.hex }} />
               {data.divisi}
             </p>
@@ -76,7 +94,7 @@ function ProfileCard({ data, index }: { data: any, index: number }) {
             <div className="space-y-6">
               {data.visi && (
                 <div>
-                  <h3 className={`text-sm font-bold uppercase tracking-widest ${theme.text} mb-2 flex items-center gap-2`}>
+                  <h3 className={`text-sm font-bold uppercase tracking-widest text-slate-100 mb-2 flex items-center gap-2`}>
                     Visi
                   </h3>
                   <p className="text-white/95 font-bold leading-relaxed text-sm md:text-base italic border-l-2 pl-3" style={{ borderColor: theme.hex }}>
@@ -86,7 +104,7 @@ function ProfileCard({ data, index }: { data: any, index: number }) {
               )}
               {data.misi && (
                 <div>
-                  <h3 className={`text-sm font-bold uppercase tracking-widest ${theme.text} mb-2`}>Misi</h3>
+                  <h3 className={`text-sm font-bold uppercase tracking-widest text-slate-100 mb-2`}>Misi</h3>
                   <div className="text-white/90 font-bold leading-relaxed text-sm md:text-base whitespace-pre-line text-justify space-y-2">
                     {data.misi.split('\n').map((paragraph: string, i: number) => (
                       <p key={i}>{paragraph.trim()}</p>
@@ -141,10 +159,11 @@ function ProfileCard({ data, index }: { data: any, index: number }) {
 export default function PengurusClient({ members, angkatanTitle }: { members: any[], angkatanTitle: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [stars, setStars] = useState<{ id: number; top: string; left: string; size: string; opacity: number; animationDuration: string }[]>([]);
+  const [decorIcons, setDecorIcons] = useState<{ iconIdx: number, style: any }[]>([]);
 
   useEffect(() => {
-    // Generate random stars on client layout
-    const generatedStars = Array.from({ length: 40 }).map((_, i) => ({
+    // Generate 150 random stars for a richer background
+    const generatedStars = Array.from({ length: 150 }).map((_, i) => ({
       id: i,
       top: `${Math.random() * 100}%`,
       left: `${Math.random() * 100}%`,
@@ -153,7 +172,26 @@ export default function PengurusClient({ members, angkatanTitle }: { members: an
       animationDuration: `${Math.random() * 3 + 2}s`
     }));
     setStars(generatedStars);
+
+    // Generate 25 random educational icons
+    const generatedIcons = Array.from({ length: 25 }).map((_, i) => ({
+      iconIdx: Math.floor(Math.random() * 12),
+      style: {
+        top: `${Math.random() * 100}%`,
+        left: `${Math.random() * 100}%`,
+        rotate: Math.random() * 360,
+        scale: Math.random() * 0.4 + 0.4,
+        duration: Math.random() * 15 + 15, // Slower movement for background feel
+        delay: Math.random() * 10
+      }
+    }));
+    setDecorIcons(generatedIcons);
   }, []);
+
+  const schoolIcons = [
+    Pencil, BookOpen, GraduationCap, Calculator, Ruler, Eraser, 
+    School, Palette, Atom, Sigma, Library, Compass
+  ];
 
   const { scrollY } = useScroll();
 
@@ -188,18 +226,50 @@ export default function PengurusClient({ members, angkatanTitle }: { members: an
         <div className="absolute top-[15%] left-[-10%] w-[70%] h-[1200px] bg-blue-900/10 rounded-full blur-[120px] mix-blend-screen" />
         <div className="absolute bottom-[10%] left-[20%] w-[60%] h-[1000px] bg-indigo-900/10 rounded-full blur-[120px] mix-blend-screen" />
 
-        {/* Render Star Particles */}
-        <div className="absolute inset-0 opacity-40">
+        {/* 1. School Icons Overlay (Melayang lebih jelas) */}
+        <div className="absolute inset-0 opacity-[0.35]">
+            {decorIcons.map((item, i) => {
+              const IconComponent = schoolIcons[item.iconIdx];
+              return (
+                <motion.div
+                  key={`decor-${i}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ 
+                    opacity: [0.5, 0.8, 0.5],
+                    y: [0, -100, 0],
+                    rotate: [item.style.rotate, item.style.rotate + 30, item.style.rotate]
+                  }}
+                  transition={{ 
+                    duration: item.style.duration, 
+                    repeat: Infinity, 
+                    delay: item.style.delay,
+                    ease: "easeInOut"
+                  }}
+                  className="absolute text-blue-500/50"
+                  style={{ 
+                    top: item.style.top, 
+                    left: item.style.left,
+                    scale: item.style.scale * 1.5 // Diperbesar 1.5x
+                  }}
+                >
+                  <IconComponent size={60} strokeWidth={1.5} />
+                </motion.div>
+              );
+            })}
+         </div>
+
+        {/* 2. Stars Overlay (Lebih terang dan banyak) */}
+        <div className="absolute inset-0 opacity-80">
             {stars.map((star) => (
             <div
                 key={star.id}
-                className="absolute rounded-full bg-white animate-pulse"
+                className="absolute rounded-full bg-white animate-pulse shadow-[0_0_5px_rgba(255,255,255,0.8)]"
                 style={{
                 top: star.top,
                 left: star.left,
                 width: star.size,
                 height: star.size,
-                opacity: star.opacity,
+                opacity: star.opacity + 0.2, // Lebih terang
                 animationDuration: star.animationDuration
                 }}
             />
@@ -225,8 +295,8 @@ export default function PengurusClient({ members, angkatanTitle }: { members: an
               <span className="text-blue-300 text-xs font-bold tracking-[0.2em] uppercase">Struktur Organisasi</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-black mt-4 mb-6 pb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-slate-100 dark:via-slate-300 dark:to-slate-500 uppercase tracking-tight">
-              {angkatanTitle}
+            <h1 className="text-4xl md:text-5xl font-bold mt-4 mb-6 uppercase antialiased">
+              <span className="text-white">Jiva</span> <span className="text-slate-200">Abisatya</span>
             </h1>
 
             <p className="text-base md:text-lg text-slate-400 font-bold max-w-xl mx-auto leading-relaxed">
@@ -259,8 +329,8 @@ export default function PengurusClient({ members, angkatanTitle }: { members: an
                   className="max-w-5xl mx-auto mb-16"
                 >
                   <div className="text-center mb-10">
-                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 uppercase tracking-widest drop-shadow-sm">{group.name}</h2>
-                    <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full mx-auto mt-6" />
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-100 uppercase antialiased">{group.name}</h2>
+                    <div className="w-24 h-1 bg-white/10 rounded-full mx-auto mt-6" />
                   </div>
                 </motion.div>
               )}
@@ -280,7 +350,6 @@ export default function PengurusClient({ members, angkatanTitle }: { members: an
           ))}
         </div>
 
-        {/* FOOTER CALL TO ACTION */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -288,9 +357,12 @@ export default function PengurusClient({ members, angkatanTitle }: { members: an
           transition={{ duration: 0.8 }}
           className="mt-32 md:mt-40 text-center pb-12 md:pb-20 relative w-full"
         >
-          <div className="inline-block p-[2px] rounded-full bg-gradient-to-r from-blue-500/50 via-indigo-500/50 to-purple-500/50 shadow-lg mb-8 cursor-default">
+          <div className="inline-block p-[2px] rounded-full bg-white/5 shadow-lg mb-8 cursor-default border border-white/10">
             <div className="bg-[#0a0f1c] rounded-full px-8 py-4 md:px-10 md:py-5 flex items-center gap-3 backdrop-blur-xl">
-              <span className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-[0.3em] uppercase">#JivaAbisatya</span>
+              <span className="text-xl md:text-2xl font-bold uppercase tracking-[0.3em] antialiased">
+                <span className="text-white">#Jiva</span>
+                <span className="text-slate-400">Abisatya</span>
+              </span>
             </div>
           </div>
           <p className="mt-2 md:mt-4 text-slate-500 uppercase tracking-widest mb-8 font-bold text-xs md:text-xs">Terima kasih telah berkunjung</p>
