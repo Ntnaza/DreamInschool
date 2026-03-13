@@ -10,7 +10,7 @@ import {
   CheckCircle2, AlertTriangle, ArrowRightLeft, TrendingDown,
   Upload, Image as ImageIcon, Camera, Maximize2, ChevronDown,
   History, Coins, ImageOff, ShoppingBag, Hash, Sparkles,
-  FileSpreadsheet, FileText, Printer, Download, FileDown, Loader2
+  FileSpreadsheet, FileText, Printer, Download, FileDown, Loader2, HelpCircle
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
 import { createGeneralTrx, createEventBudget, createEventTrx, createBukuKas, closeEventBudget } from "@/lib/actions";
@@ -63,6 +63,11 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
   const fileInputBarang = useRef<HTMLInputElement>(null);
   const fileInputNota = useRef<HTMLInputElement>(null);
   const lpjRef = useRef<HTMLDivElement>(null);
+  const tourRef = useRef<any>(null);
+
+  const handleStartTour = () => {
+    if (tourRef.current) tourRef.current.startTour();
+  };
 
   useEffect(() => { 
     setIsClient(true); 
@@ -338,7 +343,19 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
          <div className="tour-finance-header">
             <div className="flex items-center gap-4">
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">Financial System <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">💰</span></h1>
-                {isClient && <TourGuide steps={financeTourSteps} />}
+                
+                {isClient && (
+                  <button 
+                    onClick={handleStartTour}
+                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 text-sm font-medium"
+                    title="Bantuan Panduan"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">Panduan</span>
+                  </button>
+                )}
+
+                {isClient && <TourGuide ref={tourRef} steps={financeTourSteps} tourKey="finance" />}
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Pembukuan Multi-Ledger & Audit Realisasi.</p>
          </div>
@@ -358,7 +375,7 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
                         <button onClick={() => { setModalType('new_ledger'); setIsModalOpen(true); }} className="p-1.5 bg-blue-600 text-white rounded-lg hover:scale-105 transition-all shadow-lg shadow-blue-500/30"><Plus size={14}/></button>
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar tour-ledger-sidebar">
                     {isDataLoading ? (
                         [1, 2, 3].map(i => (
                             <div key={i} className="p-4 rounded-xl border border-transparent bg-slate-50/50 dark:bg-white/5 animate-pulse flex items-center gap-3">

@@ -1,17 +1,28 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { 
   FileText, Download, Filter, Calendar, Search, ArrowLeft,
   ChevronRight, BarChart3, PieChart, Users, CheckCircle,
-  XCircle, Clock, Info, Loader2, FileSpreadsheet, MapPin
+  XCircle, Clock, Info, Loader2, FileSpreadsheet, MapPin,
+  HelpCircle
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getRekapAbsensi, getDetailLaporan } from "@/lib/actions";
 import { showToast } from "@/components/Toast";
 import * as XLSX from 'xlsx';
+import TourGuide from "@/components/TourGuide";
+
+const rekapTourSteps = [
+    { target: '.tour-rekap-header', content: 'Selamat datang di pusat Rekapitulasi Absensi! Di sini Anda dapat melihat, memantau, dan mengunduh laporan kehadiran pengurus.', disableBeacon: true },
+    { target: '.tour-rekap-list', content: 'Daftar seluruh sesi absensi yang telah dilakukan. Pilih salah satu sesi untuk melihat detail kehadirannya.', placement: 'right' as const },
+    { target: '.tour-rekap-search', content: 'Gunakan fitur pencarian ini untuk menemukan sesi acara tertentu dengan cepat berdasarkan namanya.', },
+    { target: '.tour-rekap-stats', content: 'Ringkasan statistik kehadiran untuk sesi yang dipilih. Anda bisa melihat perbandingan jumlah hadir, izin, sakit, dan alpa secara visual.', },
+    { target: '.tour-rekap-table', content: 'Daftar rinci kehadiran setiap pengurus pada sesi ini. Anda juga bisa melihat keterangan tambahan di sini.', },
+    { target: '.tour-rekap-export', content: 'Butuh laporan fisik? Klik tombol ini untuk mengunduh rekapitulasi dalam format Excel yang rapi dan siap cetak.', },
+];
 
 export default function LaporanClient() {
   const router = useRouter();
@@ -24,6 +35,12 @@ export default function LaporanClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const tourRef = useRef<any>(null);
+
+  const handleStartTour = () => {
+    if (tourRef.current) tourRef.current.startTour();
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -128,14 +145,27 @@ export default function LaporanClient() {
           <div>
              <div className="flex items-center gap-4">
                 <button onClick={() => router.back()} className="p-2.5 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 rounded-xl text-slate-500 hover:text-blue-600 transition-all shadow-sm"><ArrowLeft size={20}/></button>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-rekap-header">
                    Rekapitulasi Absensi <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">📊</span>
                 </h1>
+
+                {isClient && (
+                  <button 
+                    onClick={handleStartTour}
+                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 text-sm font-medium"
+                    title="Bantuan Panduan"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">Panduan</span>
+                  </button>
+                )}
+
+                {isClient && <TourGuide ref={tourRef} steps={rekapTourSteps} tourKey="rekap-absensi" />}
              </div>
              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Pantau dan unduh data kehadiran pengurus secara mendalam.</p>
           </div>
           
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-3 w-full md:w-auto tour-rekap-search">
              <div className="relative flex-1 md:w-80">
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
@@ -152,7 +182,7 @@ export default function LaporanClient() {
       <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
           
           {/* LEFT: EVENT LISTS (SUMMARY) */}
-          <div className="w-full lg:w-1/2 flex flex-col gap-4 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/5 rounded-2xl p-6 shadow-sm overflow-hidden h-full">
+          <div className="w-full lg:w-1/2 flex flex-col gap-4 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/5 rounded-2xl p-6 shadow-sm overflow-hidden h-full tour-rekap-list">
               <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       <Calendar className="text-blue-600" size={18} /> Daftar Riwayat Acara
@@ -273,14 +303,14 @@ export default function LaporanClient() {
                               <button 
                                 onClick={() => handleExportExcel(selectedAcara, detailData)}
                                 disabled={isDetailLoading}
-                                className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-105 transition-all disabled:opacity-50"
+                                className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-105 transition-all disabled:opacity-50 tour-rekap-export"
                               >
                                   <FileSpreadsheet size={16} /> Excel
                               </button>
                           </div>
 
                           {/* STATS STRIP */}
-                          <div className="grid grid-cols-4 border-b border-slate-100 dark:border-white/5">
+                          <div className="grid grid-cols-4 border-b border-slate-100 dark:border-white/5 tour-rekap-stats">
                               {['Hadir', 'Izin', 'Sakit', 'Alpa'].map((label, idx) => (
                                   <div key={label} className={`p-4 ${idx < 3 ? 'border-r' : ''} border-slate-100 dark:border-white/5 text-center`}>
                                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
@@ -296,7 +326,7 @@ export default function LaporanClient() {
                           </div>
 
                           {/* DATA TABLE */}
-                          <div className="flex-1 overflow-y-auto custom-scrollbar">
+                          <div className="flex-1 overflow-y-auto custom-scrollbar tour-rekap-table">
                               {isDetailLoading ? (
                                   <table className="w-full text-left animate-pulse">
                                       <thead className="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10">

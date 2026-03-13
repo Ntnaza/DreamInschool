@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, ChevronLeft } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, ChevronLeft, HelpCircle } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 const beritaTourSteps = [
-    { target: '.tour-berita-header', content: 'Manajemen seluruh artikel dan berita organisasi di sini.', disableBeacon: true },
-    { target: '.tour-write-btn', content: 'Klik di sini untuk mulai menulis artikel berita baru.', disableBeacon: true },
-    { target: '.tour-search-bar', content: 'Cari berita dengan cepat berdasarkan judul atau kategori.', disableBeacon: true },
-    { target: '.tour-filter-btn', content: 'Saring daftar berita berdasarkan kategori atau status publikasi.', disableBeacon: true },
-    { target: '.tour-berita-card', content: 'Kelola (Edit/Hapus) artikel Anda melalui tombol hover di atas gambar.', disableBeacon: true },
+    { target: '.tour-berita-header', content: 'Selamat datang di Manajemen Berita! Di sini Anda bisa mengelola seluruh artikel dan kabar terbaru organisasi.' },
+    { target: '.tour-write-btn', content: 'Klik tombol ini untuk mulai menulis artikel berita baru yang akan tampil di website publik.' },
+    { target: '.tour-search-bar', content: 'Cari berita yang sudah dibuat dengan cepat melalui judul atau isi konten.' },
+    { target: '.tour-filter-btn', content: 'Gunakan filter ini untuk menyaring berita berdasarkan kategori tertentu.' },
+    { target: '.tour-berita-card', content: 'Setiap kartu berita memiliki tombol aksi untuk Mengedit atau Menghapus artikel saat Anda mengarahkan kursor ke atasnya.' },
 ];
 
 export default function BeritaHeader() {
@@ -18,10 +18,17 @@ export default function BeritaHeader() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const tourRef = useRef<any>(null);
   
   const isEditorOpen = searchParams.get("editor") === "true";
 
   useEffect(() => { setIsClient(true); }, []);
+
+  const handleStartTour = () => {
+    if (tourRef.current) {
+      tourRef.current.startTour();
+    }
+  };
 
   const toggleEditor = () => {
     const params = new URLSearchParams(searchParams);
@@ -44,7 +51,19 @@ export default function BeritaHeader() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-berita-header">
                       Manajemen Berita <span className="text-2xl p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">📰</span>
                     </h1>
-                    {isClient && <TourGuide steps={beritaTourSteps} />}
+                    
+                    {isClient && (
+                      <button 
+                        onClick={handleStartTour}
+                        className="p-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 text-sm font-medium"
+                        title="Bantuan Panduan"
+                      >
+                        <HelpCircle className="w-5 h-5" />
+                        <span className="hidden sm:inline">Panduan</span>
+                      </button>
+                    )}
+
+                    {isClient && <TourGuide ref={tourRef} steps={beritaTourSteps} tourKey="berita" />}
                   </>
                 ) : (
                   <div className="flex items-center gap-4">

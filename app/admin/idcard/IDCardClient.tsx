@@ -6,18 +6,19 @@ import Image from "next/image";
 import { updateIdCardDesign, saveIdCardBackground } from "@/lib/actions"; 
 import { 
   Search, Printer, ImageIcon, RefreshCw, AlertCircle, Scan, ArrowLeft, Users, 
-  CheckSquare, Square, Trash2, Upload, Layout, Shield
+  CheckSquare, Square, Trash2, Upload, Layout, Shield, HelpCircle
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
 
 // DEFINISI LANGKAH TUR
 const idCardTourSteps = [
-    { target: '.tour-idcard-header', content: 'Desain dan cetak kartu identitas pengurus.', disableBeacon: true },
-    { target: '.tour-member-list', content: 'Pilih anggota untuk dipreview.', placement: 'right' as const },
-    { target: '.tour-select-checkbox', content: 'Centang untuk memilih banyak kartu.', placement: 'right' as const },
-    { target: '.tour-side-toggle', content: 'Ganti tampilan Depan/Belakang.', },
-    { target: '.tour-card-preview', content: 'Preview hasil cetak.', },
-    { target: '.tour-print-btn', content: 'Klik untuk mulai mencetak PDF.', },
+    { target: '.tour-idcard-header', content: 'Selamat datang di ID Card Studio! Di sini Anda bisa mendesain dan mencetak kartu identitas pengurus secara mandiri.', disableBeacon: true },
+    { target: '.tour-member-list', content: 'Gunakan daftar ini untuk memilih anggota yang ingin Anda lihat preview kartunya.', placement: 'right' as const },
+    { target: '.tour-select-checkbox', content: 'Klik kotak centang di samping nama anggota untuk memilih kartu mana saja yang ingin dicetak secara kolektif.', placement: 'right' as const },
+    { target: '.tour-side-toggle', content: 'Gunakan tombol ini untuk beralih antara tampilan Sisi Depan (biodata) dan Sisi Belakang (QR Code & Aturan).', },
+    { target: '.tour-action-buttons', content: 'Anda bisa mengunggah desain kustom untuk sisi depan atau mengatur background seragam untuk sisi belakang seluruh kartu.', },
+    { target: '.tour-card-preview', content: 'Ini adalah tampilan hasil akhir kartu Anda. Pastikan semua data dan foto sudah sesuai sebelum dicetak.', },
+    { target: '.tour-print-btn', content: 'Jika sudah siap, klik tombol ini untuk masuk ke mode cetak. Anda bisa mencetak banyak kartu sekaligus dalam format PDF.', },
 ];
 
 // ✅ 3. Terima props 'initialBackImage' dari server
@@ -29,6 +30,8 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
   const [searchQuery, setSearchQuery] = useState("");
   const [isClient, setIsClient] = useState(false);
   
+  const tourRef = useRef<any>(null);
+
   // STATE EDITOR
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [backBackground, setBackBackground] = useState<string | null>(initialBackImage);
@@ -69,6 +72,10 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
       window.removeEventListener('resize', handleResize);
     };
   }, [selectedId, activeSide, initialMembers]);
+
+  const handleStartTour = () => {
+    if (tourRef.current) tourRef.current.startTour();
+  };
 
   const selectedMember = memberList.find(m => m.id === selectedId) || memberList[0];
 
@@ -265,7 +272,19 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-idcard-header">
                   ID Card Studio <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">🪪</span>
                 </h1>
-                {isClient && <TourGuide steps={idCardTourSteps} />}
+                
+                {isClient && (
+                  <button 
+                    onClick={handleStartTour}
+                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 text-sm font-medium"
+                    title="Bantuan Panduan"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">Panduan</span>
+                  </button>
+                )}
+
+                {isClient && <TourGuide ref={tourRef} steps={idCardTourSteps} tourKey="idcard" />}
              </div>
              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Desain dan cetak kartu identitas pengurus dengan QR Code.</p>
           </div>
@@ -302,7 +321,7 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
                   ) : (
                     filteredMembers.map((member) => (
                       <div key={member.id} onClick={() => setSelectedId(member.id)} className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left cursor-pointer group border relative ${selectedId === member.id ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-500/30 shadow-sm" : "bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5"}`}>
-                          <div onClick={(e) => togglePrintSelect(member.id, e)} className={`shrink-0 w-8 h-8 flex items-center justify-center transition-all ${selectedId === member.id || selectedPrintIds.includes(member.id) ? 'text-blue-600' : 'text-slate-300 hover:text-blue-600'}`}>
+                          <div onClick={(e) => togglePrintSelect(member.id, e)} className={`shrink-0 w-8 h-8 flex items-center justify-center transition-all tour-select-checkbox ${selectedId === member.id || selectedPrintIds.includes(member.id) ? 'text-blue-600' : 'text-slate-300 hover:text-blue-600'}`}>
                             {selectedPrintIds.includes(member.id) ? <CheckSquare size={18} /> : <Square size={18}/>}
                           </div>
                           <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-white/10 shrink-0">
@@ -326,7 +345,7 @@ export default function IDCardClient({ initialMembers, initialBackImage }: { ini
                      <NavButton icon={Layout} label="Sisi Depan" active={activeSide === 'front'} onClick={() => setActiveSide('front')} />
                      <NavButton icon={Shield} label="Sisi Belakang" active={activeSide === 'back'} onClick={() => setActiveSide('back')} />
                   </div>
-                  <div className="flex flex-col gap-3 p-2 bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-2xl rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl">
+                  <div className="flex flex-col gap-3 p-2 bg-white/90 dark:bg-[#0f172a]/80 backdrop-blur-2xl rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl tour-action-buttons">
                      {activeSide === 'front' ? (
                         <>
                            <input type="file" ref={fileInputRefFront} onChange={handleFrontUpload} accept="image/*" className="hidden" />

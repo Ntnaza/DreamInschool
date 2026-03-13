@@ -10,7 +10,7 @@ import {
   ShieldCheck, AlertTriangle, ArrowLeft, History, Timer, Trash2, Edit2, Play, Square,
   Layers, Repeat, Activity, Volume2, VolumeX,
   Book, GraduationCap, Calculator, Pencil, Ruler, Atom, Brain, Library,
-  UserPlus
+  UserPlus, HelpCircle
 } from "lucide-react";
 import TourGuide from "@/components/TourGuide";
 import { 
@@ -25,9 +25,12 @@ import { Html5Qrcode } from "html5-qrcode";
 const DAYS_LIST = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
 const absensiTourSteps = [
-    { target: '.tour-acara-header', content: 'Kelola sesi absensi aktif Anda di sini.', disableBeacon: true },
-    { target: '.tour-session-controls', content: 'Klik START untuk mulai menerima absensi.', },
-    { target: '.tour-scanner-btn', content: 'Klik di sini untuk meluncurkan mode kamera scanner.', },
+    { target: '.tour-absensi-header', content: 'Selamat datang di Smart Attendance! Sistem absensi digital berbasis QR Code untuk efisiensi organisasi Anda.', disableBeacon: true },
+    { target: '.tour-acara-list', content: 'Daftar sesi absensi Anda. Anda bisa membuat sesi baru untuk rapat, event, atau absensi harian rutin.', placement: 'right' as const },
+    { target: '.tour-session-controls', content: 'Pusat kendali sesi. Klik START untuk membuka sesi absensi agar scanner bisa mulai digunakan.', },
+    { target: '.tour-scanner-area', content: 'Area Scanner & Input Manual. Tombol scanner akan muncul di sini saat sesi sudah dimulai (START).', },
+    { target: '.tour-absensi-stats', content: 'Pantau statistik kehadiran secara real-time. Data akan otomatis terupdate setiap kali ada yang melakukan scan.', },
+    { target: '.tour-activity-stream', content: 'Riwayat aktivitas terbaru. Anda juga bisa mengubah status kehadiran secara manual di sini jika diperlukan.', },
 ];
 
 const FloatingIcon = ({ children, delay = 0, x = 0, y = 0, size = 24, duration = 10 }: any) => (
@@ -53,6 +56,12 @@ export default function ScanClient() {
   const [viewMode, setViewMode] = useState<'manage' | 'scanning'>('manage');
   const [currentTime, setCurrentTime] = useState(new Date());
   
+  const tourRef = useRef<any>(null);
+
+  const handleStartTour = () => {
+    if (tourRef.current) tourRef.current.startTour();
+  };
+
   // DATA STATES
   const [logs, setLogs] = useState<any[]>([]);
   const [daftarAcara, setDaftarAcara] = useState<any[]>([]);
@@ -243,7 +252,7 @@ export default function ScanClient() {
 
   const renderManagement = () => (
     <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden h-full px-4 md:px-0">
-        <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/5 rounded-2xl p-5 shadow-sm overflow-hidden h-full">
+        <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/5 rounded-2xl p-5 shadow-sm overflow-hidden h-full tour-acara-list">
             <div className="flex justify-between items-center px-1 mb-2">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2"><History className="text-blue-600" size={18} /> Sesi Acara</h3>
                 <button onClick={() => { setModalMode('create'); setIsModalOpen(true); }} className="p-1.5 bg-blue-600 text-white rounded-lg hover:scale-105 active:scale-95 transition-all shadow-sm"><Plus size={14} strokeWidth={3} /></button>
@@ -332,7 +341,7 @@ export default function ScanClient() {
         <div className="flex-1 flex flex-col gap-6 overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 {/* STATS CARD: TOTAL HADIR (Slim & Professional) */}
-                <div className="md:col-span-3 bg-white dark:bg-[#0f172a] p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+                <div className="md:col-span-3 bg-white dark:bg-[#0f172a] p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm tour-absensi-stats">
                     <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">Kehadiran Hari Ini</p>
                     <div className="flex items-baseline gap-1.5">
                         <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -351,7 +360,7 @@ export default function ScanClient() {
                 </div>
 
                 {/* CONTROL CENTER: Slim-line Layout */}
-                <div className="md:col-span-9 flex flex-col md:flex-row gap-3 tour-session-controls">
+                <div className="md:col-span-9 flex flex-col md:flex-row gap-3 tour-session-controls tour-scanner-area">
                     {!selectedAcara || selectedAcara.status === 'UPCOMING' || (selectedAcara.status === 'COMPLETED' && selectedAcara.tipe === 'RUTINAN') ? (
                         <button 
                             onClick={handleStartSession} 
@@ -552,8 +561,22 @@ export default function ScanClient() {
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-2 shrink-0">
           <div>
              <div className="flex items-center gap-4">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">Smart Attendance <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">⚡</span></h1>
-                {isClient && <TourGuide steps={absensiTourSteps} />}
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-absensi-header">
+                  Smart Attendance <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">⚡</span>
+                </h1>
+
+                {isClient && (
+                  <button 
+                    onClick={handleStartTour}
+                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 text-sm font-medium"
+                    title="Bantuan Panduan"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">Panduan</span>
+                  </button>
+                )}
+
+                {isClient && <TourGuide ref={tourRef} steps={absensiTourSteps} tourKey="absensi" />}
              </div>
              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Kelola kehadiran organisasi secara efisien dan real-time.</p>
           </div>

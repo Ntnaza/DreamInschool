@@ -133,13 +133,6 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
     }
   };
 
-  const inboxTourSteps = [
-    { target: '.tour-inbox-header', content: 'Pusat Manajemen Aspirasi Siswa.', disableBeacon: true },
-    { target: '.tour-tab-nav', content: 'Gunakan folder ini untuk memisahkan pesan masuk dan arsip selesai.', placement: 'right' as const },
-    { target: '.tour-message-list', content: 'Daftar pesan masuk. Klik salah satu untuk membaca detailnya.', placement: 'right' as const },
-    { target: '.tour-message-detail', content: 'Baca isi lengkap aspirasi dan berikan jawaban langsung di panel ini.', placement: 'left' as const },
-  ];
-
   return (
     <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0">
         <div className="w-full md:w-[420px] flex flex-col gap-4 flex-shrink-0">

@@ -38,7 +38,7 @@ export default function AspirasiSection() {
   }
 
   return (
-    <section className="relative w-full py-24 z-10 overflow-hidden">
+    <section id="aspirasi-form" className="relative w-full py-24 z-10 overflow-hidden">
       
       {/* Background: Gradient Gelap Elegan */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-100 to-slate-200 dark:from-[#020617] dark:to-[#0b1121] z-0" />

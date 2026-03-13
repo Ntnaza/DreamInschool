@@ -49,9 +49,29 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    if (isDisabled || !mounted) return;
-    window.scrollTo(0, 0);
-  }, [pathname, isDisabled, mounted]);
+    if (isDisabled || !mounted || isMobile) return;
+
+    // Handle Anchor Links (Sampaikan Aspirasi, dll)
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+      
+      if (anchor && anchor.hash && anchor.origin === window.location.origin) {
+        const targetElement = document.querySelector(anchor.hash);
+        if (targetElement) {
+          e.preventDefault();
+          const targetPosition = targetElement.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }
+    };
+
+    document.addEventListener('click', handleAnchorClick);
+    return () => document.removeEventListener('click', handleAnchorClick);
+  }, [isDisabled, mounted, isMobile]);
 
   useEffect(() => {
     if (isDisabled || !mounted || isMobile) return;

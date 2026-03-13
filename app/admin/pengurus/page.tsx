@@ -16,5 +16,9 @@ export default async function PengurusPage() {
     tglLahir: m.tglLahir ? m.tglLahir.toISOString().split("T")[0] : "",
   }));
 
-  return <PengurusClient initialData={formattedMembers} initialDivisi={divisions} />;
+  return (
+    <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
+      <PengurusClient initialData={formattedMembers} initialDivisi={divisions} />
+    </div>
+  );
 }

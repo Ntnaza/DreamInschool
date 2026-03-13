@@ -84,9 +84,9 @@ export default async function Home() {
               </p>
 
               <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-2">
-                <Link href="/aspirasi" className="px-6 py-2.5 bg-blue-700 dark:bg-white text-white dark:text-black rounded-full font-bold text-xs md:text-sm hover:scale-105 transition-all shadow-lg hover:shadow-blue-500/30 dark:hover:shadow-white/40">
+                <a href="#aspirasi-form" className="px-6 py-2.5 bg-blue-700 dark:bg-white text-white dark:text-black rounded-full font-bold text-xs md:text-sm hover:scale-105 transition-all shadow-lg hover:shadow-blue-500/30 dark:hover:shadow-white/40">
                   Sampaikan Aspirasi ({totalAspirasi})
-                </Link>
+                </a>
                 {/* Tombol Outline */}
                 <Link href="/pengurus" className="px-6 py-2.5 bg-transparent border border-slate-400 dark:bg-black/20 dark:border-white/30 text-slate-900 dark:text-white rounded-full font-bold text-xs md:text-sm hover:bg-slate-300 dark:hover:bg-white dark:hover:text-black transition-all backdrop-blur-sm">
                   Struktur Organisasi

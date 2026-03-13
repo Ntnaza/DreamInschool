@@ -159,7 +159,7 @@ export default function BeritaClient({ initialPosts, dynamicCategories }: { init
           <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col h-full">
             
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 flex-shrink-0">
-              <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
+              <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar tour-filter-btn">
                   {categories.map((cat) => (
                     <button 
                       key={cat} 
@@ -170,7 +170,7 @@ export default function BeritaClient({ initialPosts, dynamicCategories }: { init
                     </button>
                   ))}
               </div>
-              <div className="relative flex-1 md:w-72 group w-full">
+              <div className="relative flex-1 md:w-72 group w-full tour-search-bar">
                   <input 
                     type="text" 
                     placeholder="Cari berita..." 

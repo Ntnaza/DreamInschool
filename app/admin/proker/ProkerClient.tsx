@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, Plus, CheckCircle, X, 
   Flag, Trash2, Edit, PlayCircle, AlertCircle, FileText, Loader2,
-  Image as ImageIcon, Star
+  Image as ImageIcon, Star, HelpCircle
 } from "lucide-react";
 import { showToast } from "@/components/Toast";
 import { showConfirm } from "@/components/ConfirmDialog";
@@ -14,13 +14,12 @@ import TourGuide from "@/components/TourGuide";
 import { useRouter } from "next/navigation";
 import { createProgramKerja, updateProgramKerja, deleteProgramKerja } from "@/lib/actions"; 
 
-const tourSteps = [
-    { target: '.tour-header-title', content: 'Pusat kendali kegiatan OSIS.', disableBeacon: true },
-    { target: '.tour-buat-baru-btn', content: 'Klik untuk tambah proker baru.' },
-    { target: '.tour-col-segera', content: 'Proker yang masih rencana (Progress 0%).', placement: 'right' as const },
-    { target: '.tour-col-berjalan', content: 'Proker sedang dikerjakan (1-99%).', placement: 'bottom' as const },
-    { target: '.tour-priority-badge', content: 'Tanda prioritas tinggi.', },
-    { target: '.tour-edit-action', content: 'Klik pensil untuk edit.', },
+const prokerTourSteps = [
+    { target: '.tour-header-title', content: 'Selamat datang di Manajemen Proker! Di sini Anda bisa memantau status seluruh kegiatan organisasi.', disableBeacon: true },
+    { target: '.tour-buat-baru-btn', content: 'Gunakan tombol ini untuk merencanakan Program Kerja (Proker) baru.' },
+    { target: '.tour-proker-control', content: 'Saring Proker berdasarkan divisi atau cari kegiatan tertentu dengan cepat di area kendali ini.' },
+    { target: '.tour-kanban-board', content: 'Ini adalah papan progres. Geser ke samping untuk melihat alur kegiatan dari Rencana, Sedang Berjalan, hingga Selesai.' },
+    { target: '.tour-edit-action', content: 'Klik ikon pensil pada kartu Proker untuk memperbarui detail atau mengubah progres kegiatan.' },
 ];
 
 export default function ProkerClient({ initialData, divisions }: { initialData: any[], divisions: string[] }) {
@@ -36,6 +35,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
   const [isSaving, setIsSaving] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tourRef = useRef<any>(null);
   const router = useRouter();
 
   const [formState, setFormState] = useState({
@@ -47,10 +47,13 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
   useEffect(() => { 
     setIsClient(true); 
     setProkers(initialData);
-    // Beri sedikit delay agar transisi skeleton terlihat halus
     const timer = setTimeout(() => setIsDataLoading(false), 500);
     return () => clearTimeout(timer);
   }, [initialData]);
+
+  const handleStartTour = () => {
+    if (tourRef.current) tourRef.current.startTour();
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -169,7 +172,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
   return (
     <div className="relative h-full flex flex-col font-sans">
       
-      {/* HEADER & TOOLBAR (TETAP TERLIHAT) */}
+      {/* HEADER & TOOLBAR */}
       <div className="flex-shrink-0">
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
           <div>
@@ -177,7 +180,19 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3 tour-header-title">
                   Manajemen Proker <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">🚀</span>
                 </h1>
-                {isClient && <TourGuide steps={tourSteps} />}
+                
+                {isClient && (
+                  <button 
+                    onClick={handleStartTour}
+                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 text-sm font-medium"
+                    title="Bantuan Panduan"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                    <span className="hidden sm:inline">Panduan</span>
+                  </button>
+                )}
+
+                {isClient && <TourGuide ref={tourRef} steps={prokerTourSteps} tourKey="proker" />}
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Pantau status kegiatan: Segera, Berjalan, dan Selesai.</p>
           </div>
@@ -187,7 +202,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
           </button>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8 tour-proker-control">
           <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide no-scrollbar">
               <button 
                 onClick={() => setFilterSekbid("Semua")} 
@@ -219,7 +234,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
       </div>
 
       {/* KANBAN BOARD AREA */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto pb-20 custom-scrollbar pr-2">
+      <div className="flex-1 overflow-y-auto overflow-x-auto pb-20 custom-scrollbar pr-2 tour-kanban-board">
          {isDataLoading ? (
             <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0 min-h-full h-fit animate-pulse">
                {[1, 2, 3].map((col) => (
@@ -261,7 +276,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
          )}
       </div>
 
-      {/* MODAL (Bisa dibuka kapan saja) */}
+      {/* MODAL */}
       <AnimatePresence>
          {isModalOpen && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">

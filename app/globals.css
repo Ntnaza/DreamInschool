@@ -21,26 +21,89 @@
     background: rgb(var(--background-rgb));
   }
 
-  /* SCROLLBAR CUSTOM (Tipis & Tetap Terlihat) */
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+  /* SCROLLBAR MODERN MINIMALIS (Gaya Mac/iOS) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.3) transparent; /* Slate/Abu-abu lembut */
   }
+
+  ::-webkit-scrollbar {
+    width: 5px; /* Lebih tipis sedikit agar makin rapi */
+    height: 5px; 
+  }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1; /* Terlihat permanen di mode terang */
-    border-radius: 10px;
+    background-color: rgba(148, 163, 184, 0.3); /* Slate-400 transparan */
+    border-radius: 20px;
+    border: 1px solid transparent; 
+    background-clip: content-box;
   }
+
   .dark ::-webkit-scrollbar-thumb {
-    background-color: #334155; /* Terlihat permanen di mode gelap */
+    background-color: rgba(71, 85, 105, 0.3); /* Slate-600 transparan di mode gelap */
   }
+
   ::-webkit-scrollbar-thumb:hover {
-    background-color: #94a3b8 !important;
+    background-color: rgba(148, 163, 184, 0.6) !important;
   }
+
   .dark ::-webkit-scrollbar-thumb:hover {
-    background-color: #475569 !important;
+    background-color: rgba(71, 85, 105, 0.6) !important;
+  }
+
+  /* Khusus Panel Admin agar lebih bersih */
+  .admin-dashboard-container {
+    scrollbar-gutter: stable;
+  }
+
+  /* === DRIVER.JS CUSTOM THEME === */
+  div.driver-popover.driverjs-theme {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1) !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  .dark div.driver-popover.driverjs-theme {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #334155 !important;
+  }
+
+  /* Force Indigo Buttons */
+  .driver-popover.driverjs-theme .driver-popover-btn {
+    background-color: #6366f1 !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    border: none !important;
+    text-shadow: none !important;
+    padding: 6px 12px !important;
+    font-weight: 600 !important;
+  }
+
+  .driver-popover.driverjs-theme .driver-popover-btn:hover {
+    background-color: #4f46e5 !important;
+  }
+
+  .driver-popover.driverjs-theme .driver-popover-prev-btn {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+  }
+
+  .dark .driver-popover.driverjs-theme .driver-popover-prev-btn {
+    background-color: #334155 !important;
+    color: #cbd5e1 !important;
+  }
+
+  .driver-popover-progress-text {
+    color: #94a3b8 !important;
+    font-size: 12px !important;
   }
 }
 

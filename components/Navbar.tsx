@@ -23,9 +23,6 @@ export default function Navbar() {
     return null;
   }
 
-  // 🔥 LOGIKA KHUSUS HALAMAN PENGURUS (GHOST MODE) 🔥
-  const isSpecialPage = pathname === "/pengurus";
-
   const menus = [
     { name: "Beranda", href: "/" },
     { name: "Program Kerja", href: "/program" },
@@ -33,6 +30,18 @@ export default function Navbar() {
     { name: "Berita", href: "/berita" },
     { name: "Galeri Kegiatan", href: "/galeri" },
   ];
+
+  // Jika halaman tidak ada di daftar menu dan bukan halaman dinamis (detail berita/galeri), sembunyikan navbar
+  const isKnownRoute = menus.some(m => m.href === pathname) || 
+                       pathname?.startsWith("/berita/") || 
+                       pathname?.startsWith("/galeri/");
+  
+  if (!isKnownRoute && pathname !== "/") {
+    return null;
+  }
+
+  // 🔥 LOGIKA KHUSUS HALAMAN PENGURUS (GHOST MODE) 🔥
+  const isSpecialPage = pathname === "/pengurus";
 
   return (
     <>

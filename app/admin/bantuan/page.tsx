@@ -159,54 +159,54 @@ export default function HelpCenterPage() {
   if (!isClient) return null;
 
   return (
-    <div className="min-h-screen font-sans space-y-10 pb-24">
+    <div className="h-[calc(100vh-140px)] flex flex-col font-sans relative px-4 md:px-0">
       
-      {/* === HERO HEADER === */}
-      <div className="relative bg-slate-900 rounded-[2rem] p-8 md:p-10 overflow-hidden shadow-xl border border-white/5 mb-8">
-         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
-         <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-600/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2"></div>
+      {/* === HERO HEADER (COMPACT & FREEZE) === */}
+      <div className="shrink-0 relative bg-slate-900 rounded-3xl p-5 md:p-6 overflow-hidden shadow-xl border border-white/5 mb-4">
+         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
          
-         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-8">
+         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div className="text-center lg:text-left flex-1">
-               <div className="flex flex-wrap items-center gap-3 mb-4 justify-center lg:justify-start">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider antialiased">
-                     <ShieldCheck size={14} /> Knowledge Base v2.5
+               <div className="flex flex-wrap items-center gap-2 mb-2 justify-center lg:justify-start">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-bold uppercase tracking-wider antialiased">
+                     <ShieldCheck size={12} /> Knowledge Base v2.5
                   </div>
-                  <button onClick={() => router.push('/admin/bantuan/inbox')} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all">
-                     <Send size={14} /> Inbox Support
+                  <button onClick={() => router.push('/admin/bantuan/inbox')} className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all">
+                     <Send size={12} /> Inbox Support
                   </button>
                </div>
-               <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight leading-tight">
+               <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 tracking-tight leading-tight">
                   Pusat Bantuan <span className="text-blue-500">Orbit Sistem</span>
                </h1>
-               <p className="text-slate-400 text-xs md:text-sm max-w-xl leading-relaxed font-medium">
+               <p className="text-slate-400 text-[10px] md:text-xs max-w-xl leading-relaxed font-medium">
                   Analisis menyeluruh untuk memudahkan anggota dalam mengelola website secara mandiri.
                </p>
             </div>
 
-            <div className="w-full lg:w-80 relative group">
+            <div className="w-full lg:w-72 relative group">
                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
-               <div className="relative bg-[#0f172a]/90 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 flex items-center shadow-lg">
-                  <Search size={18} className="text-blue-500 ml-2 shrink-0"/>
-                  <input type="text" placeholder="Cari solusi..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent border-none outline-none text-white placeholder:text-slate-500 text-sm font-bold px-3 py-1" />
+               <div className="relative bg-[#0f172a]/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 flex items-center shadow-lg">
+                  <Search size={16} className="text-blue-500 ml-2 shrink-0"/>
+                  <input type="text" placeholder="Cari solusi..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-transparent border-none outline-none text-white placeholder:text-slate-500 text-xs font-bold px-3 py-1" />
                </div>
             </div>
          </div>
       </div>
 
-      {/* === MAIN CONTENT GRID === */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-         
-         {/* LEFT: FAQ LIST */}
-         <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between mb-4">
-               <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                  <Zap className="text-amber-500" size={20}/> Direktori Panduan
-               </h2>
-               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-white/5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10">
-                  {filteredKB.length} Kategori
-               </span>
-            </div>
+      {/* === MAIN CONTENT GRID (SCROLLABLE) === */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 pb-24">
+            
+            {/* LEFT: FAQ LIST */}
+            <div className="lg:col-span-2 space-y-6">
+               <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                     <Zap className="text-amber-500" size={20}/> Direktori Panduan
+                  </h2>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-white/5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10">
+                     {filteredKB.length} Kategori
+                  </span>
+               </div>
 
             {filteredKB.length > 0 ? filteredKB.map((cat, catIdx) => (
                <div key={catIdx} className="bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl rounded-2xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
@@ -316,9 +316,12 @@ export default function HelpCenterPage() {
             </div>
 
          </div>
-      </div>
 
-      {/* === MODALS === */}
+         </div>
+         </div>
+
+         {/* === MODALS === */}
+
       <AnimatePresence>
          {activeVideo && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12">

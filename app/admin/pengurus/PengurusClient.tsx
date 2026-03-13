@@ -9,12 +9,13 @@ import {
   Instagram, Calendar, Heart,
   Edit3, Trash2, CheckCircle, Loader2,
   Layers, Briefcase, Camera,
-  Video, Globe, Trash, Check
+  Video, Globe, Trash, Check, HelpCircle
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/components/Toast";
 import { showConfirm } from "@/components/ConfirmDialog";
 import TourGuide from "@/components/TourGuide"; 
+
 import {
   createPengurus, updatePengurus, deletePengurus,
   createDivisi, updateDivisi, deleteDivisi,
@@ -22,17 +23,14 @@ import {
 } from "@/lib/actions";
 
 const pengurusTourSteps = [
-  { target: '.tour-pengurus-header', content: 'Selamat datang! Ini adalah pusat database seluruh anggota OSIS & MPK.', disableBeacon: true },
-  { target: '.tour-manage-divisi', content: 'Di sini Anda bisa mengatur Struktur Organisasi (Divisi & Jabatan) secara dinamis tanpa batas.', disableBeacon: true },
-  { target: '.tour-add-member-btn', content: 'Gunakan tombol ini untuk menambah anggota baru ke dalam sistem.', disableBeacon: true },
-  { target: '.tour-filter-sekbid', content: 'Saring daftar anggota berdasarkan Divisi/Sekbid untuk pencarian yang lebih terfokus.', disableBeacon: true },
-  { target: '.tour-search-bar', content: 'Cari anggota secara spesifik berdasarkan Nama atau Jabatan di sini.', disableBeacon: true },
-  { target: '.tour-view-toggle', content: 'Pilih tampilan yang paling nyaman bagi Anda: Mode Kartu (Grid) atau Mode Daftar (List).', disableBeacon: true },
-  { target: '.tour-member-card', content: 'Setiap kartu menampilkan info ringkas. Klik ikon pensil untuk edit, atau tong sampah untuk hapus.', disableBeacon: true },
+  { target: '.tour-pengurus-header', content: 'Selamat datang! Ini adalah database seluruh anggota OSIS & MPK.', disableBeacon: true },
+  { target: '.tour-pengurus-divisi', content: 'Di sini Anda bisa mengatur Struktur Organisasi (Divisi & Jabatan).', disableBeacon: true },
+  { target: '.tour-pengurus-add', content: 'Gunakan tombol ini untuk menambah anggota baru.', disableBeacon: true },
 ];
 
 export default function PengurusClient({ initialData, initialDivisi }: { initialData: any[], initialDivisi: any[] }) {
   const router = useRouter();
+  const tourRef = useRef<any>(null);
   const [members, setMembers] = useState(initialData);
   const [divisions, setDivisions] = useState(initialDivisi);
   const [isDataLoading, setIsDataLoading] = useState(true);
@@ -84,6 +82,10 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     }
   }, [form.divisi, divisions]);
 
+  const handleStartTour = () => {
+    if (tourRef.current) tourRef.current.startTour();
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -115,7 +117,11 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
       tglLahir: m.tglLahir || "", domisili: m.domisili || "", transportasi: m.transportasi || "Motor Pribadi", motto: m.motto || "",
       visi: m.visi || "", misi: m.misi || "", fotoUrl: m.fotoUrl || "", isAdvisor: m.isAdvisor || false
     });
-    setIsModalPengurusOpen(true);
+    setIsModalOpen(true);
+  };
+
+  const setIsModalOpen = (val: boolean) => {
+    setIsModalPengurusOpen(val);
   };
 
   const handleSaveMember = async () => {
@@ -210,21 +216,33 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-pengurus-header font-sans">
                 Data Pengurus <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">👥</span>
               </h1>
-              {isClient && <TourGuide steps={pengurusTourSteps} />}
+              
+              {isClient && (
+                <button 
+                  onClick={handleStartTour}
+                  className="p-2 text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-1 text-sm font-medium"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  <span className="hidden sm:inline">Panduan</span>
+                </button>
+              )}
+
+              {isClient && <TourGuide ref={tourRef} steps={pengurusTourSteps} tourKey="pengurus" />}
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Database keanggotaan dan struktur organisasi.</p>
           </div>
+          
           <div className="flex gap-3">
-            <button onClick={() => setIsModalStructureOpen(true)} className="tour-manage-divisi px-5 py-2.5 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs shadow-sm flex items-center gap-2 transition-all hover:bg-slate-50 active:scale-95">
+            <button onClick={() => setIsModalStructureOpen(true)} className="tour-pengurus-divisi px-5 py-2.5 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs shadow-sm flex items-center gap-2 transition-all hover:bg-slate-50 active:scale-95">
               <Layers size={18} /> Struktur
             </button>
-            <button onClick={openNewMember} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 flex items-center gap-2 transition-transform active:scale-95 tour-add-member-btn text-xs">
+            <button onClick={openNewMember} className="tour-pengurus-add px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 flex items-center gap-2 transition-transform active:scale-95 text-xs">
               <Plus size={18} /> Tambah
             </button>
           </div>
         </div>
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-          <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 tour-filter-sekbid no-scrollbar scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+          <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 tour-pengurus-list no-scrollbar scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
             <button onClick={() => setFilterSekbid("Semua")} className={`px-4 py-1.5 rounded-xl text-[11px] font-bold transition-all border ${filterSekbid === "Semua" ? "bg-slate-900 dark:bg-blue-600 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}>Semua</button>
             {divisions.map((div) => (
               <button key={div.id} onClick={() => setFilterSekbid(div.nama)} className={`px-4 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all border ${filterSekbid === div.nama ? "bg-slate-900 dark:bg-blue-600 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}>{div.nama}</button>
