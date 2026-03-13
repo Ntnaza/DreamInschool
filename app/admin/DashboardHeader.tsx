@@ -26,7 +26,7 @@ export default function DashboardHeader({ children }: { children?: React.ReactNo
                 <h1 className="text-3xl font-bold font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-dashboard-header">
                    Dashboard Overview <span className="text-2xl p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">📊</span>
                 </h1>
-                {isClient && <TourGuide steps={dashboardSteps} />}
+                {/* {isClient && <TourGuide steps={dashboardSteps} />} */}
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">
                Pantau performa organisasi secara real-time hari ini.
