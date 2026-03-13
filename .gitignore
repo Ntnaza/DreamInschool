@@ -38,4 +38,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# additional junk
+/*.zip
+/.next/
+/.next_old/
+/.swp
+/.idea/
+/.vscode/
+/node_modules/
+/package-lock.json
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env*.local
+
 /app/generated/prisma
