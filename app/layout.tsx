@@ -16,6 +16,8 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "OSIS & MPK - SMK Nurul Islam",
   description: "Website Resmi Organisasi Siswa Intra Sekolah",
