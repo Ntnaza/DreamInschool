@@ -1,19 +1,33 @@
+import path from "path";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
   experimental: {
     serverActions: {
-      bodySizeLimit: '200mb',
+      bodySizeLimit: "200mb",
     },
   },
+
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: '**' },
+      {
+        protocol: "https",
+        hostname: "**",
+      },
     ],
   },
-  // Optimasi tambahan agar folder build tidak membengkak
+
   typescript: {
     ignoreBuildErrors: false,
+  },
+
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": path.resolve(process.cwd()),
+    };
+
+    return config;
   },
 };
 
