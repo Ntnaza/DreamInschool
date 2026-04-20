@@ -823,6 +823,22 @@ export async function updateTicketStatus(id: number, status: any) {
   } catch (error) { return { success: false, message: "Gagal update status." }; }
 }
 
+export async function deleteHelpTicket(id: number) {
+  try {
+    await prisma.helpTicket.delete({ where: { id } });
+    revalidatePath("/admin/bantuan/inbox");
+    return { success: true, message: "Tiket bantuan berhasil dihapus." };
+  } catch (error) { return { success: false, message: "Gagal menghapus tiket bantuan." }; }
+}
+
+export async function deleteHelpTicket(id: number) {
+  try {
+    await prisma.helpTicket.delete({ where: { id } });
+    revalidatePath("/admin/bantuan/inbox");
+    return { success: true, message: "Laporan bug berhasil dihapus." };
+  } catch (error) { return { success: false, message: "Gagal menghapus laporan." }; }
+}
+
 /* ======================================================
    11. MANAJEMEN PERIODE (ARSIP)
 ====================================================== */
