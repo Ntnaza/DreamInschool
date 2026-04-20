@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { getActivePeriodeId } from "@/lib/actions";
 import PengurusClient from "./PengurusClient";
 
 export default async function PengurusPage() {
+  const activePeriodeId = await getActivePeriodeId();
+
   const rawMembers = await prisma.pengurus.findMany({
+    where: { periodeId: activePeriodeId || undefined },
+    include: { user: true }, 
     orderBy: { nama: "asc" },
   });
 

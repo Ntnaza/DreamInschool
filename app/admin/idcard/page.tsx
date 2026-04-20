@@ -1,10 +1,16 @@
 import { prisma } from "@/lib/prisma";
+import { getActivePeriodeId } from "@/lib/actions";
 import IDCardClient from "./IDCardClient";
 
 export default async function IDCardPage() {
-  // 1. Ambil Data Pengurus
+  const activePeriodeId = await getActivePeriodeId();
+
+  // 1. Ambil Data Pengurus (Filter by Periode Aktif)
   const rawMembers = await prisma.pengurus.findMany({
-    where: { status: "AKTIF" },
+    where: { 
+      periodeId: activePeriodeId || undefined,
+      status: "AKTIF" 
+    },
     orderBy: { nama: "asc" },
   });
 
@@ -25,9 +31,11 @@ export default async function IDCardPage() {
 
   // Kirim data background juga
   return (
-    <IDCardClient 
-      initialMembers={formattedMembers} 
-      initialBackImage={config?.idCardBackImage || null} // 👈 KIRIM INI
-    />
+    <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
+      <IDCardClient 
+        initialMembers={formattedMembers} 
+        initialBackImage={config?.idCardBackImage || null} 
+      />
+    </div>
   );
 }

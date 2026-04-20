@@ -8,7 +8,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import ToastContainer from "@/components/Toast";
 import NextTopLoader from 'nextjs-toploader'; 
 import { headers } from "next/headers";
-import { trackVisitor } from "@/lib/actions";
+import { trackVisitor, getAllPeriode, getSelectedPeriodeId } from "@/lib/actions";
 
 const jakarta = Plus_Jakarta_Sans({ 
   subsets: ["latin"],
@@ -16,12 +16,27 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
 });
 
+import { prisma } from "@/lib/prisma";
+
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "OSIS & MPK - SMK Nurul Islam",
-  description: "Website Resmi Organisasi Siswa Intra Sekolah",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const config = await prisma.websiteConfig.findFirst();
+    return {
+      title: config?.namaOrganisasi ? `${config.namaOrganisasi} - SMK Nurul Islam` : "OSIS & MPK - SMK Nurul Islam",
+      description: config?.deskripsi || "Website Resmi Organisasi Siswa Intra Sekolah",
+      icons: {
+        icon: config?.faviconUrl || "/favicon.ico",
+      }
+    };
+  } catch (error) {
+    return {
+      title: "OSIS & MPK - SMK Nurul Islam",
+      description: "Website Resmi Organisasi Siswa Intra Sekolah",
+    };
+  }
+}
 
 export default async function RootLayout({
   children,
@@ -32,6 +47,10 @@ export default async function RootLayout({
   const ip = headerList.get("x-forwarded-for") || "127.0.0.1";
   const userAgent = headerList.get("user-agent") || "Unknown";
   trackVisitor(ip, userAgent, "/");
+
+  // Ambil data periode untuk selector di Navbar
+  const periodes = await getAllPeriode();
+  const selectedPeriodeId = await getSelectedPeriodeId();
 
   return (
     <html lang="id" suppressHydrationWarning>
@@ -49,7 +68,7 @@ export default async function RootLayout({
         />
 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Navbar />
+          <Navbar periodes={JSON.parse(JSON.stringify(periodes))} selectedPeriodeId={selectedPeriodeId} />
           <SmoothScroll>
             {children}
           </SmoothScroll>

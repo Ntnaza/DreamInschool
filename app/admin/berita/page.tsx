@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getActivePeriodeId } from "@/lib/actions";
 import BeritaClient from "./BeritaClient";
 import BeritaHeader from "./BeritaHeader";
 
@@ -6,8 +7,11 @@ import BeritaHeader from "./BeritaHeader";
  * SERVER COMPONENT (Pengambil Data)
  */
 export default async function BeritaPage() {
-  // Ambil data Berita
+  const activePeriodeId = await getActivePeriodeId();
+
+  // Ambil data Berita (Filter by Periode Aktif)
   const rawPosts = await prisma.berita.findMany({
+    where: { periodeId: activePeriodeId || undefined },
     orderBy: { createdAt: "desc" },
   });
 

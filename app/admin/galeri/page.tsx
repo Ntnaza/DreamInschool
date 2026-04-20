@@ -1,9 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { getActivePeriodeId } from "@/lib/actions";
 import GaleriClient from "./GaleriClient";
 
 export default async function GaleriPage() {
-  // Ambil data Galeri
+  const activePeriodeId = await getActivePeriodeId();
+
+  // Ambil data Galeri (Filter by Periode Aktif)
   const rawGaleris = await prisma.galeri.findMany({
+    where: { periodeId: activePeriodeId || undefined },
     orderBy: { tanggal: "desc" },
   });
 

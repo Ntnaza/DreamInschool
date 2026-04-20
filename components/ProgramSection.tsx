@@ -3,9 +3,10 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
 // Function ambil data (Hanya ambil 3 program teratas)
-async function getPrograms() {
+async function getPrograms(periodeId?: number | null) {
   try {
     const data = await prisma.programKerja.findMany({
+      where: { periodeId: periodeId || undefined },
       take: 3, // Cuma ambil 3 biji buat di Landing Page
       orderBy: [
         { isFeatured: 'desc' }, // Yang Featured (True) taruh paling atas
@@ -19,8 +20,8 @@ async function getPrograms() {
   }
 }
 
-export default async function ProgramSection() {
-  const programs = await getPrograms();
+export default async function ProgramSection({ periodeId }: { periodeId?: number | null }) {
+  const programs = await getPrograms(periodeId);
 
   if (programs.length === 0) return null; // Hide section kalau kosong
 

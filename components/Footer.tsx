@@ -1,10 +1,34 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { Instagram, Youtube, Mail, Phone, MapPin, Loader2 } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [config, setConfig] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.error) setConfig(data);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Default values if config is not loaded yet
+  const data = config || {
+    namaOrganisasi: "OSIS MPK",
+    deskripsi: "Wadah aspirasi dan kreasi siswa. Membangun karakter kepemimpinan yang berakhlak mulia dan berdaya saing global.",
+    instagram: "https://instagram.com/",
+    youtube: "https://youtube.com/",
+    tiktok: "https://tiktok.com/",
+    email: "admin@school.sch.id",
+    telepon: "0263123456",
+    alamat: "Jl. Raya Cianjur - Bandung"
+  };
 
   return (
     <footer className="relative w-full bg-slate-50 dark:bg-[#020617] border-t border-slate-200 dark:border-slate-800 pt-16 pb-8 transition-colors duration-500 overflow-hidden">
@@ -19,44 +43,38 @@ export default function Footer() {
       </div>
 
       <div className="container mx-auto px-6 md:px-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
           
-          {/* KOLOM 1: IDENTITAS SEKOLAH */}
+          {/* KOLOM 1: IDENTITAS */}
           <div className="space-y-4">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="text-blue-600">OSIS</span> MPK
+              <span className="text-blue-600 uppercase">{data.namaOrganisasi.split(' ')[0]}</span> {data.namaOrganisasi.split(' ').slice(1).join(' ')}
             </h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-bold">
-              Wadah aspirasi dan kreasi siswa SMK Nurul Islam Cianjur. Membangun karakter kepemimpinan yang berakhlak mulia dan berdaya saing global.
+              {data.deskripsi}
             </p>
             <div className="flex items-center gap-4 pt-2">
+               {/* INSTAGRAM */}
                <Link 
-                 href="https://instagram.com/osis_smknuris" 
+                 href={data.instagram} 
                  target="_blank"
                  className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-gradient-to-br hover:from-purple-500 hover:via-pink-500 hover:to-orange-500 hover:text-white dark:hover:text-white transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1"
                >
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                 </svg>
+                 <Instagram size={20} />
                </Link>
 
-               {/* 2. YOUTUBE */}
+               {/* YOUTUBE */}
                <Link 
-                 href="https://youtube.com/@smknuris" 
+                 href={data.youtube} 
                  target="_blank"
                  className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-red-600 hover:text-white dark:hover:text-white transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1"
                >
-                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                   <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path>
-                   <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
-                 </svg>
+                 <Youtube size={20} />
                </Link>
 
-               {/* 3. TIKTOK */}
+               {/* TIKTOK */}
                <Link 
-                 href="https://tiktok.com/@smknuris" 
+                 href={data.tiktok} 
                  target="_blank"
                  className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1"
                >
@@ -78,34 +96,21 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* KOLOM 3: KONSENTRASI KEAHLIAN */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest">Jurusan</h4>
-            <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
-              <li><span className="hover:text-blue-600 cursor-default transition-colors">PPLG (RPL)</span></li>
-              <li><span className="hover:text-blue-600 cursor-default transition-colors">TJKT (TKJ)</span></li>
-              <li><span className="hover:text-blue-600 cursor-default transition-colors">DKV (Multimedia)</span></li>
-              <li><span className="hover:text-blue-600 cursor-default transition-colors">MPLB (OTKP)</span></li>
-              <li><span className="hover:text-blue-600 cursor-default transition-colors">AKL (Akuntansi)</span></li>
-              <li><span className="hover:text-blue-600 cursor-default transition-colors">TO (Otomotif)</span></li>
-            </ul>
-          </div>
-
-          {/* KOLOM 4: KONTAK */}
+          {/* KOLOM 3: KONTAK */}
           <div className="space-y-4">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest">Hubungi Kami</h4>
             <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
               <li className="flex items-start gap-3">
-                <span className="text-lg">📍</span>
-                <span>Jl. Raya Cianjur - Bandung Km. 09, Bojong, Karangtengah, Cianjur, Jawa Barat.</span>
+                <MapPin className="text-blue-500 shrink-0" size={18} />
+                <span className="font-medium">{data.alamat}</span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-lg">📧</span>
-                <span>osis@smknuris.sch.id</span>
+                <Mail className="text-blue-500 shrink-0" size={18} />
+                <span className="font-medium">{data.email}</span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-lg">📞</span>
-                <span>(0263) 1234567</span>
+                <Phone className="text-blue-500 shrink-0" size={18} />
+                <span className="font-medium">{data.telepon}</span>
               </li>
             </ul>
           </div>
@@ -115,7 +120,7 @@ export default function Footer() {
         {/* COPYRIGHT BOTTOM */}
         <div className="border-t border-slate-200 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
            <p className="text-xs text-slate-500 dark:text-slate-500 text-center md:text-left">
-             &copy; {currentYear} <strong className="text-slate-700 dark:text-slate-300">OSIS & MPK SMK Nurul Islam</strong>. All rights reserved.
+             &copy; {currentYear} <strong className="text-slate-700 dark:text-slate-300">{data.namaOrganisasi}</strong>. All rights reserved.
            </p>
            <p className="text-xs text-slate-400 dark:text-slate-600 flex items-center gap-1">
              Made with ❤️ by <span className="text-blue-500 font-bold">Sultan Malik Ahmad</span>

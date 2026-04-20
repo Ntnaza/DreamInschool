@@ -19,7 +19,8 @@ import TourGuide from "@/components/TourGuide";
 import {
   createPengurus, updatePengurus, deletePengurus,
   createDivisi, updateDivisi, deleteDivisi,
-  createJabatan, updateJabatan, deleteJabatan
+  createJabatan, updateJabatan, deleteJabatan,
+  saveUserAccount, deleteUserAccount
 } from "@/lib/actions";
 
 const pengurusTourSteps = [
@@ -59,6 +60,12 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
     hp: "", email: "", instagram: "", tiktok: "",
     tglLahir: "", domisili: "", transportasi: "Motor Pribadi", motto: "",
     visi: "", misi: "", fotoUrl: "", isAdvisor: false
+  });
+
+  const [accountForm, setAccountForm] = useState({
+    username: "",
+    password: "",
+    role: "PENGURUS" as "ADMIN" | "PENGURUS"
   });
 
   useEffect(() => {
@@ -106,6 +113,7 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
       tglLahir: "", domisili: "", transportasi: "Motor Pribadi", motto: "",
       visi: "", misi: "", fotoUrl: "", isAdvisor: false
     });
+    setAccountForm({ username: "", password: "", role: "PENGURUS" });
     setIsModalPengurusOpen(true);
   };
 
@@ -117,6 +125,12 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
       tglLahir: m.tglLahir || "", domisili: m.domisili || "", transportasi: m.transportasi || "Motor Pribadi", motto: m.motto || "",
       visi: m.visi || "", misi: m.misi || "", fotoUrl: m.fotoUrl || "", isAdvisor: m.isAdvisor || false
     });
+    // Load Account Data if exists
+    setAccountForm({ 
+      username: m.user?.username || "", 
+      password: "", 
+      role: m.user?.role || "PENGURUS" 
+    });
     setIsModalOpen(true);
   };
 
@@ -127,15 +141,40 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
   const handleSaveMember = async () => {
     if (!form.nama || !form.nis) return showToast("Wajib diisi!", "warning");
     setIsSubmitting(true);
-    const formData = new FormData();
-    if (isEditing && editId) formData.append("id", editId.toString());
-    Object.entries(form).forEach(([key, value]) => formData.append(key, value.toString()));
+    
     try {
+      const formData = new FormData();
+      if (isEditing && editId) formData.append("id", editId.toString());
+      Object.entries(form).forEach(([key, value]) => formData.append(key, value.toString()));
+      
       const res = isEditing ? await updatePengurus(formData) : await createPengurus(formData);
-      if (res.success) { showToast("Berhasil!", "success"); router.refresh(); setIsModalPengurusOpen(false); }
-      else showToast(res.message || "Terjadi kesalahan", "error");
-    } catch (err) { showToast("Error!", "error"); }
-    finally { setIsSubmitting(false); }
+      
+      if (res.success) { 
+        // JIka ada username yang diisi, simpan akunnya juga
+        if (accountForm.username) {
+          const accData = new FormData();
+          // Jika edit, ID pengurus sudah ada. Jika baru, kita butuh ID dari response create
+          const pId = isEditing ? editId : (res as any).id;
+          if (pId) {
+            accData.append("pengurusId", pId.toString());
+            accData.append("username", accountForm.username);
+            accData.append("password", accountForm.password);
+            accData.append("role", accountForm.role);
+            await saveUserAccount(accData);
+          }
+        }
+        
+        showToast("Data Berhasil Disimpan!", "success"); 
+        router.refresh(); 
+        setIsModalPengurusOpen(false); 
+      } else {
+        showToast(res.message || "Terjadi kesalahan", "error");
+      }
+    } catch (err) { 
+      showToast("Error sistem!", "error"); 
+    } finally { 
+      setIsSubmitting(false); 
+    }
   };
 
   const handleSaveDivisi = async () => {
@@ -388,15 +427,22 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
                 </div>
                 <button onClick={() => setIsModalPengurusOpen(false)} className="p-2 text-slate-400 hover:text-red-500"><X size={20} /></button>
               </div>
-              <div className="px-8 pt-4 border-b border-slate-50 dark:border-white/5 bg-slate-50/30 dark:bg-white/5 flex gap-8">
-                {[{ id: "utama", label: "Utama", icon: User }, { id: "media", label: "Kontak", icon: Globe }, { id: "personal", label: "Personal", icon: Heart }, { id: "visi", label: "Visi Misi", icon: Briefcase }].map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`pb-3 text-xs font-bold border-b-2 uppercase tracking-widest ${activeTab === tab.id ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400"}`}>{tab.label}</button>
+              <div className="px-8 pt-4 border-b border-slate-50 dark:border-white/5 bg-slate-50/30 dark:bg-white/5 flex gap-8 overflow-x-auto no-scrollbar">
+                {[
+                  { id: "utama", label: "Utama", icon: User }, 
+                  { id: "media", label: "Kontak", icon: Globe }, 
+                  { id: "personal", label: "Personal", icon: Heart }, 
+                  { id: "visi", label: "Visi Misi", icon: Briefcase },
+                  { id: "akun", label: "Akun Login", icon: Briefcase }
+                ].map((tab) => (
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`pb-3 text-xs font-bold border-b-2 uppercase tracking-widest whitespace-nowrap ${activeTab === tab.id ? "border-blue-600 text-blue-600" : "border-transparent text-slate-400"}`}>{tab.label}</button>
                 ))}
               </div>
               <div className="flex-1 overflow-y-auto custom-scrollbar p-8 bg-white dark:bg-[#0a0f1e]">
                 <form className="space-y-8">
                   {activeTab === "utama" && (
                     <div className="space-y-8">
+                      {/* (Rest of Utama content remains same) */}
                       <div className="flex flex-col sm:flex-row items-center gap-8 bg-slate-50/50 dark:bg-white/5 p-6 rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
                         <div className="relative w-24 h-24 rounded-full bg-white dark:bg-[#0f172a] border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 cursor-pointer overflow-hidden group" onClick={() => fileInputRef.current?.click()}>
                           {form.fotoUrl ? <Image src={form.fotoUrl} alt="Foto" fill className="object-cover" /> : <Camera size={24} className="opacity-20" />}
@@ -421,6 +467,121 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
                       </div>
                     </div>
                   )}
+                  {activeTab === "akun" && (
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                      <div className="p-6 bg-blue-50 dark:bg-blue-600/10 rounded-2xl border border-blue-100 dark:border-blue-500/20">
+                        <h4 className="text-sm font-bold text-blue-700 dark:text-blue-400 mb-1">Akses Login Pengurus</h4>
+                        <p className="text-[10px] text-blue-600/70 dark:text-blue-400/60 leading-relaxed">Akses menu ditentukan secara otomatis berdasarkan <strong>Jabatan ({form.jabatan})</strong> yang Anda pilih di tab Utama.</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {/* Username & Password Inputs */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Username</label>
+                          <input 
+                            type="text" 
+                            value={accountForm.username} 
+                            onChange={e => setAccountForm({ ...accountForm, username: e.target.value })} 
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold" 
+                            placeholder="Contoh: zaki.arkan"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password Baru</label>
+                          <input 
+                            type="password" 
+                            value={accountForm.password} 
+                            onChange={e => setAccountForm({ ...accountForm, password: e.target.value })} 
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold" 
+                            placeholder={isEditing ? "Kosongkan jika tidak ganti" : "Password awal..."}
+                          />
+                        </div>
+
+                        {/* PREVIEW HAK AKSES (THE GRANULAR INFO) */}
+                        <div className="sm:col-span-2 p-5 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-4">Pratinjau Hak Akses ({form.jabatan})</label>
+                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              {[
+                                { name: "Dashboard", allowed: ["ALL"] },
+                                { name: "Aspirasi", allowed: ["MPK", "Ketua Umum", "Pembina", "ADMIN"] },
+                                { name: "Berita", allowed: ["Sekretaris", "Ketua Umum", "ADMIN"] },
+                                { name: "Proker", allowed: ["Ketua", "Sekretaris", "Divisi", "ADMIN"] },
+                                { name: "Keuangan", allowed: ["Bendahara", "Ketua Umum", "Ketua MPK", "Pembina", "ADMIN"] },
+                                { name: "Pengurus", allowed: ["Ketua Umum", "Sekretaris", "ADMIN"] },
+                                { name: "Absensi", allowed: ["Sekretaris", "Ketua Umum", "ADMIN"] },
+                                { name: "Settings", allowed: ["ADMIN"] },
+                              ].map((perm, i) => {
+                                const userJab = form.jabatan.toLowerCase();
+                                const isAllowed = accountForm.role === 'ADMIN' || 
+                                                  perm.allowed.includes("ALL") || 
+                                                  perm.allowed.some(a => {
+                                                    const r = a.toLowerCase();
+                                                    if (r === "ketua umum" && !userJab.includes("umum")) return false;
+                                                    if (r === "ketua mpk" && !userJab.includes("mpk")) return false;
+                                                    if (r === "ketua divisi" && !userJab.includes("divisi")) return false;
+                                                    return userJab.includes(r);
+                                                  });
+
+                                return (
+                                  <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${isAllowed ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100/50 dark:bg-white/5 border-transparent text-slate-400 opacity-50'}`}>
+                                    {isAllowed ? <CheckCircle size={14} /> : <X size={14} />}
+                                    <span className="text-[10px] font-bold">{perm.name}</span>
+                                  </div>
+                                );
+                              })}
+                           </div>
+                        </div>
+
+                        <div className="sm:col-span-2 space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Level Kunci Utama</label>
+                          <div className="flex gap-3">
+                            <button 
+                              type="button" 
+                              onClick={() => setAccountForm({ ...accountForm, role: 'PENGURUS' })}
+                              className={`flex-1 p-4 rounded-2xl border-2 transition-all text-left group ${accountForm.role === 'PENGURUS' ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 hover:border-slate-200'}`}
+                            >
+                              <div className={`w-10 h-10 rounded-xl mb-3 flex items-center justify-center transition-colors ${accountForm.role === 'PENGURUS' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400 group-hover:bg-slate-300'}`}><User size={20} /></div>
+                              <h5 className={`text-xs font-bold ${accountForm.role === 'PENGURUS' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>PENGURUS</h5>
+                              <p className="text-[9px] text-slate-400 mt-1">Akses otomatis sesuai jabatan di atas.</p>
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setAccountForm({ ...accountForm, role: 'ADMIN' })}
+                              className={`flex-1 p-4 rounded-2xl border-2 transition-all text-left group ${accountForm.role === 'ADMIN' ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 hover:border-slate-200'}`}
+                            >
+                              <div className={`w-10 h-10 rounded-xl mb-3 flex items-center justify-center transition-colors ${accountForm.role === 'ADMIN' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400 group-hover:bg-slate-300'}`}><Briefcase size={20} /></div>
+                              <h5 className={`text-xs font-bold ${accountForm.role === 'ADMIN' ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'}`}>SUPER ADMIN</h5>
+                              <p className="text-[9px] text-slate-400 mt-1">Akses mutlak (BPH Inti / IT).</p>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {isEditing && accountForm.username && (
+                        <div className="pt-6 border-t border-slate-100 dark:border-white/5">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              showConfirm({
+                                title: "Hapus Akun Login?",
+                                message: "Pengurus ini tidak akan bisa login lagi, tapi data profilnya tetap ada.",
+                                type: "danger",
+                                onConfirm: async () => {
+                                  if (editId) await deleteUserAccount(editId);
+                                  showToast("Akun dihapus", "success");
+                                  window.location.reload();
+                                }
+                              })
+                            }}
+                            className="flex items-center gap-2 text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-widest"
+                          >
+                            <Trash size={14} /> Hapus Akses Login
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {/* (Kontak, Personal, Visi tabs remain same) */}
                   {activeTab === "media" && (
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -487,15 +648,44 @@ export default function PengurusClient({ initialData, initialDivisi }: { initial
                 {selectedDivisi && (
                   <div className="space-y-4 pt-4 border-t">
                     <label className="text-[10px] font-bold uppercase">Jabatan di {selectedDivisi.nama}</label>
-                    <div className="flex gap-2">
-                      <input type="text" placeholder="Baru..." value={jabatanFormName} onChange={e => setJabatanFormName(e.target.value)} className="flex-1 p-2 rounded-lg border text-sm" />
-                      <button onClick={handleAddJabatan} className="px-4 bg-slate-900 text-white rounded-lg text-xs font-bold">Tambah</button>
+                    <div className="flex flex-col gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                      <input type="text" placeholder="Nama Jabatan Baru..." value={jabatanFormName} onChange={e => setJabatanFormName(e.target.value)} className="w-full p-2.5 rounded-xl border text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <div className="flex gap-2">
+                        <select id="aksesLevelSelect" className="flex-1 p-2.5 rounded-xl border text-xs font-bold bg-white dark:bg-[#161d2f]">
+                          <option value="UMUM">Level: Umum</option>
+                          <option value="PIMPINAN">Level: Pimpinan (Full)</option>
+                          <option value="SEKRETARIS">Level: Sekretaris</option>
+                          <option value="BENDAHARA">Level: Bendahara</option>
+                          <option value="DIVISI">Level: Ketua Divisi</option>
+                          <option value="PENGAWAS">Level: Pengawas (MPK)</option>
+                        </select>
+                        <button 
+                          onClick={async () => {
+                            const level = (document.getElementById('aksesLevelSelect') as HTMLSelectElement).value;
+                            if (!jabatanFormName || !selectedDivId) return;
+                            setIsSubmitting(true);
+                            const formData = new FormData();
+                            formData.append("nama", jabatanFormName);
+                            formData.append("divisiId", selectedDivId.toString());
+                            formData.append("aksesLevel", level);
+                            const res = await createJabatan(formData);
+                            if (res.success) { setJabatanFormName(""); showToast("Jabatan dibuat!", "success"); router.refresh(); }
+                            setIsSubmitting(false);
+                          }} 
+                          className="px-6 bg-slate-900 dark:bg-blue-600 text-white rounded-xl text-xs font-bold active:scale-95 transition-transform"
+                        >
+                          Tambah
+                        </button>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2">
                       {selectedDivisi.jabatans.map((jab: any) => (
-                        <div key={jab.id} className="flex items-center justify-between p-2 bg-white border rounded-lg">
-                          <span className="text-[10px] font-bold truncate">{jab.nama}</span>
-                          <button onClick={() => handleDeleteJabatan(jab.id)} className="text-red-400"><Trash size={12} /></button>
+                        <div key={jab.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-white/5 rounded-xl shadow-sm">
+                          <div>
+                            <h5 className="text-xs font-bold text-slate-800 dark:text-white">{jab.nama}</h5>
+                            <span className="text-[9px] font-black text-blue-500 uppercase tracking-tighter">Akses: {jab.aksesLevel}</span>
+                          </div>
+                          <button onClick={() => handleDeleteJabatan(jab.id)} className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"><Trash size={14} /></button>
                         </div>
                       ))}
                     </div>

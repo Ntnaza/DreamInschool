@@ -9,6 +9,7 @@ import {
 import { ActivityChart } from "@/components/DashboardCharts"; 
 import SpotlightCard from "@/components/SpotlightCard"; 
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 interface DashboardUIProps {
   stats: {
@@ -39,6 +40,24 @@ const formatDateShort = (date: Date | null) => {
 
 export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi, chartData }: DashboardUIProps) {
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setUser(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const userJabatan = user?.jabatan?.toLowerCase() || "";
+  const isAdmin = user?.role === "ADMIN";
+
+  // Hak Akses Khusus
+  const canSeeFinance = isAdmin || userJabatan.includes("bendahara") || userJabatan.includes("umum") || userJabatan.includes("mpk") || userJabatan.includes("pembina");
+  const canSeeStats = isAdmin || userJabatan.includes("sekretaris") || userJabatan.includes("umum") || userJabatan.includes("divisi");
+  const canSeeAspirasi = isAdmin || userJabatan.includes("mpk") || userJabatan.includes("umum") || userJabatan.includes("pembina");
 
   const tagColorMap: any = {
     orange: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300",
@@ -61,17 +80,22 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
       return 'blue';
   };
 
-  const quickAccessItems = [
-    { label: 'Tulis Berita', icon: PenTool, color: 'blue', href: '/admin/berita' },
-    { label: 'Buat Surat', icon: FileText, color: 'pink', href: '/admin/surat' },
-    { label: 'Scan Absensi', icon: QrCode, color: 'green', href: '/admin/absensi' },
-    { label: 'Input Kas', icon: Wallet, color: 'orange', href: '/admin/kas' },
+  const allQuickAccess = [
+    { label: 'Tulis Berita', icon: PenTool, color: 'blue', href: '/admin/berita', only: ["sekretaris", "umum"] },
+    { label: 'Buat Surat', icon: FileText, color: 'pink', href: '/admin/surat', only: ["sekretaris", "umum"] },
+    { label: 'Scan Absensi', icon: QrCode, color: 'green', href: '/admin/absensi', only: ["sekretaris", "umum"] },
+    { label: 'Input Kas', icon: Wallet, color: 'orange', href: '/admin/kas', only: ["bendahara", "umum"] },
   ];
+
+  const quickAccessItems = allQuickAccess.filter(item => {
+    if (isAdmin) return true;
+    return item.only.some(r => userJabatan.includes(r));
+  });
 
   return (
     <div className="flex-1 overflow-y-auto pb-20 pr-2 custom-scrollbar space-y-6">
          {/* STATS GRID */}
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 tour-stats-grid">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 tour-stats-grid">
          <SpotlightCard color="blue" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-blue-300 transition-colors" onClick={() => router.push('/admin/absensi')}>
             <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 shadow-sm">
                 <UserCheck size={20} />
@@ -83,11 +107,13 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
             </div>
          </SpotlightCard>
          
-         <SpotlightCard color="purple" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-purple-300 transition-colors" onClick={() => router.push('/admin/aspirasi')}>
-            <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4 shadow-sm"><Mail size={20} /></div>
-            <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Aspirasi Baru</h3>
-            <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{stats.aspirasiBaru}</p>
-         </SpotlightCard>
+         {canSeeAspirasi && (
+            <SpotlightCard color="purple" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-purple-300 transition-colors" onClick={() => router.push('/admin/aspirasi')}>
+               <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4 shadow-sm"><Mail size={20} /></div>
+               <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Aspirasi Baru</h3>
+               <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{stats.aspirasiBaru}</p>
+            </SpotlightCard>
+         )}
 
          <SpotlightCard color="green" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-green-300 transition-colors" onClick={() => router.push('/admin/proker')}>
             <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400 mb-4 shadow-sm"><CheckCircle size={20} /></div>
@@ -95,36 +121,42 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
             <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{stats.prokerPersen}%</p>
          </SpotlightCard>
 
-         <SpotlightCard color="yellow" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-yellow-300 transition-colors" onClick={() => router.push('/admin/kas')}>
-            <div className="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400 mb-4 shadow-sm"><Wallet size={20} /></div>
-            <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Dana Kas</h3>
-            <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{formatCurrency(stats.danaKas)}</p>
-         </SpotlightCard>
+         {canSeeFinance && (
+            <SpotlightCard color="yellow" className="p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-yellow-300 transition-colors" onClick={() => router.push('/admin/kas')}>
+               <div className="w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400 mb-4 shadow-sm"><Wallet size={20} /></div>
+               <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Dana Kas</h3>
+               <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{formatCurrency(stats.danaKas)}</p>
+            </SpotlightCard>
+         )}
 
-         <SpotlightCard color="indigo" className="tour-total-views p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-indigo-300 transition-colors">
-            <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 shadow-sm"><Eye size={20} /></div>
-            <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Views</h3>
-            <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{stats.totalViews}</p>
-                <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">+{stats.viewsHariIni} hari ini</span>
-            </div>
-         </SpotlightCard>
+         {canSeeStats && (
+            <SpotlightCard color="indigo" className="tour-total-views p-6 rounded-xl border border-slate-200 dark:border-white/10 cursor-pointer hover:border-indigo-300 transition-colors">
+               <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 shadow-sm"><Eye size={20} /></div>
+               <h3 className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Views</h3>
+               <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-black font-bold text-slate-900 dark:text-white tracking-tight">{stats.totalViews}</p>
+                  <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded">+{stats.viewsHariIni} hari ini</span>
+               </div>
+            </SpotlightCard>
+         )}
       </div>
 
       {/* GRID TENGAH */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          {/* CHART */}
-         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-2 bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm tour-activity-chart">
-            <div className="flex items-center justify-between mb-6">
-               <h3 className="font-black font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><Activity size={20} className="text-blue-600" /> Tren Aktivitas</h3>
-            </div>
-            <div className="h-[250px]"><ActivityChart data={chartData} /></div>
-         </motion.div>
+         {canSeeStats && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-2 bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm tour-activity-chart">
+               <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-black font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><Activity size={20} className="text-blue-600" /> Tren Aktivitas</h3>
+               </div>
+               <div className="h-[250px]"><ActivityChart data={chartData} /></div>
+            </motion.div>
+         )}
 
          {/* QUICK ACCESS */}
-         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm flex flex-col tour-quick-access">
+         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`${canSeeStats ? 'lg:col-span-1' : 'lg:col-span-3'} bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm flex flex-col tour-quick-access`}>
             <h3 className="font-black font-bold text-md text-slate-900 dark:text-white mb-6 flex items-center gap-2"><PenTool size={18} className="text-indigo-500"/> Akses Cepat</h3>
-            <div className="grid grid-cols-2 gap-3 flex-1">
+            <div className={`grid ${canSeeStats ? 'grid-cols-2' : 'grid-cols-4'} gap-3 flex-1`}>
                {quickAccessItems.map((item, i) => (
                   <button 
                     key={i} 
@@ -135,6 +167,7 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
                      <span className="text-xs font-black font-bold text-slate-600 dark:text-slate-300">{item.label}</span>
                   </button>
                ))}
+               {quickAccessItems.length === 0 && <p className="col-span-full text-center text-xs text-slate-500 py-10">Tidak ada aksi cepat tersedia untuk jabatan Anda.</p>}
             </div>
          </motion.div>
       </div>
@@ -156,45 +189,49 @@ export default function DashboardUI({ stats, agenda, transaksiTerakhir, aspirasi
             </div>
          </motion.div>
 
-         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm tour-recent-trx">
-            <h3 className="font-black font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><Wallet size={18} className="text-green-500" /> Transaksi Terakhir</h3>
-            <div className="space-y-3">
-               {transaksiTerakhir.length > 0 ? transaksiTerakhir.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer" onClick={() => router.push('/admin/kas')}>
-                     <div className="flex items-center gap-3">
-                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${item.tipe === 'PEMASUKAN' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                            {item.tipe === 'PEMASUKAN' ? <ArrowDownLeft size={14}/> : <ArrowUpRight size={14}/>}
-                         </div>
-                         <div>
-                            <h4 className="text-xs font-bold text-slate-800 dark:text-white line-clamp-1">{item.judul}</h4>
-                            <p className="text-[10px] text-slate-500">{formatDateShort(item.tanggal)}</p>
-                         </div>
-                     </div>
-                     <span className={`text-xs font-bold ${item.tipe === 'PEMASUKAN' ? 'text-green-600' : 'text-red-500'}`}>
-                        {item.tipe === 'PEMASUKAN' ? '+' : '-'}{formatCurrency(item.nominal).replace('Rp', '')}
-                     </span>
-                  </div>
-               )) : <p className="text-xs text-slate-500 italic">Belum ada transaksi.</p>}
-            </div>
-         </motion.div>
-
-         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm tour-inbox-widget">
-            <h3 className="font-black font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2"><Mail size={18} className="text-pink-500" /> Inbox Aspirasi</h3>
-            <div className="space-y-3">
-               {aspirasi.length > 0 ? aspirasi.map((item, i) => (
-                  <div key={i} onClick={() => router.push('/admin/aspirasi')} className="group flex items-center justify-between p-3 rounded-xl bg-slate-50/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 transition-all cursor-pointer">
-                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 flex items-center justify-center text-xs font-black font-bold text-slate-700 dark:text-slate-300 shadow-sm shrink-0">{item.pengirim.charAt(0)}</div>
-                        <div className="min-w-0">
-                           <h4 className="text-xs font-black font-bold text-slate-900 dark:text-white truncate">{item.pengirim}</h4>
-                           <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">{item.isi}</p>
+         {canSeeFinance && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm tour-recent-trx">
+               <h3 className="font-black font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><Wallet size={18} className="text-green-500" /> Transaksi Terakhir</h3>
+               <div className="space-y-3">
+                  {transaksiTerakhir.length > 0 ? transaksiTerakhir.map((item, i) => (
+                     <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer" onClick={() => router.push('/admin/kas')}>
+                        <div className="flex items-center gap-3">
+                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${item.tipe === 'PEMASUKAN' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                              {item.tipe === 'PEMASUKAN' ? <ArrowDownLeft size={14}/> : <ArrowUpRight size={14}/>}
+                           </div>
+                           <div>
+                              <h4 className="text-xs font-bold text-slate-800 dark:text-white line-clamp-1">{item.judul}</h4>
+                              <p className="text-[10px] text-slate-500">{formatDateShort(item.tanggal)}</p>
+                           </div>
                         </div>
+                        <span className={`text-xs font-bold ${item.tipe === 'PEMASUKAN' ? 'text-green-600' : 'text-red-500'}`}>
+                           {item.tipe === 'PEMASUKAN' ? '+' : '-'}{formatCurrency(item.nominal).replace('Rp', '')}
+                        </span>
                      </div>
-                     <span className={`text-[9px] font-black font-bold px-2 py-0.5 rounded-md ${tagColorMap[getKategoriColor(item.kategori)]} shrink-0`}>{item.kategori}</span>
-                  </div>
-               )) : <p className="text-xs text-slate-500 italic text-center p-4">Belum ada aspirasi baru.</p>}
-            </div>
-         </motion.div>
+                  )) : <p className="text-xs text-slate-500 italic">Belum ada transaksi.</p>}
+               </div>
+            </motion.div>
+         )}
+
+         {canSeeAspirasi && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0f172a]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-xl p-6 shadow-sm tour-inbox-widget">
+               <h3 className="font-black font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2"><Mail size={18} className="text-pink-500" /> Inbox Aspirasi</h3>
+               <div className="space-y-3">
+                  {aspirasi.length > 0 ? aspirasi.map((item, i) => (
+                     <div key={i} onClick={() => router.push('/admin/aspirasi')} className="group flex items-center justify-between p-3 rounded-xl bg-slate-50/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 transition-all cursor-pointer">
+                        <div className="flex items-center gap-3">
+                           <div className="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 flex items-center justify-center text-xs font-black font-bold text-slate-700 dark:text-slate-300 shadow-sm shrink-0">{item.pengirim.charAt(0)}</div>
+                           <div className="min-w-0">
+                              <h4 className="text-xs font-black font-bold text-slate-900 dark:text-white truncate">{item.pengirim}</h4>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">{item.isi}</p>
+                           </div>
+                        </div>
+                        <span className={`text-[9px] font-black font-bold px-2 py-0.5 rounded-md ${tagColorMap[getKategoriColor(item.kategori)]} shrink-0`}>{item.kategori}</span>
+                     </div>
+                  )) : <p className="text-xs text-slate-500 italic text-center p-4">Belum ada aspirasi baru.</p>}
+               </div>
+            </motion.div>
+         )}
       </div>
     </div>
   );

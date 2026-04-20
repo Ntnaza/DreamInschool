@@ -38,9 +38,10 @@ const DUMMY_ITEMS = [
 ];
 
 // 2. FUNGSI AMBIL DATA
-async function getGalleryItems() {
+async function getGalleryItems(periodeId?: number | null) {
   try {
     const data = await prisma.galeri.findMany({
+      where: { periodeId: periodeId || undefined },
       take: 8,
       orderBy: { createdAt: 'desc' },
       // 🔥 Kita ambil semua kolom yang dibutuhkan
@@ -86,8 +87,8 @@ async function getGalleryItems() {
   }
 }
 
-export default async function GalleryPreview() {
-  const dbItems = await getGalleryItems();
+export default async function GalleryPreview({ periodeId }: { periodeId?: number | null }) {
+  const dbItems = await getGalleryItems(periodeId);
   const finalItems = dbItems.length > 0 ? dbItems : DUMMY_ITEMS;
 
   // Lempar data ke Client Component

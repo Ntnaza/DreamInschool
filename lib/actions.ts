@@ -102,8 +102,19 @@ export async function createBerita(formData: FormData) {
   const adminUser = await prisma.user.findUnique({ where: { username: session.username } });
   if (!adminUser) return { success: false, message: "User tidak ditemukan!" };
 
+  const activePeriodeId = await getActivePeriodeId();
+
   try {
-    await prisma.berita.create({ data: { judul, slug, konten, kategori, gambar: gambar || null, penulisId: adminUser.id, status: (formData.get("status") as string) || "PUBLISHED", views: 0 } });
+    await prisma.berita.create({ 
+      data: { 
+        judul, slug, konten, kategori, 
+        gambar: gambar || null, 
+        penulisId: adminUser.id, 
+        status: (formData.get("status") as string) || "PUBLISHED", 
+        views: 0,
+        periodeId: activePeriodeId
+      } 
+    });
     revalidatePath("/admin/berita"); revalidatePath("/berita");
     return { success: true, message: "Berita disimpan!" };
   } catch (error) {
@@ -212,15 +223,65 @@ export async function deleteProgramKerja(id: number) {
   }
 }
 
+import bcrypt from "bcryptjs";
+
 /* ======================================================
-   4. PENGURUS
+   4. PENGURUS & AKUN USER
 ====================================================== */
+
+export async function saveUserAccount(formData: FormData) {
+  const pengurusId = Number(formData.get("pengurusId"));
+  const username = formData.get("username") as string;
+  const password = formData.get("password") as string;
+  const role = formData.get("role") as any || "PENGURUS";
+
+  if (!username) return { success: false, message: "Username wajib diisi!" };
+
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { username } });
+    
+    // Jika ganti username dan username sudah dipakai orang lain
+    const currentUser = await prisma.user.findFirst({ where: { pengurusId } });
+    if (existingUser && currentUser?.username !== username) {
+      return { success: false, message: "Username sudah digunakan!" };
+    }
+
+    let data: any = { username, role };
+    if (password && password.trim() !== "") {
+      data.password = await bcrypt.hash(password, 10);
+    }
+
+    await prisma.user.upsert({
+      where: { pengurusId },
+      update: data,
+      create: { ...data, pengurusId, password: data.password || await bcrypt.hash("password123", 10) }
+    });
+
+    revalidatePath("/admin/pengurus");
+    return { success: true, message: "Akun login berhasil disimpan!" };
+  } catch (error) {
+    console.error("Save Account Error:", error);
+    return { success: false, message: "Gagal menyimpan akun." };
+  }
+}
+
+export async function deleteUserAccount(pengurusId: number) {
+  try {
+    await prisma.user.delete({ where: { pengurusId } });
+    revalidatePath("/admin/pengurus");
+    return { success: true, message: "Akun login dihapus." };
+  } catch (error) {
+    return { success: false, message: "Gagal hapus akun." };
+  }
+}
 
 export async function createPengurus(formData: FormData) {
   const nama = formData.get("nama") as string;
   const nis = formData.get("nis") as string;
   const jabatan = formData.get("jabatan") as string;
   if (!nama || !nis || !jabatan) return { success: false, message: "Nama, NIS, dan Jabatan wajib diisi!" };
+
+  const activePeriodeId = await getActivePeriodeId();
 
   try {
     await prisma.pengurus.create({
@@ -229,7 +290,8 @@ export async function createPengurus(formData: FormData) {
         kelas: formData.get("kelas") as string || "-",
         divisi: formData.get("divisi") as string || "-",
         fotoUrl: formData.get("fotoUrl") as string || null,
-        isAdvisor: formData.get("isAdvisor") === "true"
+        isAdvisor: formData.get("isAdvisor") === "true",
+        periodeId: activePeriodeId
       },
     });
     revalidatePath("/admin/pengurus");
@@ -258,6 +320,43 @@ export async function updatePengurus(formData: FormData) {
     return { success: true, message: "Data pengurus diperbarui!" };
   } catch (error) {
     return { success: false, message: "Gagal update data." };
+  }
+}
+
+export async function updateSelfProfile(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Sesi habis." };
+
+  try {
+    const user = await prisma.user.findUnique({ 
+      where: { username: session.username },
+      include: { pengurus: true }
+    });
+
+    if (!user || !user.pengurusId) return { success: false, message: "Profil tidak ditemukan." };
+
+    await prisma.pengurus.update({
+      where: { id: user.pengurusId },
+      data: {
+        hp: formData.get("hp") as string,
+        email: formData.get("email") as string,
+        instagram: formData.get("instagram") as string,
+        tiktok: formData.get("tiktok") as string,
+        domisili: formData.get("domisili") as string,
+        motto: formData.get("motto") as string,
+        visi: formData.get("visi") as string,
+        misi: formData.get("misi") as string,
+        fotoUrl: formData.get("fotoUrl") as string || undefined,
+        tglLahir: formData.get("tglLahir") ? new Date(formData.get("tglLahir") as string) : null,
+      }
+    });
+
+    revalidatePath("/admin/profile");
+    revalidatePath("/admin/pengurus");
+    return { success: true, message: "Profil Anda berhasil diperbarui! ✨" };
+  } catch (error) {
+    console.error("Self Update Error:", error);
+    return { success: false, message: "Gagal memperbarui profil." };
   }
 }
 
@@ -638,7 +737,19 @@ export async function deleteDivisi(id: number) {
 }
 
 export async function createJabatan(formData: FormData) {
-  try { await prisma.jabatan.create({ data: { nama: formData.get("nama") as string, divisiId: Number(formData.get("divisiId")) } }); revalidatePath("/admin/pengurus"); return { success: true, message: "Jabatan dibuat" }; } catch (error) { return { success: false, message: "Gagal." }; }
+  try { 
+    await prisma.jabatan.create({ 
+      data: { 
+        nama: formData.get("nama") as string, 
+        divisiId: Number(formData.get("divisiId")),
+        aksesLevel: (formData.get("aksesLevel") as any) || "UMUM"
+      } 
+    }); 
+    revalidatePath("/admin/pengurus"); 
+    return { success: true, message: "Jabatan dibuat" }; 
+  } catch (error) { 
+    return { success: false, message: "Gagal." }; 
+  }
 }
 
 export async function updateJabatan(id: number, formData: FormData) {
@@ -712,10 +823,112 @@ export async function updateTicketStatus(id: number, status: any) {
   } catch (error) { return { success: false, message: "Gagal update status." }; }
 }
 
-export async function deleteHelpTicket(id: number) {
+/* ======================================================
+   11. MANAJEMEN PERIODE (ARSIP)
+====================================================== */
+
+/**
+ * Mendapatkan ID periode yang sedang aktif (isAktif: true)
+ */
+export async function getActivePeriodeId() {
   try {
-    await prisma.helpTicket.delete({ where: { id } });
-    revalidatePath("/admin/bantuan/inbox");
-    return { success: true, message: "Tiket dihapus." };
-  } catch (error) { return { success: false, message: "Gagal hapus tiket." }; }
+    const active = await prisma.periode.findFirst({
+      where: { isAktif: true },
+      select: { id: true }
+    });
+    return active?.id || null;
+  } catch (error) {
+    return null;
+  }
 }
+
+/**
+ * Mendapatkan ID periode yang sedang dipilih oleh pengunjung (dari cookie)
+ * Jika tidak ada cookie, gunakan periode yang aktif.
+ */
+export async function getSelectedPeriodeId() {
+  const cookieStore = await cookies();
+  const selectedId = cookieStore.get("selected_periode")?.value;
+  
+  if (selectedId) return Number(selectedId);
+  
+  return await getActivePeriodeId();
+}
+
+/**
+ * Mengatur periode yang dipilih oleh pengunjung via cookie
+ */
+export async function setSelectedPeriodeAction(id: number | null) {
+  const cookieStore = await cookies();
+  if (id === null) {
+    cookieStore.delete("selected_periode");
+  } else {
+    // Simpan selama 30 hari
+    cookieStore.set("selected_periode", id.toString(), { maxAge: 60 * 60 * 24 * 30 });
+  }
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function getAllPeriode() {
+  return await prisma.periode.findMany({
+    orderBy: { tahun: "desc" }
+  });
+}
+
+export async function createPeriode(formData: FormData) {
+  try {
+    await prisma.periode.create({
+      data: {
+        tahun: formData.get("tahun") as string,
+        namaKabinet: formData.get("namaKabinet") as string,
+        logoKabinet: formData.get("logoKabinet") as string || null,
+        fotoAngkatan: formData.get("fotoAngkatan") as string || null,
+        isAktif: false
+      }
+    });
+    revalidatePath("/admin/periode");
+    return { success: true, message: "Periode baru ditambahkan!" };
+  } catch (error) { return { success: false, message: "Gagal (Tahun mungkin sudah ada)." }; }
+}
+
+export async function updatePeriode(id: number, formData: FormData) {
+  try {
+    await prisma.periode.update({
+      where: { id },
+      data: {
+        tahun: formData.get("tahun") as string,
+        namaKabinet: formData.get("namaKabinet") as string,
+        logoKabinet: formData.get("logoKabinet") as string || undefined,
+        fotoAngkatan: formData.get("fotoAngkatan") as string || undefined,
+      }
+    });
+    revalidatePath("/admin/periode");
+    return { success: true, message: "Periode diperbarui!" };
+  } catch (error) { return { success: false, message: "Gagal update." }; }
+}
+
+export async function setActivePeriode(id: number) {
+  try {
+    await prisma.$transaction([
+      // Nonaktifkan semua periode
+      prisma.periode.updateMany({ data: { isAktif: false } }),
+      // Aktifkan yang dipilih
+      prisma.periode.update({ where: { id }, data: { isAktif: true } })
+    ]);
+    revalidatePath("/admin/periode");
+    return { success: true, message: "Periode aktif berhasil diganti! ✨" };
+  } catch (error) { return { success: false, message: "Gagal mengganti periode aktif." }; }
+}
+
+export async function deletePeriode(id: number) {
+  try {
+    const isAktif = await prisma.periode.findUnique({ where: { id }, select: { isAktif: true } });
+    if (isAktif?.isAktif) return { success: false, message: "Periode aktif tidak bisa dihapus." };
+    
+    await prisma.periode.delete({ where: { id } });
+    revalidatePath("/admin/periode");
+    return { success: true, message: "Periode dihapus." };
+  } catch (error) { return { success: false, message: "Gagal hapus." }; }
+}
+

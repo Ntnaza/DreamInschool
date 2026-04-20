@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
+import { getActivePeriodeId } from "@/lib/actions";
 import ProkerClient from "./ProkerClient";
 
 /**
@@ -41,8 +42,11 @@ function KanbanSkeleton() {
 }
 
 async function ProkerData() {
-  // 1. AMBIL DATA DARI DATABASE
+  const activePeriodeId = await getActivePeriodeId();
+
+  // 1. AMBIL DATA DARI DATABASE (Filter by Periode Aktif)
   const rawProkers = await prisma.programKerja.findMany({
+    where: { periodeId: activePeriodeId || undefined },
     orderBy: { createdAt: "desc" },
   });
 

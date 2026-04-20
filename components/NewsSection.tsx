@@ -35,12 +35,15 @@ const DUMMY_NEWS = [
 
 const FALLBACK_IMG = "https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&q=80";
 
-async function getNews() {
+async function getNews(periodeId?: number | null) {
   try {
     const data = await prisma.berita.findMany({
+      where: { 
+        status: "PUBLISHED",
+        periodeId: periodeId || undefined
+      },
       take: 3,
-      orderBy: { createdAt: 'desc' },
-      where: { status: "PUBLISHED" } 
+      orderBy: { createdAt: 'desc' }
     });
     
     if (!data || data.length === 0) return null;
@@ -58,8 +61,8 @@ function formatDate(date: Date) {
   });
 }
 
-export default async function NewsSection() {
-  const dbNews = await getNews();
+export default async function NewsSection({ periodeId }: { periodeId?: number | null }) {
+  const dbNews = await getNews(periodeId);
   let news: any[] = dbNews || [];
   
   if (news.length < 3) {

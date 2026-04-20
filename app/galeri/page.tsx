@@ -1,16 +1,21 @@
 import { prisma } from "@/lib/prisma";
+import { getSelectedPeriodeId } from "@/lib/actions";
 import GaleriPublicClient from "./GaleriPublicClient";
 
 // Biar datanya selalu fresh setiap kali dibuka
 export const dynamic = "force-dynamic";
 
 export default async function GaleriPage() {
-  // 1. Ambil data dari database (urutkan terbaru)
+  // 1. Ambil ID periode terpilih
+  const selectedPeriodeId = await getSelectedPeriodeId();
+
+  // 2. Ambil data dari database (urutkan terbaru) berdasarkan periode
   const data = await prisma.galeri.findMany({
+    where: { periodeId: selectedPeriodeId || undefined },
     orderBy: { tanggal: 'desc' }
   });
 
-  // 2. Format data biar sesuai struktur Client (Parse JSON images)
+  // 3. Format data biar sesuai struktur Client (Parse JSON images)
   const formattedData = data.map((item) => {
     let images = [];
     try {
@@ -30,6 +35,6 @@ export default async function GaleriPage() {
     };
   });
 
-  // 3. Render Client Component
+  // 4. Render Client Component
   return <GaleriPublicClient galleryItems={formattedData} />;
 }

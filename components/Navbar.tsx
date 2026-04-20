@@ -4,8 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle"; 
+import PeriodSelector from "./PeriodSelector";
 
-export default function Navbar() {
+export default function Navbar({ 
+  periodes = [], 
+  selectedPeriodeId = null 
+}: { 
+  periodes?: any[], 
+  selectedPeriodeId?: number | null 
+}) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
@@ -89,6 +96,12 @@ export default function Navbar() {
             
             <ThemeToggle />
             
+            <PeriodSelector 
+              periodes={periodes} 
+              selectedId={selectedPeriodeId} 
+              isSpecialPage={isSpecialPage}
+            />
+            
             <Link href="/login" className="px-5 py-2 text-xs font-bold text-white bg-blue-600 dark:bg-white dark:text-black rounded-full hover:bg-blue-700 dark:hover:bg-slate-200 transition-all shadow-lg hover:shadow-blue-500/30 dark:hover:shadow-white/20">
               LOGIN
             </Link>
@@ -110,6 +123,13 @@ export default function Navbar() {
       {/* MOBILE OVERLAY */}
       <div className={`fixed inset-0 z-40 bg-slate-900/95 dark:bg-[#020617]/95 backdrop-blur-xl transition-all duration-500 md:hidden flex items-center justify-center ${isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
         <nav className="flex flex-col items-center gap-8">
+          <div className="mb-2">
+            <PeriodSelector 
+              periodes={periodes} 
+              selectedId={selectedPeriodeId} 
+              isSpecialPage={true}
+            />
+          </div>
           {menus.map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-white hover:text-blue-400 transition-colors">
               {item.name}

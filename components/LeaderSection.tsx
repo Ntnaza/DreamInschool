@@ -52,12 +52,13 @@ function LeaderCard({ leader, isEven }: { leader: any, isEven: boolean }) {
   );
 }
 
-export default async function LeaderSection() {
+export default async function LeaderSection({ periodeId }: { periodeId?: number | null }) {
   let leaders: any[] = [];
   try {
-    // Ambil hanya Ketua OSIS dan Ketua MPK (Hindari Ketua Sekbid dsb)
+    // Ambil hanya Ketua OSIS dan Ketua MPK berdasarkan periode
     const data = await prisma.pengurus.findMany({
       where: { 
+        periodeId: periodeId || undefined,
         OR: [
           { jabatan: { equals: "Ketua OSIS" } },
           { jabatan: { equals: "Ketua MPK" } }

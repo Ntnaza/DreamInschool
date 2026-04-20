@@ -12,6 +12,31 @@ datasource db {
 }
 
 // --------------------------------------------------------
+// 0. MANAJEMEN ANGKATAN / PERIODE (Arsip Masa Lalu)
+// --------------------------------------------------------
+
+model Periode {
+  id          Int      @id @default(autoincrement())
+  tahun       String   @unique // Contoh: "2024/2025"
+  namaKabinet String?  // Contoh: "Jiva Abisatya"
+  logoKabinet String?  @db.LongText
+  fotoAngkatan String? @db.LongText // Foto pelantikan / foto bareng
+  isAktif     Boolean  @default(false)
+  
+  // Relasi ke data yang diarsipkan
+  pengurus    Pengurus[]
+  leaders     Leader[]
+  proker      ProgramKerja[]
+  berita      Berita[]
+  surat       Surat[]
+  keuangan    Keuangan[]
+  galeri      Galeri[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// --------------------------------------------------------
 // 1. DATA PENGURUS & SISTEM LOGIN (Auth & User Management)
 // --------------------------------------------------------
 
@@ -24,7 +49,7 @@ model User {
   pengurus   Pengurus? @relation(fields: [pengurusId], references: [id])
   pengurusId Int?      @unique
 
-  berita     Berita[]  // ✅ relasi 1 User → banyak Berita
+  berita     Berita[]  // relasi 1 User → banyak Berita
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -46,16 +71,19 @@ model Pengurus {
   status    StatusPengurus @default(AKTIF)
   isAdvisor Boolean  @default(false)
 
-  // === KOLOM TAMBAHAN BARU (Opsi A) ===
+  // Arsir: Link ke Periode
+  periodeId Int?     
+  periode   Periode? @relation(fields: [periodeId], references: [id])
+
+  // Media Sosial & Kontak
   email        String?
   instagram    String?
   tiktok       String?
-  domisili     String?   // Alamat Lengkap
+  domisili     String?   
   transportasi String?   
   motto        String?   
   tglLahir     DateTime? 
   idCardDesign String?   @db.LongText
-  // ====================================
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,13 +104,12 @@ model Aspirasi {
   kategori  String
   status    StatusAspirasi @default(PENDING)
   
-  // === TAMBAHAN BARU ===
-  balasan   String?  @db.Text // Jawaban Admin
-  balasanAt DateTime?         // Kapan dibalas
-  // =====================
+  balasan   String?  @db.Text 
+  balasanAt DateTime?         
 
   createdAt DateTime @default(now())
 }
+
 // --------------------------------------------------------
 // 3. MODUL KELOLA BERITA (CMS Artikel)
 // --------------------------------------------------------
@@ -98,14 +125,16 @@ model Berita {
   penulis   User     @relation(fields: [penulisId], references: [id])
   penulisId Int
 
+  // Arsir: Link ke Periode
+  periodeId Int?     
+  periode   Periode? @relation(fields: [periodeId], references: [id])
+
   views     Int      @default(0)
   status    String   @default("PUBLISHED")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-
 
 // --------------------------------------------------------
 // 4. MODUL PROGRAM KERJA (Kanban Board)
@@ -117,7 +146,10 @@ model ProgramKerja {
   deskripsi    String?  @db.Text
   divisi       String
   
-  // === UPDATE KOLOM ===
+  // Arsir: Link ke Periode
+  periodeId Int?     
+  periode   Periode? @relation(fields: [periodeId], references: [id])
+
   status       StatusProker @default(TODO)
   progress     Int          @default(0)        
   prioritas    String       @default("Medium") 
@@ -125,7 +157,6 @@ model ProgramKerja {
   
   deadline     DateTime?    
   startDate    DateTime?    
-  // ====================
 
   image        String?   @db.LongText
   isFeatured   Boolean      @default(false)
@@ -137,10 +168,7 @@ model ProgramKerja {
   pj           Pengurus? @relation(fields: [pjId], references: [id])
   pjId         Int?
 
-  // ✅ POSISI INI SUDAH BENAR
   anggaranTerpakai Float @default(0) 
-
-  // ✅✅✅ TAMBAHKAN BARIS INI (PENYEBAB ERRORNYA)
   transaksi    Keuangan[] 
 }
 
@@ -153,12 +181,12 @@ model Acara {
   nama              String
   deskripsi         String?  @db.Text
   tipe              TipeAcara @default(SEKALI_PAKAI)
-  hari              String?  // Untuk Rutinan: "Senin", "Selasa", dsb
+  hari              String?  
   tanggal           DateTime @default(now())
   waktuMulai        DateTime? 
   waktuSelesai      DateTime?
-  waktuMulaiAktual  DateTime? // Kapan Admin klik START (Legacy/Sekali Pakai)
-  waktuSelesaiAktual DateTime? // Kapan Admin klik STOP (Legacy/Sekali Pakai)
+  waktuMulaiAktual  DateTime? 
+  waktuSelesaiAktual DateTime? 
   lokasi            String?  @default("Sekolah")
   status            StatusAcara @default(UPCOMING)
   autoStart         Boolean  @default(false)
@@ -186,15 +214,12 @@ model Absensi {
   id          Int      @id @default(autoincrement())
   tanggal     DateTime @default(now())
   
-  // Relasi ke Acara
   acara       Acara    @relation(fields: [acaraId], references: [id], onDelete: Cascade)
   acaraId     Int
 
-  // Relasi ke Sesi (Untuk pengelompokan laporan)
   sesi        SesiAcara? @relation(fields: [sesiId], references: [id], onDelete: SetNull)
   sesiId      Int?
 
-  // Kita tetap simpan kolom kegiatan (string) sebagai backup/denormalisasi jika perlu
   kegiatan    String   
   
   status      StatusKehadiran @default(HADIR)
@@ -210,11 +235,15 @@ model Absensi {
 model Surat {
   id          Int      @id @default(autoincrement())
   nomorSurat  String   @unique
-  jenis       String   // Undangan, Permohonan, SK
+  jenis       String   
   perihal     String
   tujuan      String
-  fileUrl     String?  // Link file PDF jika ada
+  fileUrl     String?  
   tanggal     DateTime @default(now())
+
+  // Arsir: Link ke Periode
+  periodeId Int?     
+  periode   Periode? @relation(fields: [periodeId], references: [id])
 }
 
 // --------------------------------------------------------
@@ -236,27 +265,26 @@ model BukuKas {
 model Keuangan {
   id          Int      @id @default(autoincrement())
   judul       String
-  tipe        TipeTransaksi // PEMASUKAN / PENGELUARAN
+  tipe        TipeTransaksi 
   nominal     Float
-  kategori    String   // "Dana BOS", "Event: LDKS", dll
+  kategori    String   
   tanggal     DateTime @default(now())
   buktiUrl    String?
   
-  // FOTO BUKTI GANDA
   fotoBarang  String?     @db.LongText
   fotoNota    String?     @db.LongText
 
-  // DETAIL BARANG (Untuk Realisasi Lengkap)
   kuantitas   Float?      @default(1)
   satuan      String?     @default("pcs")
 
   keterangan  String?  @db.Text
   
-  // Relasi ke Buku Kas (Opsional untuk realisasi proker)
+  periodeId Int?     
+  periode   Periode? @relation(fields: [periodeId], references: [id])
+
   bukuKas     BukuKas?     @relation(fields: [bukuKasId], references: [id], onDelete: Cascade)
   bukuKasId   Int?
 
-  // Relasi Opsional ke Proker (biar tau ini uang buat event mana)
   proker      ProgramKerja? @relation(fields: [prokerId], references: [id])
   prokerId    Int?
 }
@@ -267,16 +295,16 @@ model Keuangan {
 model Inventaris {
   id          Int          @id @default(autoincrement())
   nama        String
-  kode        String       @unique // INV-001
-  kategori    String       // Elektronik, Umum, dll
-  kondisi     String       // Baik, Rusak Ringan, dll
+  kode        String       @unique 
+  kategori    String       
+  kondisi     String       
   harga       Float        @default(0)
   fotoUrl     String?      @db.LongText
-  serialNum   String?      // Serial Number Pabrik
+  serialNum   String?      
   
   status      StatusBarang @default(AVAILABLE)
-  peminjam    String?      // Nama peminjam saat ini (jika dipinjam)
-  tglPinjam   DateTime?    // Tanggal keluar
+  peminjam    String?      
+  tglPinjam   DateTime?    
   
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -289,27 +317,43 @@ model RiwayatAset {
   peminjam      String
   tglKeluar     DateTime
   tglKembali    DateTime @default(now())
-  kondisiKembali String  // Kondisi saat dikembalikan
+  kondisiKembali String  
   
   inventaris    Inventaris @relation(fields: [inventarisId], references: [id], onDelete: Cascade)
   inventarisId  Int
 }
 
+model WebsiteConfig {
+  id              Int      @id @default(1)
+  namaOrganisasi  String   @default("OSIS MPK")
+  deskripsi       String?  @db.Text
+  logoUrl         String?  @db.LongText
+  faviconUrl      String?  @db.LongText
+  
+  instagram       String?  @default("https://instagram.com/")
+  youtube         String?  @default("https://youtube.com/")
+  tiktok          String?  @default("https://tiktok.com/")
+  
+  email           String?  @default("admin@school.sch.id")
+  telepon         String?  @default("0263123456")
+  alamat          String?  @db.Text
+  mapUrl          String?  @db.Text 
+  
+  updatedAt       DateTime @updatedAt
+}
 
 model AppConfig {
   id              Int     @id @default(autoincrement())
-  idCardBackImage String? @db.LongText // ✅ Tempat simpan background belakang
+  idCardBackImage String? @db.LongText 
 }
 
-
-
 // --------------------------------------------------------
-// ENUMS (Pilihan Terbatas)
+// ENUMS
 // --------------------------------------------------------
 
 enum Role {
-  ADMIN     // Inti MPK / Ketua OSIS
-  PENGURUS  // Anggota biasa
+  ADMIN     
+  PENGURUS  
 }
 
 enum StatusPengurus {
@@ -338,10 +382,10 @@ enum TipeAcara {
 }
 
 enum StatusAcara {
-  UPCOMING    // Belum dimulai
-  ONGOING     // Sedang berlangsung (Bisa di-scan)
-  COMPLETED   // Sudah selesai
-  CANCELLED   // Dibatalkan
+  UPCOMING    
+  ONGOING     
+  COMPLETED   
+  CANCELLED   
 }
 
 enum StatusKehadiran {
@@ -370,10 +414,6 @@ enum StatusBarang {
   LOST
 }
 
-
-
-
-
 // --------------------------------------------------------
 // 10. MODUL GALERI KEGIATAN
 // --------------------------------------------------------
@@ -384,7 +424,9 @@ model Galeri {
   kategori  String
   tanggal   DateTime @default(now())
   
-  // WAJIB LongText biar muat jutaan karakter
+  periodeId Int?     
+  periode   Periode? @relation(fields: [periodeId], references: [id])
+
   images    String   @db.LongText 
   
   deskripsi String?  @db.Text
@@ -399,7 +441,10 @@ model Leader {
   image   String  @db.LongText
   vision  String  @db.Text
   mission String  @db.Text
-  tags    String? // Simpan tag dipisah koma: "Kolaborasi,Prestasi"
+  tags    String? 
+  
+  periodeId Int?     
+  periode   Periode? @relation(fields: [periodeId], references: [id])
 }
 
 model Visitor {
@@ -410,7 +455,7 @@ model Visitor {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
-  @@index([ip, path, createdAt]) // Index gabungan untuk pencarian cepat
+  @@index([ip, path, createdAt]) 
 }
 
 // --------------------------------------------------------
@@ -423,24 +468,31 @@ model Divisi {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  jabatans  Jabatan[] // Relasi ke banyak Jabatan
+  jabatans  Jabatan[] 
 }
 
 model Jabatan {
   id        Int      @id @default(autoincrement())
   nama      String
+  aksesLevel AksesLevel @default(UMUM)
   divisiId  Int
   divisi    Divisi   @relation(fields: [divisiId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([nama, divisiId]) // Gabungan nama jabatan dan divisi harus unik
+  @@unique([nama, divisiId]) 
 }
 
-// --------------------------------------------------------
-// 12. MANAJEMEN KATEGORI GALERI (Dinamis)
-// --------------------------------------------------------
+enum AksesLevel {
+  PIMPINAN
+  SEKRETARIS
+  BENDAHARA
+  DIVISI
+  PENGAWAS
+  UMUM
+}
+
 model KategoriGaleri {
   id        Int      @id @default(autoincrement())
   nama      String   @unique
@@ -448,9 +500,6 @@ model KategoriGaleri {
   updatedAt DateTime @updatedAt
 }
 
-// --------------------------------------------------------
-// 13. PUSAT BANTUAN & TIKET (Dinamis)
-// --------------------------------------------------------
 model HelpVideo {
   id        Int      @id @default(autoincrement())
   title     String
@@ -472,8 +521,8 @@ model HelpTicket {
 }
 
 enum StatusTicket {
-  OPEN      // Baru masuk
-  ON_REVIEW // Sedang dicek
-  FIXED     // Selesai diperbaiki
-  CLOSED    // Ditutup
+  OPEN      
+  ON_REVIEW 
+  FIXED     
+  CLOSED    
 }

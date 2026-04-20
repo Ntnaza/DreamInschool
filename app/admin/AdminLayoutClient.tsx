@@ -12,7 +12,7 @@ import {
   LayoutDashboard, Inbox, Newspaper, CalendarDays, Users, 
   ChevronLeft, ChevronRight, LogOut, Rocket, Menu, Settings,
   CreditCard, QrCode, FileText, Wallet, Package, HelpCircle,
-  Camera, BarChart3
+  Camera, BarChart3, User
 } from "lucide-react";
 
 export default function AdminLayout({ 
@@ -29,6 +29,9 @@ export default function AdminLayout({
 
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState(0);
+  const [logo, setLogo] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [activePeriode, setActivePeriode] = useState<any>(null);
 
   // Fungsi untuk toggle sidebar dengan persistensi Cookie
   const toggleSidebar = () => {
@@ -41,6 +44,23 @@ export default function AdminLayout({
   };
 
   useEffect(() => {
+    // Ambil Data User & Jabatan untuk RBAC
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setUser(data);
+      })
+      .catch(() => {});
+
+    // Ambil Logo untuk Sidebar
+    fetch("/api/config")
+      .then(res => res.json())
+      .then(data => {
+        if (data.logoUrl) setLogo(data.logoUrl);
+        if (data.activePeriode) setActivePeriode(data.activePeriode);
+      })
+      .catch(() => {});
+
     const checkMobile = () => {
       const isMobileView = window.innerWidth < 768;
       setIsMobile(isMobileView);
@@ -69,43 +89,73 @@ export default function AdminLayout({
   const menuGroups = [
     {
       title: "UTAMA",
+      roles: ["ALL"], 
       items: [
         { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-        { name: "Inbox Aspirasi", href: "/admin/aspirasi", icon: Inbox },
+        { name: "Arsip Angkatan", href: "/admin/periode", icon: CalendarDays, only: ["PIMPINAN", "ADMIN"] },
+        { name: "Inbox Aspirasi", href: "/admin/aspirasi", icon: Inbox, only: ["PIMPINAN", "PENGAWAS", "ADMIN"] },
       ]
     },
     {
       title: "KONTEN & PROYEK",
+      roles: ["PIMPINAN", "SEKRETARIS", "DIVISI", "ADMIN"],
       items: [
-        { name: "Kelola Berita", href: "/admin/berita", icon: Newspaper },
+        { name: "Kelola Berita", href: "/admin/berita", icon: Newspaper, only: ["PIMPINAN", "SEKRETARIS", "ADMIN"] },
         { name: "Program Kerja", href: "/admin/proker", icon: CalendarDays },
         { name: "Galeri Kegiatan", href: "/admin/galeri", icon: Camera },
       ]
     },
     {
       title: "SDM & ABSENSI",
+      roles: ["PIMPINAN", "SEKRETARIS", "PENGAWAS", "ADMIN"],
       items: [
-        { name: "Data Pengurus", href: "/admin/pengurus", icon: Users },
-        { name: "ID Card Studio", href: "/admin/idcard", icon: CreditCard },
-        { name: "Scan Absensi", href: "/admin/absensi", icon: QrCode },
+        { name: "Data Pengurus", href: "/admin/pengurus", icon: Users, only: ["PIMPINAN", "SEKRETARIS", "ADMIN"] },
+        { name: "ID Card Studio", href: "/admin/idcard", icon: CreditCard, only: ["SEKRETARIS", "ADMIN"] },
+        { name: "Scan Absensi", href: "/admin/absensi", icon: QrCode, only: ["PIMPINAN", "SEKRETARIS", "ADMIN"] },
         { name: "Laporan Absensi", href: "/admin/absensi/laporan", icon: BarChart3 },
       ]
     },
     {
       title: "ADMINISTRASI",
+      roles: ["PIMPINAN", "SEKRETARIS", "BENDAHARA", "PENGAWAS", "ADMIN"],
       items: [
-        { name: "Buat Surat", href: "/admin/surat", icon: FileText },
-        { name: "Kas & Anggaran", href: "/admin/kas", icon: Wallet },
-        { name: "Inventaris", href: "/admin/inventaris", icon: Package },
+        { name: "Buat Surat", href: "/admin/surat", icon: FileText, only: ["PIMPINAN", "SEKRETARIS", "ADMIN"] },
+        { name: "Kas & Anggaran", href: "/admin/kas", icon: Wallet, only: ["PIMPINAN", "BENDAHARA", "PENGAWAS", "ADMIN"] },
+        { name: "Inventaris", href: "/admin/inventaris", icon: Package, only: ["PIMPINAN", "BENDAHARA", "ADMIN"] },
       ]
     },
     {
       title: "SUPPORT",
+      roles: ["ALL"],
       items: [
+        { name: "Profil Saya", href: "/admin/profile", icon: User },
         { name: "Pusat Bantuan", href: "/admin/bantuan", icon: HelpCircle },
       ]
     }
   ];
+
+  // Logic: Filter Menu Berdasarkan aksesLevel (TRULY DYNAMIC)
+  const filteredMenuGroups = menuGroups.filter(group => {
+    if (user?.role === "ADMIN") return true; 
+    if (!user) return group.title === "UTAMA" || group.title === "SUPPORT"; 
+    
+    const userAkses = user.aksesLevel || "UMUM";
+    
+    const isRoleMatch = group.roles.includes("ALL") || 
+                        group.roles.includes(userAkses) ||
+                        (group.roles.includes("ADMIN") && user.role === "ADMIN");
+    
+    return isRoleMatch;
+  }).map(group => ({
+    ...group,
+    items: group.items.filter((item: any) => {
+      if (user?.role === "ADMIN") return true;
+      if (!item.only) return true;
+      
+      const userAkses = user?.aksesLevel || "UMUM";
+      return item.only.includes(userAkses);
+    })
+  })).filter(group => group.items.length > 0); 
 
   return (
     <div className={`h-screen bg-[#F8FAFC] dark:bg-[#020617] flex font-sans overflow-hidden transition-colors duration-500 relative ${!isMounted ? "sidebar-no-transition hide-scrollbar-init" : ""}`}>
@@ -146,14 +196,23 @@ export default function AdminLayout({
         {/* 1. Header */}
         <div className="h-20 flex items-center relative shrink-0 border-b border-slate-100 dark:border-white/5 overflow-hidden">
            <div className="absolute left-0 w-20 h-11 flex justify-center items-center">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 text-white flex-shrink-0">
-                <Rocket size={18} fill="currentColor" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 text-white flex-shrink-0 overflow-hidden border border-white/10 p-1">
+                {logo ? (
+                  <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <Rocket size={18} fill="currentColor" />
+                )}
               </div>
            </div>
            <AnimatePresence>
               {isSidebarOpen && (
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="pl-20 whitespace-nowrap overflow-hidden">
-                  <span className="font-bold text-slate-800 dark:text-white tracking-tight text-lg uppercase">ORBIT<span className="text-blue-600">ADM</span></span>
+                  <span className="font-bold text-slate-800 dark:text-white tracking-tight text-lg uppercase">OSIS<span className="text-blue-600">MPK</span></span>
+                  {activePeriode && (
+                    <div className="text-[10px] font-black text-blue-600 dark:text-blue-400 -mt-1 tracking-wider uppercase opacity-80">
+                      Kabinet {activePeriode.namaKabinet}
+                    </div>
+                  )}
                 </motion.div>
               )}
            </AnimatePresence>
@@ -161,7 +220,7 @@ export default function AdminLayout({
 
         {/* 2. Menu List */}
         <nav className="flex-1 py-6 space-y-6 overflow-y-auto overflow-x-hidden thin-scrollbar hover:thin-scrollbar-thumb">
-           {menuGroups.map((group, groupIdx) => (
+           {filteredMenuGroups.map((group, groupIdx) => (
              <div key={groupIdx}>
                <div className="h-6 flex items-center mb-2 relative">
                  <AnimatePresence mode="wait">
@@ -226,38 +285,71 @@ export default function AdminLayout({
            ))}
         </nav>
 
-        {/* 3. Footer Sidebar */}
-        <div className="p-4 border-t border-slate-100 dark:border-white/5 shrink-0 overflow-hidden">
-           <div className="flex flex-col gap-3">
-             <div className="flex items-center h-11 w-full relative">
-                 <div className="absolute left-[-16px] w-20 h-11 flex justify-center items-center">
-                    <button className="p-2 rounded-lg text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors">
-                       <Settings size={20} />
-                    </button>
-                 </div>
-                 {isSidebarOpen && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex justify-end pr-2">
-                       <div className="scale-90"><ThemeToggle /></div>
-                    </motion.div>
-                 )}
-             </div>
+        {/* 3. Footer Sidebar (Settings & Logout) */}
+        <div className="px-0 py-4 border-t border-slate-100 dark:border-white/5 shrink-0 overflow-hidden space-y-1.5">
+           
+           {/* Settings Row (Struktur Identik dengan Menu Utama) */}
+           <Link 
+              href="/admin/settings"
+              onMouseEnter={(e) => {
+                 if (!isSidebarOpen) {
+                    setHoveredMenu("Pengaturan Website");
+                    setTooltipPos(e.currentTarget.getBoundingClientRect().top);
+                 }
+              }}
+              onMouseLeave={() => setHoveredMenu(null)}
+              className="flex items-center group relative h-11 w-full"
+           >
+              {/* THE BACKGROUND BOX (Sama persis dengan menu utama) */}
+              <div className={`absolute h-11 transition-all duration-300 rounded-xl ${isSidebarOpen ? "left-3 right-3" : "left-[18px] w-11"} group-hover:bg-slate-50 dark:group-hover:bg-white/5`} />
+
+              {/* THE FIXED ICON (80px width to center in mini mode) */}
+              <div className="absolute left-0 w-20 h-11 flex justify-center items-center z-10 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:hover:text-white transition-colors">
+                 <Settings size={20} className="group-hover:rotate-45 transition-transform duration-500" />
+              </div>
+
+              {isSidebarOpen && (
+                 <motion.div 
+                    initial={{ opacity: 0, x: -10 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    className="pl-20 flex-1 flex items-center justify-between pr-2 z-10"
+                 >
+                    <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white">Settings</span>
+                    <div className="scale-90" onClick={(e) => e.preventDefault()}><ThemeToggle /></div>
+                 </motion.div>
+              )}
+           </Link>
              
-             <button 
-                onClick={() => logoutAction()} 
-                className="flex items-center group relative h-11 w-full overflow-hidden"
-             >
-                {/* Perfect Square logout background when closed */}
-                <div className={`absolute h-11 transition-all duration-300 rounded-xl bg-red-50/50 dark:bg-red-500/10 group-hover:bg-red-100 dark:group-hover:bg-red-500/20 ${isSidebarOpen ? "left-0 right-0" : "left-[18px] w-11"}`} />
-                <div className="absolute left-0 w-20 h-11 flex justify-center items-center text-red-600 dark:text-red-400 z-10">
-                   <LogOut size={18} />
-                </div>
-                {isSidebarOpen && (
-                  <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="pl-12 text-xs font-bold text-red-600 dark:text-red-400 z-10">
-                    Log Out
-                  </motion.span>
-                )}
-             </button>
-           </div>
+           {/* Logout Button (Struktur Identik dengan Menu Utama) */}
+           <button 
+              onClick={() => logoutAction()} 
+              onMouseEnter={(e) => {
+                 if (!isSidebarOpen) {
+                    setHoveredMenu("Logout");
+                    setTooltipPos(e.currentTarget.getBoundingClientRect().top);
+                 }
+              }}
+              onMouseLeave={() => setHoveredMenu(null)}
+              className="flex items-center group relative h-11 w-full"
+           >
+              {/* THE BACKGROUND BOX */}
+              <div className={`absolute h-11 transition-all duration-300 rounded-xl bg-red-50/50 dark:bg-red-500/10 group-hover:bg-red-100 dark:group-hover:bg-red-500/20 ${isSidebarOpen ? "left-3 right-3" : "left-[18px] w-11"}`} />
+              
+              {/* THE FIXED ICON */}
+              <div className="absolute left-0 w-20 h-11 flex justify-center items-center text-red-600 dark:text-red-400 z-10">
+                 <LogOut size={18} />
+              </div>
+
+              {isSidebarOpen && (
+                <motion.span 
+                  initial={{ opacity: 0, x: -10 }} 
+                  animate={{ opacity: 1, x: 0 }} 
+                  className="pl-20 text-sm font-bold text-red-600 dark:text-red-400 z-10"
+                >
+                  Log Out
+                </motion.span>
+              )}
+           </button>
         </div>
 
         <AnimatePresence>

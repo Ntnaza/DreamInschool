@@ -34,10 +34,20 @@ export async function loginAction(formData: FormData) {
       return { success: false, message: "ID atau Password salah!" };
     }
 
-    // Buat JWT Token
+    // Cari Level Akses dari tabel Jabatan berdasarkan nama jabatan pengurus
+    const jabatanData = await prisma.jabatan.findFirst({
+      where: { nama: user.pengurus?.jabatan || "" }
+    });
+
+    const aksesLevel = jabatanData?.aksesLevel || "UMUM";
+
+    // Buat JWT Token dengan data jabatan & aksesLevel
     const token = await new SignJWT({ 
       username: user.username, 
-      role: user.role 
+      role: user.role,
+      jabatan: user.pengurus?.jabatan || "Umum",
+      divisi: user.pengurus?.divisi || "Umum",
+      aksesLevel: aksesLevel // Simpan level akses ke token
     })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
