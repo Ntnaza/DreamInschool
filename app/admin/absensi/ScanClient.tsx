@@ -539,16 +539,16 @@ export default function ScanClient() {
                                         <div className="w-40 h-40 rounded-full p-1.5 bg-white shadow-2xl ring-8 ring-white/20"><div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white"><Image src={scanResult.data.image || "https://source.unsplash.com/random/100x100/?portrait"} alt="" fill className="object-cover" /></div></div>
                                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className={`absolute -bottom-1 -right-1 p-2.5 rounded-full shadow-xl border-4 border-white ${scanResult.data.status === 'DUPLICATE' ? 'bg-amber-600' : 'bg-emerald-600'}`}>{scanResult.data.status === 'DUPLICATE' ? <Clock className="text-white" size={24} /> : <CheckCircle className="text-white" size={24} />}</motion.div>
                                     </div>
-                                    <h2 className="text-3xl font-black text-white mb-1 tracking-tight leading-tight">{scanResult.data.name}</h2>
+                                    <h2 className="text-3xl font-bold text-white mb-1 tracking-tight leading-tight">{scanResult.data.name}</h2>
                                     <p className="text-xs font-bold text-white/80 uppercase tracking-[0.3em] mb-8">{scanResult.data.role}</p>
-                                    <div className="px-8 py-4 bg-white rounded-2xl shadow-xl flex flex-col items-center gap-0.5"><span className={`text-xs font-black uppercase tracking-widest ${scanResult.data.status === 'DUPLICATE' ? 'text-amber-700' : 'text-emerald-700'}`}>{scanResult.message}</span><span className="text-[9px] font-bold text-slate-400 tracking-widest">{scanResult.data.time}</span></div>
+                                    <div className="px-8 py-4 bg-white rounded-2xl shadow-xl flex flex-col items-center gap-0.5"><span className={`text-xs font-bold uppercase tracking-widest ${scanResult.data.status === 'DUPLICATE' ? 'text-amber-700' : 'text-emerald-700'}`}>{scanResult.message}</span><span className="text-[9px] font-bold text-slate-400 tracking-widest">{scanResult.data.time}</span></div>
                                 </motion.div>
                             )}</AnimatePresence>
                         </div>
                     </div>
                 </div>
                 <div className="absolute -bottom-20 left-0 w-full text-center">
-                    <div className="inline-flex items-center gap-4 px-8 py-4 bg-white dark:bg-slate-900 shadow-2xl rounded-full border border-slate-100 dark:border-white/5 transition-all"><div className="flex h-3 w-3 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span></div><span className="text-xs font-black text-slate-600 dark:text-blue-400 uppercase tracking-[0.4em]">Intelligence Scanner Active</span></div>
+                    <div className="inline-flex items-center gap-4 px-8 py-4 bg-white dark:bg-slate-900 shadow-2xl rounded-full border border-slate-100 dark:border-white/5 transition-all"><div className="flex h-3 w-3 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span></div><span className="text-xs font-bold text-slate-600 dark:text-blue-400 uppercase tracking-[0.4em]">Intelligence Scanner Active</span></div>
                 </div>
             </div>
         </div>,

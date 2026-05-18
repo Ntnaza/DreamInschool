@@ -1,20 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, use, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Image as ImageIcon, Calendar } from "lucide-react";
 
-export default function GaleriPublicClient({ galleryItems }: { galleryItems: any[] }) {
-  const [activeFilter, setActiveFilter] = useState("Semua");
-
-  const categories = ["Semua", ...Array.from(new Set(galleryItems.map((item) => item.category)))];
-
-  const filteredImages = activeFilter === "Semua" 
-    ? galleryItems 
-    : galleryItems.filter((item) => item.category === activeFilter);
-
+export default function GaleriPublicClient({ dataPromise }: { dataPromise: Promise<any[]> }) {
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-[#020617] transition-colors duration-500 pt-24 pb-24">
       <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.10] pointer-events-none z-0" />
@@ -25,7 +17,7 @@ export default function GaleriPublicClient({ galleryItems }: { galleryItems: any
           <span className="px-4 py-2 rounded-full bg-blue-100 dark:bg-white/10 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-widest border border-blue-200 dark:border-white/10">
             Arsip Visual 📸
           </span>
-          <h1 className="text-4xl md:text-5xl font-black mt-4 mb-4 pb-2 leading-tight
+          <h1 className="text-4xl md:text-5xl font-bold mt-4 mb-4 pb-2 leading-tight
             text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700
             dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
             Galeri Kegiatan
@@ -35,6 +27,26 @@ export default function GaleriPublicClient({ galleryItems }: { galleryItems: any
           </p>
         </div>
 
+        <Suspense fallback={<GaleriSkeleton />}>
+          <GaleriContent dataPromise={dataPromise} />
+        </Suspense>
+      </div>
+    </main>
+  );
+}
+
+function GaleriContent({ dataPromise }: { dataPromise: Promise<any[]> }) {
+  const galleryItems = use(dataPromise);
+  const [activeFilter, setActiveFilter] = useState("Semua");
+
+  const categories = ["Semua", ...Array.from(new Set(galleryItems.map((item: any) => item.category)))];
+
+  const filteredImages = activeFilter === "Semua" 
+    ? galleryItems 
+    : galleryItems.filter((item: any) => item.category === activeFilter);
+
+  return (
+    <>
         {/* FILTER BUTTONS */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           {categories.map((cat: any) => (
@@ -55,7 +67,7 @@ export default function GaleriPublicClient({ galleryItems }: { galleryItems: any
         {/* MASONRY GRID - PINTEREST STYLE (2 COL MOBILE, 4 COL DESKTOP) */}
         <motion.div layout className="columns-2 md:columns-3 lg:columns-4 gap-4 md:gap-6 space-y-4 md:space-y-6 p-2">
           <AnimatePresence>
-            {filteredImages.map((item) => (
+            {filteredImages.map((item: any) => (
               <motion.div
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -70,7 +82,7 @@ export default function GaleriPublicClient({ galleryItems }: { galleryItems: any
                     
                     {/* Dark Overlay with Info - Permanent on Mobile, Hover on Desktop */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-4 md:p-6 z-10">
-                      <span className="inline-block px-2 py-0.5 bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider rounded mb-2 w-fit">{item.category}</span>
+                      <span className="inline-block px-2 py-0.5 bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider rounded mb-2 w-fit">{item.category}</span>
                       <h3 className="text-white font-bold text-sm md:text-lg leading-tight line-clamp-2 drop-shadow-lg">{item.title}</h3>
                       <div className="flex items-center justify-between mt-2">
                         <p className="text-white/70 text-[10px] flex items-center gap-1 font-medium drop-shadow-md"><Calendar size={10}/> {item.date}</p>
@@ -87,7 +99,26 @@ export default function GaleriPublicClient({ galleryItems }: { galleryItems: any
             ))}
           </AnimatePresence>
         </motion.div>
+    </>
+  );
+}
+
+function GaleriSkeleton() {
+  return (
+    <div className="animate-pulse space-y-12">
+      <div className="flex flex-wrap justify-center gap-3 mb-12">
+         {[1, 2, 3, 4, 5].map(i => (
+           <div key={i} className="h-10 w-24 bg-slate-200 dark:bg-slate-800 rounded-full" />
+         ))}
       </div>
-    </main>
+      <div className="columns-2 md:columns-3 lg:columns-4 gap-4 md:gap-6 space-y-4 md:space-y-6 p-2">
+         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => {
+           const heightClass = i % 3 === 0 ? "h-64" : i % 2 === 0 ? "h-80" : "h-48";
+           return (
+             <div key={i} className={`break-inside-avoid w-full ${heightClass} bg-slate-200 dark:bg-slate-800 rounded-xl md:rounded-2xl`} />
+           );
+         })}
+      </div>
+    </div>
   );
 }

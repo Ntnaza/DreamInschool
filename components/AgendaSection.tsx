@@ -64,7 +64,7 @@ export default async function AgendaSection() {
         
         {/* HEADER */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
             Agenda <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">Mendatang</span>
           </h2>
           <p className="text-slate-600 dark:text-slate-400 font-bold">

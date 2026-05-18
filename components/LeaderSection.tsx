@@ -23,10 +23,10 @@ function LeaderCard({ leader, isEven }: { leader: any, isEven: boolean }) {
               className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-0 dark:grayscale-[30%] dark:group-hover:grayscale-0"
             />
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent dark:from-[#0f172a] dark:via-[#0f172a]/80 p-6 pt-24">
-                <h3 className="text-2xl font-black uppercase tracking-wide text-white">{leader.nama}</h3>
+                <h3 className="text-2xl font-bold uppercase tracking-wide text-white">{leader.nama}</h3>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="h-[1px] w-8 bg-blue-400 dark:bg-slate-400" />
-                  <div className="text-blue-300 dark:text-slate-300 text-xs font-bold tracking-[0.2em] uppercase">{leader.jabatan}</div>
+                  <div className="font-bold text-blue-600 dark:text-blue-400 text-[10px] tracking-[0.2em] uppercase">{leader.jabatan}</div>
                 </div>
             </div>
           </div>
@@ -34,10 +34,8 @@ function LeaderCard({ leader, isEven }: { leader: any, isEven: boolean }) {
 
       {/* TEKS DESKRIPSI */}
       <div className={`w-full md:w-7/12 text-center flex flex-col ${isEven ? 'md:text-left md:items-start' : 'md:text-left md:items-start'} space-y-6`}>
-        <h2 className="text-3xl md:text-5xl font-black leading-tight text-slate-900 dark:text-white">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
-            &quot;{visi}&quot;
-          </span>
+        <h2 className="text-3xl md:text-5xl font-bold leading-tight text-slate-900 dark:text-white italic">
+          &quot;{visi}&quot;
         </h2>
         <div className="text-slate-700 dark:text-slate-400 leading-relaxed text-sm md:text-base font-bold max-w-xl border-l-2 border-blue-600/30 dark:border-slate-500/50 pl-4">
           Misi: {misi}
@@ -86,6 +84,8 @@ export default async function LeaderSection({ periodeId }: { periodeId?: number 
       <div className="absolute inset-0 bg-gradient-to-b from-slate-200 to-slate-300 dark:from-[#020617] dark:to-[#0f172a] z-0" />
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] dark:opacity-[0.10] mix-blend-overlay z-0" />
       
+      
+
       <div className="relative z-20 max-w-6xl mx-auto px-8 md:px-12 space-y-48">
         {leaders.map((leader) => (
           <LeaderCard 

@@ -81,7 +81,7 @@ export default function MajorsClient({ majors }: { majors: any[] }) {
                             <Zap size={12} fill="currentColor"/> {activeMajor.roleName}
                         </div>
                         
-                        <h2 className="text-4xl md:text-5xl font-black text-white leading-none mb-3 tracking-tight drop-shadow-2xl">
+                        <h2 className="text-4xl md:text-5xl font-bold text-white leading-none mb-3 tracking-tight drop-shadow-2xl">
                             {activeMajor.title}
                         </h2>
                         <h3 className="text-sm md:text-base font-bold text-white/50 mb-6 uppercase tracking-wider">
@@ -101,7 +101,7 @@ export default function MajorsClient({ majors }: { majors: any[] }) {
                         {/* Stats */}
                         {activeMajor.count !== undefined && (
                             <div className="mt-6">
-                                <div className="text-2xl font-black text-white flex items-baseline gap-2" style={{ textShadow: `0 0 20px ${activeMajor.MysteriousColor}80` }}>
+                                <div className="text-2xl font-bold text-white flex items-baseline gap-2" style={{ textShadow: `0 0 20px ${activeMajor.MysteriousColor}80` }}>
                                     {activeMajor.count} <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Active Agents</span>
                                 </div>
                             </div>

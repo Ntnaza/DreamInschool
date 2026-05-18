@@ -1,0 +1,14 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/smaknisc/public_html/oska"
+PassengerBaseURI "/"
+PassengerNodejs "/home/smaknisc/nodevenv/public_html/oska/22/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
+# Konfigurasi Tambahan untuk Litespeed (Hosting DomaiNesia)
+<IfModule Litespeed>
+SetEnv DATABASE_URL mysql://smaknisc_oskaa:oskasmaknis2026@antillo-db.id.rapidplex.com:3306/smaknisc_oska
+SetEnv JWT_SECRET osis-mpk-secret-2026
+SetEnv NODE_ENV production
+</IfModule>

@@ -17,10 +17,12 @@ import {
 
 export default function AdminLayout({ 
   children,
-  initialSidebarOpen = true 
+  initialSidebarOpen = true,
+  initialUser = null
 }: { 
   children: React.ReactNode,
-  initialSidebarOpen?: boolean
+  initialSidebarOpen?: boolean,
+  initialUser?: any
 }) {
   const pathname = usePathname();
   const [isSidebarOpen, setSidebarOpen] = useState(initialSidebarOpen);
@@ -30,7 +32,7 @@ export default function AdminLayout({
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState(0);
   const [logo, setLogo] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(initialUser);
   const [activePeriode, setActivePeriode] = useState<any>(null);
 
   // Fungsi untuk toggle sidebar dengan persistensi Cookie
@@ -44,14 +46,6 @@ export default function AdminLayout({
   };
 
   useEffect(() => {
-    // Ambil Data User & Jabatan untuk RBAC
-    fetch("/api/auth/me")
-      .then(res => res.json())
-      .then(data => {
-        if (!data.error) setUser(data);
-      })
-      .catch(() => {});
-
     // Ambil Logo untuk Sidebar
     fetch("/api/config")
       .then(res => res.json())
@@ -209,7 +203,7 @@ export default function AdminLayout({
                 <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="pl-20 whitespace-nowrap overflow-hidden">
                   <span className="font-bold text-slate-800 dark:text-white tracking-tight text-lg uppercase">OSIS<span className="text-blue-600">MPK</span></span>
                   {activePeriode && (
-                    <div className="text-[10px] font-black text-blue-600 dark:text-blue-400 -mt-1 tracking-wider uppercase opacity-80">
+                    <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 -mt-1 tracking-wider uppercase opacity-80">
                       Kabinet {activePeriode.namaKabinet}
                     </div>
                   )}

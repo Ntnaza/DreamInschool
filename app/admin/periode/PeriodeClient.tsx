@@ -1,24 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { 
-  Plus, Calendar, ShieldCheck, Edit3, Trash2, 
-  Save, X, Loader2, Camera, Clock, History, CheckCircle2,
-  Users, Briefcase, ChevronRight
+  Plus, Calendar, Edit3, Trash2, Save, X, Loader2, Camera, History, 
+  Users, Briefcase, Star
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { showToast } from "@/components/Toast";
 import { showConfirm } from "@/components/ConfirmDialog";
 import { createPeriode, updatePeriode, deletePeriode, setActivePeriode } from "@/lib/actions";
-import Image from "next/image";
 
 export default function PeriodeClient({ initialData }: { initialData: any[] }) {
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState<number | null>(null);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [data, setData] = useState(initialData);
+
+  const action = searchParams.get("action");
+  const editIdParam = searchParams.get("id");
+  const isModalOpen = action === "add" || action === "edit";
+  const isEditing = action === "edit";
+  const editId = editIdParam ? parseInt(editIdParam) : null;
+
   const [loading, setLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   const [form, setForm] = useState({
     tahun: "",
@@ -26,6 +32,39 @@ export default function PeriodeClient({ initialData }: { initialData: any[] }) {
     logoKabinet: "",
     fotoAngkatan: ""
   });
+
+  useEffect(() => {
+    setIsClient(true);
+    if (initialData) {
+      setData(initialData);
+    }
+  }, [initialData]);
+
+  // Sync form with URL state for editing
+  useEffect(() => {
+    if (isEditing && editId && data.length > 0) {
+      const p = data.find((item: any) => item.id === editId);
+      if (p) {
+        setForm({ tahun: p.tahun, namaKabinet: p.namaKabinet || "", logoKabinet: p.logoKabinet || "", fotoAngkatan: p.fotoAngkatan || "" });
+      }
+    } else if (action === "add") {
+      setForm({ tahun: "", namaKabinet: "", logoKabinet: "", fotoAngkatan: "" });
+    }
+  }, [isEditing, editId, action, data]);
+
+  const closeModal = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("action");
+    params.delete("id");
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const openEditModal = (p: any) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("action", "edit");
+    params.set("id", p.id.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0];
@@ -37,18 +76,6 @@ export default function PeriodeClient({ initialData }: { initialData: any[] }) {
     }
   };
 
-  const openAddModal = () => {
-    setIsEditing(false); setEditId(null);
-    setForm({ tahun: "", namaKabinet: "", logoKabinet: "", fotoAngkatan: "" });
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (p: any) => {
-    setIsEditing(true); setEditId(p.id);
-    setForm({ tahun: p.tahun, namaKabinet: p.namaKabinet || "", logoKabinet: p.logoKabinet || "", fotoAngkatan: p.fotoAngkatan || "" });
-    setIsModalOpen(true);
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.tahun) return showToast("Tahun ajaran wajib!", "warning");
@@ -57,7 +84,11 @@ export default function PeriodeClient({ initialData }: { initialData: any[] }) {
     Object.entries(form).forEach(([key, value]) => formData.append(key, value));
     try {
       const res = isEditing && editId ? await updatePeriode(editId, formData) : await createPeriode(formData);
-      if (res.success) { showToast(res.message, "success"); setIsModalOpen(false); router.refresh(); }
+      if (res.success) { 
+        showToast(res.message, "success", isEditing ? "Arsip Diperbarui" : "Arsip Ditambahkan"); 
+        closeModal(); 
+        router.refresh(); 
+      }
       else showToast(res.message, "error");
     } catch (err) { showToast("Error!", "error"); }
     finally { setLoading(false); }
@@ -75,132 +106,208 @@ export default function PeriodeClient({ initialData }: { initialData: any[] }) {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-8 pb-20">
+    <div className="flex-1 overflow-hidden flex flex-col gap-6 font-sans">
       
-      {/* 1. HEADER */}
-      <div className="flex-shrink-0 flex flex-col md:flex-row justify-between items-end gap-6 px-1">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 font-sans">
-            Arsip Angkatan <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">⏳</span>
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Simpan dan kelola sejarah kepengurusan OSIS-MPK.</p>
-        </div>
-        <button onClick={openAddModal} className="px-6 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold shadow-lg text-xs transition-transform active:scale-95 flex items-center gap-2">
-          <Plus size={18} /> Tambah Sejarah
-        </button>
+      {/* GRID LIST */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+          <PeriodeDataList 
+            data={data} 
+            openEditModal={openEditModal} 
+            handleActivate={handleActivate}
+            router={router}
+          />
       </div>
 
-      {/* 2. GRID LIST (CLEAN MINIMALIST) */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar-main">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {initialData.map((p) => (
-            <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative group">
-              
-              {/* THE CARD (Subtle Rounding & Elegant) */}
-              <div className={`relative bg-white dark:bg-slate-900/40 p-3 pb-6 rounded-3xl shadow-sm border transition-all duration-500 group-hover:shadow-xl ${p.isAktif ? 'border-blue-500 ring-4 ring-blue-500/5' : 'border-slate-100 dark:border-white/5'}`}>
-                
-                {/* PHOTO AREA (LANDSCAPE 16:9) */}
-                <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 mb-5">
-                  {p.fotoAngkatan ? (
-                    <img src={p.fotoAngkatan} alt="Foto" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-10"><History size={40} /></div>
-                  )}
+      {/* MODAL */}
+
+      {isModalOpen && (
+         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+            <div className="bg-white dark:bg-[#1e293b] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+               <div className="p-5 border-b border-slate-100 dark:border-white/10 flex justify-between items-center">
+                  <h3 className="font-bold text-lg text-slate-800 dark:text-white">{isEditing ? 'Edit Angkatan' : 'Tambah Angkatan'}</h3>
+                  <button onClick={closeModal}><X size={20} className="text-slate-400 hover:text-red-500" /></button>
+               </div>
+               <form onSubmit={handleSave} className="p-6 overflow-y-auto custom-scrollbar space-y-5">
                   
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90" />
-                  
-                  {/* LOGO KABINET (Minimalist Floating) */}
-                  <div className="absolute top-3 left-3 w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xl border border-white/20 p-1.5 flex items-center justify-center">
-                    {p.logoKabinet ? <img src={p.logoKabinet} alt="L" className="w-full h-full object-contain" /> : <History className="text-white/50" size={16} />}
+                  {/* Visual Upload Area */}
+                  <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase text-slate-500">Foto Bersama</label>
+                        <div onClick={() => document.getElementById('fotoUpload')?.click()} className="relative aspect-video rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-blue-500 transition-colors cursor-pointer flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-white/5">
+                            {form.fotoAngkatan ? (
+                              <img src={form.fotoAngkatan} className="w-full h-full object-cover" />
+                            ) : (
+                              <>
+                                <Camera size={24} className="text-slate-300" />
+                                <span className="text-[9px] mt-1 font-bold text-slate-400">UPLOAD</span>
+                              </>
+                            )}
+                            <input type="file" id="fotoUpload" hidden accept="image/*" onChange={e => handleImageUpload(e, 'fotoAngkatan')} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase text-slate-500">Logo Kabinet</label>
+                        <div onClick={() => document.getElementById('logoUpload')?.click()} className="relative aspect-video rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-blue-500 transition-colors cursor-pointer flex flex-col items-center justify-center overflow-hidden bg-slate-50 dark:bg-white/5">
+                            {form.logoKabinet ? (
+                              <img src={form.logoKabinet} className="w-full h-full object-contain p-4" />
+                            ) : (
+                              <>
+                                <Star size={24} className="text-slate-300" />
+                                <span className="text-[9px] mt-1 font-bold text-slate-400">UPLOAD</span>
+                              </>
+                            )}
+                            <input type="file" id="logoUpload" hidden accept="image/*" onChange={e => handleImageUpload(e, 'logoKabinet')} />
+                        </div>
+                      </div>
                   </div>
 
-                  {/* ACTIVE BADGE */}
-                  {p.isAktif && (
-                    <div className="absolute top-3 right-3 px-3 py-1 bg-blue-600 text-white text-[8px] font-black uppercase tracking-widest rounded-lg shadow-xl flex items-center gap-1.5">
-                      <div className="w-1 h-1 bg-white rounded-full animate-pulse" /> Aktif
-                    </div>
-                  )}
-
-                  {/* INFO OVERLAY */}
-                  <div className="absolute bottom-5 left-6 right-6">
-                    <h3 className="text-xl font-black text-white tracking-tight uppercase leading-none">{p.tahun}</h3>
-                    <p className="text-blue-400 text-[9px] font-bold uppercase tracking-[0.2em] mt-1.5">{p.namaKabinet || 'TANPA KABINET'}</p>
-                  </div>
-                </div>
-
-                {/* STATS & ACTION */}
-                <div className="px-3 space-y-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-                      <Users size={14} className="text-slate-400" /> {p._count.pengurus} Anggota
-                    </div>
-                    <div className="h-3 w-[1px] bg-slate-100 dark:border-white/5" />
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-                      <Briefcase size={14} className="text-slate-400" /> {p._count.proker} Program
-                    </div>
+                  <div className="space-y-4">
+                     <div>
+                        <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Tahun Ajaran</label>
+                        <input 
+                          required 
+                          type="text" 
+                          placeholder="Contoh: 2025/2026"
+                          className="w-full p-3 border rounded-xl text-sm font-bold bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 outline-none focus:border-blue-500" 
+                          value={form.tahun} 
+                          onChange={e => setForm({...form, tahun: e.target.value})}
+                        />
+                     </div>
+                     <div>
+                        <label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Nama Kabinet</label>
+                        <input 
+                          type="text" 
+                          placeholder="Contoh: Nawa Satya"
+                          className="w-full p-3 border rounded-xl text-sm font-bold bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 outline-none focus:border-blue-500" 
+                          value={form.namaKabinet} 
+                          onChange={e => setForm({...form, namaKabinet: e.target.value})}
+                        />
+                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {!p.isAktif ? (
-                      <button onClick={() => handleActivate(p)} className="flex-1 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white transition-all">Pilih</button>
-                    ) : (
-                      <div className="flex-1 py-2.5 bg-emerald-500/10 text-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-widest text-center border border-emerald-500/20">Menjabat</div>
-                    )}
-                    <button onClick={() => openEditModal(p)} className="p-2.5 bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-blue-600 rounded-xl transition-all"><Edit3 size={16} /></button>
-                    {!p.isAktif && (
-                      <button onClick={() => {
-                        showConfirm({ title: "Hapus Arsip?", message: "Data akan musnah!", type: "danger", onConfirm: async () => {
-                          const res = await deletePeriode(p.id);
-                          if (res.success) { showToast(res.message, "success"); router.refresh(); }
-                        } });
-                      }} className="p-2.5 bg-slate-50 dark:bg-white/5 text-slate-400 hover:text-red-500 rounded-xl transition-all"><Trash2 size={16} /></button>
-                    )}
+                  <div className="pt-4 flex gap-3">
+                     <button type="button" onClick={closeModal} className="flex-1 py-3 text-slate-500 text-xs font-bold hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors">Batal</button>
+                     <button type="submit" disabled={loading} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+                        {loading ? <Loader2 className="animate-spin" size={18}/> : (
+                          <>
+                            {isEditing ? <Save size={18}/> : <Plus size={18}/>}
+                            <span>{isEditing ? 'Simpan Perubahan' : 'Tambah Angkatan'}</span>
+                          </>
+                        )}
+                     </button>
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+               </form>
+            </div>
+         </div>
+      )}
 
-      {/* --- MODAL (MODERN SUBTLE) --- */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-md" />
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 30 }} className="relative w-full max-w-xl bg-white dark:bg-[#0a0f1e] rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10">
-              <div className="p-8 border-b border-slate-50 dark:border-white/5 flex justify-between items-center bg-white dark:bg-[#0a0f1e]">
-                <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tighter">{isEditing ? 'Update Sejarah' : 'Tambah Angkatan'}</h3>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><X size={24} /></button>
-              </div>
-              
-              <form onSubmit={handleSave} className="p-8 space-y-8">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Foto Angkatan</label>
-                    <div className="relative h-32 rounded-2xl bg-slate-50 dark:bg-white/5 border-2 border-dashed flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => document.getElementById('fotoUpload')?.click()}>
-                      {form.fotoAngkatan ? <img src={form.fotoAngkatan} className="w-full h-full object-cover" /> : <Camera size={24} className="text-slate-300" />}
-                      <input type="file" id="fotoUpload" hidden accept="image/*" onChange={e => handleImageUpload(e, 'fotoAngkatan')} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Logo Kabinet</label>
-                    <div className="relative h-32 rounded-2xl bg-slate-50 dark:bg-white/5 border-2 border-dashed flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => document.getElementById('logoUpload')?.click()}>
-                      {form.logoKabinet ? <img src={form.logoKabinet} className="w-full h-full object-contain p-4" /> : <History size={24} className="text-slate-300" />}
-                      <input type="file" id="logoUpload" hidden accept="image/*" onChange={e => handleImageUpload(e, 'logoKabinet')} />
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2"><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tahun</label><input type="text" value={form.tahun} onChange={e => setForm({...form, tahun: e.target.value})} className="w-full px-5 py-4 rounded-xl bg-slate-50 border outline-none focus:ring-4 focus:ring-blue-500/10 text-sm font-bold" placeholder="2025/2026" /></div>
-                  <div className="space-y-2"><label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kabinet</label><input type="text" value={form.namaKabinet} onChange={e => setForm({...form, namaKabinet: e.target.value})} className="w-full px-5 py-4 rounded-xl bg-slate-50 border outline-none focus:ring-4 focus:ring-blue-500/10 text-sm font-bold" placeholder="Jiva Abisatya" /></div>
-                </div>
-                <button type="submit" disabled={loading} className="w-full py-4 bg-blue-600 text-white rounded-xl text-xs font-black shadow-xl uppercase tracking-[0.2em]">{loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Simpan Sejarah'}</button>
-              </form>
-            </motion.div>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+      `}</style>
+    </div>
+  );
+}
+
+export function PeriodeSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+          <div className="aspect-[4/3] bg-slate-200 dark:bg-slate-800" />
+          <div className="p-4 space-y-3">
+            <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="pt-3 border-t border-slate-200 dark:border-white/10 flex gap-4">
+               <div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
+               <div className="h-3 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PeriodeDataList({ data, openEditModal, handleActivate, router }: any) {
+
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {data.map((p: any, idx: number) => (
+        <div key={p.id} className={`group relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ${idx === 0 ? 'tour-periode-card' : ''}`}>
+           {/* IMAGE AREA */}
+           <div className="aspect-[4/3] relative bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              {p.fotoAngkatan ? (
+                <Image src={p.fotoAngkatan} alt={p.tahun} fill className="object-cover group-hover:scale-110 transition-transform duration-700"/>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center opacity-10"><History size={48} /></div>
+              )}
+
+              {/* Overlay Actions */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                 <div className="flex justify-end gap-2">
+                      <button onClick={() => openEditModal(p)} className="p-2 bg-white text-slate-900 rounded-lg shadow-lg hover:bg-blue-500 hover:text-white transition-all transform hover:scale-110"><Edit3 size={16}/></button>
+                      {!p.isAktif && (
+                        <button 
+                          onClick={() => {
+                            showConfirm({ 
+                              title: "Hapus Arsip?", 
+                              message: "Seluruh data angkatan ini akan dihapus permanen.", 
+                              type: "danger", 
+                              onConfirm: async () => {
+                                const res = await deletePeriode(p.id);
+                                if (res.success) { showToast(res.message, "success"); router.refresh(); }
+                              } 
+                            });
+                          }} 
+                          className="p-2 bg-white text-red-600 rounded-lg shadow-lg hover:bg-red-600 hover:text-white transition-all transform hover:scale-110"
+                        >
+                          <Trash2 size={16}/>
+                        </button>
+                      )}
+                 </div>
+              </div>
+
+              {/* Badge Logo Kabinet */}
+              <div className="absolute top-3 left-3 w-10 h-10 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-1.5 flex items-center justify-center shadow-sm">
+                {p.logoKabinet ? <img src={p.logoKabinet} alt="L" className="w-full h-full object-contain" /> : <Star className="text-amber-400" size={16} fill="currentColor" />}
+              </div>
+
+              {p.isAktif && (
+                <div className="absolute top-3 right-3 px-2 py-1 bg-blue-600 text-white text-[9px] font-bold uppercase tracking-wider rounded-md shadow-sm flex items-center gap-1">
+                  <div className="w-1 h-1 bg-white rounded-full animate-pulse" /> Menjabat
+                </div>
+              )}
+           </div>
+
+           {/* CARD INFO */}
+           <div className="p-4">
+              <h3 className="font-bold text-slate-800 dark:text-white mb-1 line-clamp-1 uppercase">{p.namaKabinet || 'TANPA KABINET'}</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase tracking-tight">
+                  <Calendar size={12}/> {p.tahun}
+                </div>
+                <div className="flex items-center gap-2">
+                    {!p.isAktif && (
+                      <button onClick={() => handleActivate(p)} className="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:underline">Pilih</button>
+                    )}
+                </div>
+              </div>
+              
+              {/* Mini Stats */}
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center gap-4">
+                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                  <Users size={12} className="text-blue-500/70" /> {p._count.pengurus}
+                </div>
+                <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                  <Briefcase size={12} className="text-purple-500/70" /> {p._count.proker}
+                </div>
+              </div>
+           </div>
+        </div>
+      ))}
     </div>
   );
 }

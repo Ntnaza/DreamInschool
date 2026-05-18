@@ -1,12 +1,25 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
-import PeriodeClient from "./PeriodeClient";
+import PeriodeClient, { PeriodeSkeleton } from "./PeriodeClient";
+import PeriodeHeader from "./PeriodeHeader";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Arsip Angkatan - OSIS MPK Admin",
 };
 
-export default async function PeriodePage() {
+export default function PeriodePage() {
+  return (
+    <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
+      <PeriodeHeader />
+      <Suspense fallback={<PeriodeSkeleton />}>
+        <PeriodeDataFetcher />
+      </Suspense>
+    </div>
+  );
+}
+
+async function PeriodeDataFetcher() {
   const periods = await prisma.periode.findMany({
     orderBy: { tahun: "desc" },
     include: {
@@ -21,9 +34,5 @@ export default async function PeriodePage() {
     }
   });
 
-  return (
-    <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
-      <PeriodeClient initialData={periods} />
-    </div>
-  );
+  return <PeriodeClient initialData={periods} />;
 }

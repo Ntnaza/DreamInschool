@@ -2,28 +2,36 @@ import { prisma } from "@/lib/prisma";
 import { getActivePeriodeId } from "@/lib/actions";
 import PengurusClient from "./PengurusClient";
 
-export default async function PengurusPage() {
-  const activePeriodeId = await getActivePeriodeId();
-
+// Bungkus dalam async function agar mengembalikan Native Promise, 
+// sehingga Next.js tidak melakukan sinkronisasi blocking saat serialisasi PrismaPromise.
+async function getMembers() {
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulasi delay
+  const id = await getActivePeriodeId();
   const rawMembers = await prisma.pengurus.findMany({
-    where: { periodeId: activePeriodeId || undefined },
+    where: { periodeId: id || undefined },
     include: { user: true }, 
     orderBy: { nama: "asc" },
   });
-
-  const divisions = await prisma.divisi.findMany({
-    include: { jabatans: true },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const formattedMembers = rawMembers.map((m) => ({
+  return rawMembers.map((m) => ({
     ...m,
     tglLahir: m.tglLahir ? m.tglLahir.toISOString().split("T")[0] : "",
   }));
+}
+
+async function getDivisions() {
+  return await prisma.divisi.findMany({
+    include: { jabatans: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export default function PengurusPage() {
+  const membersPromise = getMembers();
+  const divisionsPromise = getDivisions();
 
   return (
     <div className="relative h-[calc(100vh-140px)] flex flex-col font-sans">
-      <PengurusClient initialData={formattedMembers} initialDivisi={divisions} />
+      <PengurusClient dataPromise={membersPromise} divisionsPromise={divisionsPromise} />
     </div>
   );
 }

@@ -9,22 +9,10 @@ import {
   Hash, DollarSign, FileSpreadsheet,
   Trash2, Edit, Image as ImageIcon, Loader2, HelpCircle
 } from "lucide-react";
-import TourGuide from "@/components/TourGuide";
 // Import Server Actions
 import { saveInventaris, deleteInventaris, pinjamBarang, kembalikanBarang } from "@/lib/actions";
 import { showToast } from "@/components/Toast";
 import { showConfirm } from "@/components/ConfirmDialog";
-
-// DEFINISI LANGKAH TUR (DIKEMBALIKAN LENGKAP)
-const inventarisTourSteps = [
-    { target: '.tour-inventory-header', content: 'Selamat datang di Manajemen Aset! Di sini Anda bisa memantau dan mengelola seluruh barang inventaris organisasi secara sistematis.', disableBeacon: true },
-    { target: '.tour-stats-overview', content: 'Pantau kondisi aset secara cepat. Lihat berapa banyak barang yang tersedia, sedang dipinjam, atau dalam perbaikan.', placement: 'bottom' as const },
-    { target: '.tour-filter-bar', content: 'Gunakan pencarian dan filter untuk menemukan barang tertentu berdasarkan nama atau status ketersediaannya.', },
-    { target: '.tour-add-btn', content: 'Punya aset baru? Klik di sini untuk mendaftarkannya ke dalam sistem lengkap dengan foto dan spesifikasinya.', },
-    { target: '.tour-export-btn', content: 'Butuh laporan fisik? Unduh seluruh data inventaris ke dalam format Excel yang rapi dengan satu klik.', },
-    { target: '.tour-item-card', content: 'Klik pada kartu barang untuk melihat detail spesifikasi, serial number, hingga riwayat peminjaman lengkap.', },
-    { target: '.tour-action-area', content: 'Gunakan tombol aksi cepat ini untuk melakukan proses peminjaman atau pengembalian barang secara instan.', },
-];
 
 export default function InventarisClient({ initialItems }: { initialItems: any[] }) {
   const [items, setItems] = useState(initialItems);
@@ -36,12 +24,6 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
   const [searchTerm, setSearchTerm] = useState(""); 
   const [isClient, setIsClient] = useState(false);
   const [isExporting, setIsExporting] = useState(false); // State loading export
-  
-  const tourRef = useRef<any>(null);
-
-  const handleStartTour = () => {
-    if (tourRef.current) tourRef.current.startTour();
-  };
 
   // MODAL STATES
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -235,49 +217,26 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col gap-6 font-sans relative">
       
-      {/* HEADER & FILTER (FIXED) */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-4 shrink-0 px-4 md:px-0">
-         <div>
-            <div className="flex items-center gap-4">
-               <h1 className="text-3xl font-black font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3 tour-inventory-header">
-                  Inventaris Aset <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">📦</span>
-               </h1>
-               
-               {isClient && (
-                  <button 
-                    onClick={handleStartTour}
-                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 text-sm font-medium"
-                    title="Bantuan Panduan"
-                  >
-                    <HelpCircle className="w-5 h-5" />
-                    <span className="hidden sm:inline">Panduan</span>
-                  </button>
-                )}
-
-               {isClient && <TourGuide ref={tourRef} steps={inventarisTourSteps} tourKey="inventaris" />}
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Pantau ketersediaan dan kondisi barang.</p>
-         </div>
-      </div>
+      {/* HEADER & FILTER (FIXED) - HEADER TELAH DIEKSTRAK KE InventarisHeader */}
 
       {/* STATS OVERVIEW */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0 tour-stats-overview">
          <div className="bg-blue-600 p-5 rounded-2xl text-white relative overflow-hidden shadow-lg shadow-blue-600/20">
             <div className="absolute right-0 top-0 opacity-10 p-4"><Box size={64}/></div>
             <p className="text-xs font-bold opacity-80 uppercase tracking-wider mb-1">Total Aset</p>
-            <h2 className="text-3xl font-bold font-black">{items.length} <span className="text-sm font-medium opacity-60">Item</span></h2>
+            <h2 className="text-3xl font-bold font-bold">{items.length} <span className="text-sm font-medium opacity-60">Item</span></h2>
          </div>
          <div className="bg-white dark:bg-[#0f172a] p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
             <div className="flex items-center gap-3 mb-2"><div className="p-2 bg-green-100 text-green-600 rounded-lg"><CheckCircle size={18}/></div><p className="text-xs font-bold text-slate-500 uppercase">Siap Pakai</p></div>
-            <h2 className="text-2xl font-bold font-black text-slate-800 dark:text-white">{items.filter(i => i.status === 'AVAILABLE').length}</h2>
+            <h2 className="text-2xl font-bold font-bold text-slate-800 dark:text-white">{items.filter(i => i.status === 'AVAILABLE').length}</h2>
          </div>
          <div className="bg-white dark:bg-[#0f172a] p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
             <div className="flex items-center gap-3 mb-2"><div className="p-2 bg-orange-100 text-orange-600 rounded-lg"><Clock size={18}/></div><p className="text-xs font-bold text-slate-500 uppercase">Dipinjam</p></div>
-            <h2 className="text-2xl font-black font-bold text-slate-800 dark:text-white">{items.filter(i => i.status === 'BORROWED').length}</h2>
+            <h2 className="text-2xl font-bold font-bold text-slate-800 dark:text-white">{items.filter(i => i.status === 'BORROWED').length}</h2>
          </div>
          <div className="bg-white dark:bg-[#0f172a] p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
             <div className="flex items-center gap-3 mb-2"><div className="p-2 bg-red-100 text-red-600 rounded-lg"><AlertTriangle size={18}/></div><p className="text-xs font-bold text-slate-500 uppercase">Perlu Servis</p></div>
-            <h2 className="text-2xl font-black font-bold text-slate-800 dark:text-white">{items.filter(i => i.status === 'MAINTENANCE').length}</h2>
+            <h2 className="text-2xl font-bold font-bold text-slate-800 dark:text-white">{items.filter(i => i.status === 'MAINTENANCE').length}</h2>
          </div>
       </div>
 
@@ -323,7 +282,7 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
                            <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-md text-[9px] font-bold text-white uppercase">{item.category}</div>
                         </div>
                         <div className="px-1 mb-4">
-                           <h3 className="text-sm font-black text-slate-800 dark:text-white line-clamp-1">{item.name}</h3>
+                           <h3 className="text-sm font-bold text-slate-800 dark:text-white line-clamp-1">{item.name}</h3>
                            <p className="text-[10px] font-mono text-slate-400 mt-0.5">{item.code}</p>
                            <div className="flex justify-between items-center mt-2">
                               {getStatusBadge(item.status)}
@@ -355,7 +314,7 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
       {isAddModalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
            <div className="bg-white dark:bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
-              <h3 className="font-black text-lg text-slate-800 dark:text-white">{isEditing ? 'Edit Data Aset' : 'Tambah Aset Baru'}</h3>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">{isEditing ? 'Edit Data Aset' : 'Tambah Aset Baru'}</h3>
               <form onSubmit={handleSaveItem} className="space-y-4">
                  <div className="space-y-2">
                     <input required placeholder="Nama Barang" className="w-full p-2.5 border rounded-lg text-xs font-bold dark:bg-slate-800 dark:border-white/10" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} />
@@ -398,7 +357,7 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
            <div className="bg-white dark:bg-[#1e293b] w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center space-y-4">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-blue-600"><Box/></div>
-              <h3 className="font-black text-lg text-slate-800 dark:text-white">Pinjam Barang?</h3>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">Pinjam Barang?</h3>
               <p className="text-xs text-slate-500">Anda akan meminjam <strong>{borrowModal.name}</strong>.</p>
               <form onSubmit={handleBorrowSubmit} className="space-y-4 text-left">
                  <label className="text-[10px] font-bold uppercase text-slate-500">Peminjam / Divisi</label>
@@ -416,7 +375,7 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
       {returnModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
            <div className="bg-white dark:bg-[#1e293b] w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
-              <h3 className="font-black text-slate-800 dark:text-white">Validasi Pengembalian</h3>
+              <h3 className="font-bold text-slate-800 dark:text-white">Validasi Pengembalian</h3>
               <form onSubmit={handleReturnSubmit} className="space-y-4">
                  <div>
                     <label className="text-[10px] font-bold uppercase text-slate-500">Kondisi</label>
@@ -441,7 +400,7 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
                  <div className="flex gap-4">
                     <div className="w-20 h-20 bg-slate-200 rounded-xl overflow-hidden shrink-0 relative"><Image src={detailModal.image || "https://source.unsplash.com/random/200x200/?tech"} alt="Img" fill className="object-cover"/></div>
                     <div>
-                       <h2 className="text-xl font-black text-slate-900 dark:text-white">{detailModal.name}</h2>
+                       <h2 className="text-xl font-bold text-slate-900 dark:text-white">{detailModal.name}</h2>
                        <div className="flex items-center gap-2 mt-1"><span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-[10px] font-mono font-bold">{detailModal.code}</span>{getStatusBadge(detailModal.status)}</div>
                     </div>
                  </div>
@@ -450,14 +409,14 @@ export default function InventarisClient({ initialItems }: { initialItems: any[]
               <div className="p-6 overflow-y-auto custom-scrollbar">
                  <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-4">
-                       <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest border-b pb-2">Spesifikasi</h3>
+                       <h3 className="text-xs font-bold uppercase text-slate-500 tracking-widest border-b pb-2">Spesifikasi</h3>
                        <div className="space-y-3">
                           <div><p className="text-[10px] text-slate-400">Serial Number</p><p className="text-sm font-bold flex items-center gap-2"><Hash size={14}/> {detailModal.serialNum || '-'}</p></div>
                           <div><p className="text-[10px] text-slate-400">Harga Beli</p><p className="text-sm font-bold flex items-center gap-2"><DollarSign size={14}/> {detailModal.price ? `Rp ${detailModal.price.toLocaleString()}` : '-'}</p></div>
                        </div>
                     </div>
                     <div>
-                       <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest border-b pb-2 mb-4">Riwayat</h3>
+                       <h3 className="text-xs font-bold uppercase text-slate-500 tracking-widest border-b pb-2 mb-4">Riwayat</h3>
                        <div className="space-y-3">
                           {detailModal.riwayat && detailModal.riwayat.length > 0 ? detailModal.riwayat.map((log: any) => (
                              <div key={log.id} className="text-xs border-l-2 border-slate-200 pl-2 pb-2">

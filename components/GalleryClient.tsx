@@ -59,7 +59,7 @@ export default function GalleryClient({ items }: { items: any[] }) {
       {/* Header Section */}
       <div className="container mx-auto px-6 mb-10 flex justify-between items-end">
          <div>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
               Dokumentasi <span className="text-blue-600">Kegiatan</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 mt-2">
@@ -162,7 +162,7 @@ export default function GalleryClient({ items }: { items: any[] }) {
                        <span className="inline-block px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-widest mb-4">
                          {selectedItem.category}
                        </span>
-                       <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2 leading-tight">
+                       <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 leading-tight">
                          {selectedItem.title}
                        </h2>
                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-6">

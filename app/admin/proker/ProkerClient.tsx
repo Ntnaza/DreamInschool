@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use, Suspense } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -22,9 +22,7 @@ const prokerTourSteps = [
     { target: '.tour-edit-action', content: 'Klik ikon pensil pada kartu Proker untuk memperbarui detail atau mengubah progres kegiatan.' },
 ];
 
-export default function ProkerClient({ initialData, divisions }: { initialData: any[], divisions: string[] }) {
-  const [prokers, setProkers] = useState(initialData);
-  const [isDataLoading, setIsDataLoading] = useState(true);
+export default function ProkerClient({ dataPromise, divisionsPromise }: { dataPromise: Promise<any[]>, divisionsPromise: Promise<string[]> }) {
   const [filterSekbid, setFilterSekbid] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [isClient, setIsClient] = useState(false);
@@ -46,10 +44,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
 
   useEffect(() => { 
     setIsClient(true); 
-    setProkers(initialData);
-    const timer = setTimeout(() => setIsDataLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, [initialData]);
+  }, []);
 
   const handleStartTour = () => {
     if (tourRef.current) tourRef.current.startTour();
@@ -71,7 +66,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
     setIsEditing(false);
     setEditId(null);
     setFormState({ 
-        title: "", description: "", sekbid: divisions[0] || "Inti", priority: "Medium", 
+        title: "", description: "", sekbid: "Inti", priority: "Medium", 
         startDate: "", endDate: "", pic: "", budget: 0, progress: 0,
         image: "", isFeatured: false 
     });
@@ -138,36 +133,21 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
       confirmText: "Ya, Hapus",
       type: "danger",
       onConfirm: async () => {
-        const originalProkers = [...prokers];
-        setProkers(prokers.filter(p => p.id !== id));
         try {
           const res = await deleteProgramKerja(id);
           if (res.success) { 
             showToast("Proker telah dihapus.", "success", "Terhapus"); 
+            router.refresh();
           } 
           else { 
-            setProkers(originalProkers); 
             showToast(res.message || "Gagal menghapus proker", "error"); 
           }
         } catch (err) { 
-          setProkers(originalProkers); 
           showToast("Gagal menghapus proker.", "error"); 
         }
       }
     });
   };
-
-  const filteredProkers = prokers.filter((item) => {
-    const itemDivisi = item.divisi || item.sekbid || ""; 
-    const itemNama = item.nama || item.title || "";
-    const matchSekbid = filterSekbid === "Semua" ? true : itemDivisi === filterSekbid;
-    const matchSearch = itemNama.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchSekbid && matchSearch;
-  });
-
-  const listSegera = filteredProkers.filter(p => p.progress === 0);
-  const listBerjalan = filteredProkers.filter(p => p.progress > 0 && p.progress < 100);
-  const listSelesai = filteredProkers.filter(p => p.progress === 100);
 
   return (
     <div className="relative h-full flex flex-col font-sans">
@@ -203,23 +183,13 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8 tour-proker-control">
-          <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide no-scrollbar">
-              <button 
-                onClick={() => setFilterSekbid("Semua")} 
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === "Semua" ? "bg-slate-900 dark:bg-blue-600 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}
-              >
-                  Semua
-              </button>
-              {divisions.map((sekbid) => (
-                <button 
-                  key={sekbid} 
-                  onClick={() => setFilterSekbid(sekbid)} 
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === sekbid ? "bg-slate-900 dark:bg-blue-600 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}
-                >
-                    {sekbid}
-                </button>
-              ))}
-          </div>
+          <Suspense fallback={<div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 animate-pulse rounded-xl" />}>
+             <ProkerFilters 
+                divisionsPromise={divisionsPromise} 
+                filterSekbid={filterSekbid} 
+                setFilterSekbid={setFilterSekbid} 
+             />
+          </Suspense>
           <div className="relative flex-1 md:w-72 group w-full">
               <input 
                 type="text" 
@@ -234,46 +204,16 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
       </div>
 
       {/* KANBAN BOARD AREA */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto pb-20 custom-scrollbar pr-2 tour-kanban-board">
-         {isDataLoading ? (
-            <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0 min-h-full h-fit animate-pulse">
-               {[1, 2, 3].map((col) => (
-                  <div key={col} className="flex-1 rounded-[2rem] p-4 bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-h-[500px] space-y-4">
-                     <div className="flex justify-between items-center px-2 mb-4">
-                        <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
-                        <div className="h-5 w-8 bg-slate-200 dark:bg-slate-800 rounded-full" />
-                     </div>
-                     {[1, 2].map((card) => (
-                        <div key={card} className="bg-white dark:bg-[#1e293b] p-4 rounded-2xl border border-slate-100 dark:border-white/5 space-y-4">
-                           <div className="flex justify-between"><div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded" /><div className="h-4 w-12 bg-slate-50 dark:bg-slate-800/50 rounded" /></div>
-                           <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-                           <div className="space-y-2"><div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded" /><div className="h-2 w-2/3 bg-slate-100 dark:bg-slate-800 rounded" /></div>
-                        </div>
-                     ))}
-                  </div>
-               ))}
-            </div>
-         ) : (
-            <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0 min-h-full h-fit">
-               <KanbanColumn tourClass="tour-col-segera" title="SEGERA" icon={<AlertCircle size={18} />} count={listSegera.length} color="blue">
-                  {listSegera.map((item, idx) => (
-                      <ProkerCard 
-                          key={item.id} data={item} 
-                          onDelete={handleDelete} onEdit={openEditModal} 
-                          isFirstPriority={idx === 0 && (item.prioritas || item.priority) === 'High'}
-                      />
-                  ))}
-               </KanbanColumn>
-               
-               <KanbanColumn tourClass="tour-col-berjalan" title="BERJALAN" icon={<PlayCircle size={18} />} count={listBerjalan.length} color="yellow">
-                  {listBerjalan.map((item) => <ProkerCard key={item.id} data={item} onDelete={handleDelete} onEdit={openEditModal} />)}
-               </KanbanColumn>
-
-               <KanbanColumn title="SELESAI" icon={<CheckCircle size={18} />} count={listSelesai.length} color="green">
-                  {listSelesai.map((item) => <ProkerCard key={item.id} data={item} onDelete={handleDelete} onEdit={openEditModal} />)}
-               </KanbanColumn>
-            </div>
-         )}
+      <div className="flex-1 overflow-y-auto pb-20 custom-scrollbar pr-2 tour-kanban-board overflow-x-hidden">
+         <Suspense fallback={<KanbanSkeleton />}>
+            <KanbanBoard 
+               dataPromise={dataPromise} 
+               searchQuery={searchQuery} 
+               filterSekbid={filterSekbid}
+               onEdit={openEditModal}
+               onDelete={handleDelete}
+            />
+         </Suspense>
       </div>
 
       {/* MODAL */}
@@ -284,7 +224,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
                <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="relative w-full max-w-2xl bg-white dark:bg-[#0f172a] rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh]">
                   <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
                      <div>
-                        <h2 className="text-xl font-black font-bold text-slate-900 dark:text-white">{isEditing ? "Edit Proker" : "Proker Baru"}</h2>
+                        <h2 className="text-xl font-bold font-bold text-slate-900 dark:text-white">{isEditing ? "Edit Proker" : "Proker Baru"}</h2>
                         <p className="text-xs text-slate-500 mt-1">{isEditing ? "Update detail & progress kegiatan." : "Detail rencana kegiatan."}</p>
                      </div>
                      <button onClick={() => setIsModalOpen(false)}><X size={24} className="text-slate-400" /></button>
@@ -316,9 +256,9 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
                         <div className="grid grid-cols-2 gap-4">
                            <div>
                               <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Sekbid</label>
-                              <select value={formState.sekbid} onChange={e => setFormState({...formState, sekbid: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold dark:text-white">
-                                 {divisions.map(div => <option key={div} value={div}>{div}</option>)}
-                              </select>
+                              <Suspense fallback={<div className="h-11 w-full bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse" />}>
+                                 <ProkerFormSelect divisionsPromise={divisionsPromise} formState={formState} setFormState={setFormState} />
+                              </Suspense>
                            </div>
                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Prioritas</label><select value={formState.priority} onChange={e => setFormState({...formState, priority: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold dark:text-white"><option>High</option><option>Medium</option><option>Low</option></select></div>
                         </div>
@@ -331,7 +271,7 @@ export default function ProkerClient({ initialData, divisions }: { initialData: 
                         <div><label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Anggaran (Rp)</label><input type="number" placeholder="0" value={formState.budget} onChange={e => setFormState({...formState, budget: Number(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold dark:text-white" /></div>
                      </div>
                      <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-500/20">
-                        <div className="flex justify-between items-center mb-2"><label className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase block">Progress</label><span className="text-sm font-black font-bold text-blue-600 dark:text-white">{formState.progress}%</span></div>
+                        <div className="flex justify-between items-center mb-2"><label className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase block">Progress</label><span className="text-sm font-bold font-bold text-blue-600 dark:text-white">{formState.progress}%</span></div>
                         <input type="range" min="0" max="100" value={formState.progress} onChange={(e) => setFormState({...formState, progress: parseInt(e.target.value)})} className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
                      </div>
                   </div>
@@ -364,7 +304,7 @@ function KanbanColumn({ title, icon, count, children, color, tourClass }: any) {
    return (
       <div className={`flex-1 rounded-[2rem] p-4 border ${colors[color]} flex flex-col h-fit min-h-full ${tourClass || ''}`}>
          <div className="flex items-center justify-between mb-4 px-2">
-            <div className={`flex items-center gap-2 font-black font-bold uppercase tracking-wider text-xs ${textColors[color]}`}>{icon} <span>{title}</span></div>
+            <div className={`flex items-center gap-2 font-bold font-bold uppercase tracking-wider text-xs ${textColors[color]}`}>{icon} <span>{title}</span></div>
             <span className="px-2.5 py-0.5 rounded-full bg-white dark:bg-white/10 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-sm">{count}</span>
          </div>
          <div className="space-y-3 flex-1">{children}</div>
@@ -378,9 +318,9 @@ function ProkerCard({ data, onDelete, onEdit, isFirstPriority }: any) {
       pink: "from-pink-400 to-pink-600", green: "from-green-400 to-green-600", orange: "from-orange-400 to-orange-600",
    };
    const getStatusBadge = (progress: number) => {
-      if (progress === 100) return <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[10px] font-black font-bold uppercase tracking-wide">SELESAI</span>;
-      if (progress > 0) return <span className="px-2.5 py-1 rounded-md bg-yellow-100 text-yellow-700 text-[10px] font-black font-bold uppercase tracking-wide">BERJALAN</span>;
-      return <span className="px-2.5 py-1 rounded-md bg-blue-100 text-blue-600 text-[10px] font-black font-bold uppercase tracking-wide">SEGERA</span>;
+      if (progress === 100) return <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold font-bold uppercase tracking-wide">SELESAI</span>;
+      if (progress > 0) return <span className="px-2.5 py-1 rounded-md bg-yellow-100 text-yellow-700 text-[10px] font-bold font-bold uppercase tracking-wide">BERJALAN</span>;
+      return <span className="px-2.5 py-1 rounded-md bg-blue-100 text-blue-600 text-[10px] font-bold font-bold uppercase tracking-wide">SEGERA</span>;
    }
    const statusColor = data.progress === 100 ? 'bg-slate-400' : data.progress > 0 ? 'bg-yellow-500' : 'bg-blue-500';
    const namaKegiatan = data.nama || data.title || "Tanpa Nama";
@@ -401,4 +341,96 @@ function ProkerCard({ data, onDelete, onEdit, isFirstPriority }: any) {
          <div className="flex items-center justify-between pt-3 border-t border-slate-50 dark:border-white/5"><div className="flex items-center gap-2"><div className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold text-white bg-gradient-to-br ${colorVariants[data.picColor || "blue"]}`}>{lokasiPic ? lokasiPic.charAt(0) : "?"}</div><div className="flex flex-col"><span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{deadline ? new Date(deadline).toLocaleDateString("id-ID") : "-"}</span>{anggaran > 0 ? (<span className="text-[9px] text-slate-400 font-mono">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(anggaran)}</span>) : <span className="text-[9px] text-slate-400">Rp 0</span>}</div></div>{prioritas === 'High' && (<div className={`flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded-full ${isFirstPriority ? 'tour-priority-badge' : ''}`}><Flag size={10} fill="currentColor" /> High</div>)}</div>
       </motion.div>
    )
+}
+
+function KanbanSkeleton() {
+  return (
+    <div className="flex flex-col md:flex-row gap-6 min-w-[1000px] md:min-w-0 min-h-full h-fit animate-pulse">
+      {[1, 2, 3].map((col) => (
+        <div key={col} className="flex-1 rounded-[2rem] p-4 bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 min-h-[500px] space-y-4">
+          <div className="flex justify-between items-center px-2 mb-4">
+            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-5 w-8 bg-slate-200 dark:bg-slate-800 rounded-full" />
+          </div>
+          {[1, 2].map((card) => (
+            <div key={card} className="bg-white dark:bg-[#1e293b] p-4 rounded-2xl border border-slate-100 dark:border-white/5 space-y-4">
+              <div className="flex justify-between"><div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded" /><div className="h-4 w-12 bg-slate-50 dark:bg-slate-800/50 rounded" /></div>
+              <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="space-y-2"><div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded" /><div className="h-2 w-2/3 bg-slate-100 dark:bg-slate-800 rounded" /></div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProkerFilters({ divisionsPromise, filterSekbid, setFilterSekbid }: any) {
+  const divisions = use(divisionsPromise) as string[];
+  return (
+    <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide no-scrollbar">
+        <button 
+          onClick={() => setFilterSekbid("Semua")} 
+          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === "Semua" ? "bg-slate-900 dark:bg-blue-600 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}
+        >
+            Semua
+        </button>
+        {divisions.map((sekbid) => (
+          <button 
+            key={sekbid} 
+            onClick={() => setFilterSekbid(sekbid)} 
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${filterSekbid === sekbid ? "bg-slate-900 dark:bg-blue-600 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}
+          >
+              {sekbid}
+          </button>
+        ))}
+    </div>
+  );
+}
+
+function ProkerFormSelect({ divisionsPromise, formState, setFormState }: any) {
+  const divisions = use(divisionsPromise) as string[];
+  return (
+    <select value={formState.sekbid} onChange={e => setFormState({...formState, sekbid: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold dark:text-white">
+        {divisions.map(div => <option key={div} value={div}>{div}</option>)}
+    </select>
+  )
+}
+
+function KanbanBoard({ dataPromise, searchQuery, filterSekbid, onEdit, onDelete }: any) {
+  const prokers = use(dataPromise) as any[];
+
+  const filteredProkers = prokers.filter((item: any) => {
+    const itemDivisi = item.divisi || item.sekbid || ""; 
+    const itemNama = item.nama || item.title || "";
+    const matchSekbid = filterSekbid === "Semua" ? true : itemDivisi === filterSekbid;
+    const matchSearch = itemNama.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchSekbid && matchSearch;
+  });
+
+  const listSegera = filteredProkers.filter((p: any) => p.progress === 0);
+  const listBerjalan = filteredProkers.filter((p: any) => p.progress > 0 && p.progress < 100);
+  const listSelesai = filteredProkers.filter((p: any) => p.progress === 100);
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 min-h-full h-fit">
+        <KanbanColumn tourClass="tour-col-segera" title="SEGERA" icon={<AlertCircle size={18} />} count={listSegera.length} color="blue">
+          {listSegera.map((item: any, idx: number) => (
+              <ProkerCard 
+                  key={item.id} data={item} 
+                  onDelete={onDelete} onEdit={onEdit} 
+                  isFirstPriority={idx === 0 && (item.prioritas || item.priority) === 'High'}
+              />
+          ))}
+        </KanbanColumn>
+        
+        <KanbanColumn tourClass="tour-col-berjalan" title="BERJALAN" icon={<PlayCircle size={18} />} count={listBerjalan.length} color="yellow">
+          {listBerjalan.map((item: any) => <ProkerCard key={item.id} data={item} onDelete={onDelete} onEdit={onEdit} />)}
+        </KanbanColumn>
+
+        <KanbanColumn title="SELESAI" icon={<CheckCircle size={18} />} count={listSelesai.length} color="green">
+          {listSelesai.map((item: any) => <ProkerCard key={item.id} data={item} onDelete={onDelete} onEdit={onEdit} />)}
+        </KanbanColumn>
+    </div>
+  );
 }

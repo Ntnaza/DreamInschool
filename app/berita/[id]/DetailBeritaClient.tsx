@@ -37,7 +37,7 @@ export default function DetailBeritaClient({ post }: { post: any }) {
              </span>
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight mb-6">
+          <h1 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white leading-tight mb-6">
             {post.judul}
           </h1>
 

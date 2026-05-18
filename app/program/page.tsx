@@ -2,22 +2,21 @@ import { prisma } from "@/lib/prisma";
 import { getSelectedPeriodeId } from "@/lib/actions";
 import ProgramClient from "./ProgramClient";
 
-// Pastikan data selalu update
 export const dynamic = "force-dynamic";
 
-export default async function ProgramPage() {
-  
-  // 1. Ambil ID periode terpilih
+async function getProgramData() {
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulasi delay
   const selectedPeriodeId = await getSelectedPeriodeId();
-
-  // 2. Ambil Data Proker dari Database berdasarkan periode
-  const programs = await prisma.programKerja.findMany({
+  return await prisma.programKerja.findMany({
     where: { periodeId: selectedPeriodeId || undefined },
     orderBy: [
-      { startDate: 'asc' }, // Prioritas 1: Tanggal Mulai
-      { createdAt: 'asc' }  // Fallback: Tanggal Dibuat
+      { startDate: 'asc' },
+      { createdAt: 'asc' }
     ]
   });
+}
 
-  return <ProgramClient programs={programs} />;
+export default function ProgramPage() {
+  const programsPromise = getProgramData();
+  return <ProgramClient programsPromise={programsPromise} />;
 }

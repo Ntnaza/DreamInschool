@@ -2,17 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { getSelectedPeriodeId } from "@/lib/actions";
 import PengurusClient from "./PengurusClient";
 
-// Biar data selalu fresh saat ada update pengurus baru
 export const dynamic = "force-dynamic";
 
-export default async function PengurusPage({ searchParams }: { searchParams: { periode?: string } }) {
-  // 1. Ambil data semua periode untuk pilihan filter
+async function getPengurusData(searchParams: { periode?: string }) {
+  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulasi delay
+
   const allPeriods = await prisma.periode.findMany({
     orderBy: { tahun: 'desc' }
   });
 
-  // 2. Tentukan periode mana yang mau dilihat
-  // Prioritas: 1. SearchParams (URL), 2. SelectedPeriodeId (Cookie/Aktif)
   const selectedTahun = searchParams.periode;
   const cookiePeriodeId = await getSelectedPeriodeId();
   
@@ -23,12 +21,10 @@ export default async function PengurusPage({ searchParams }: { searchParams: { p
     if (found) activePeriod = found;
   }
 
-  // Jika masih tidak ada, ambil yang aktif
   if (!activePeriod) {
     activePeriod = allPeriods.find(p => p.isAktif) || allPeriods[0];
   }
 
-  // 3. Ambil Pengurus berdasarkan periode terpilih
   const rawMembers = await prisma.pengurus.findMany({
     where: { 
       periodeId: activePeriod?.id || undefined 
@@ -39,7 +35,6 @@ export default async function PengurusPage({ searchParams }: { searchParams: { p
     }
   });
 
-  // (rest of the logic remains same for sorting and coloring)
   const sortedMembers = rawMembers.sort((a, b) => {
     const jabatanA = a.jabatan.toLowerCase();
     const jabatanB = b.jabatan.toLowerCase();
@@ -74,12 +69,23 @@ export default async function PengurusPage({ searchParams }: { searchParams: { p
     programKerja: m.programKerja || [],
   }));
 
+  return {
+    members: formattedMembers,
+    angkatanTitle: activePeriod?.namaKabinet || "Generasi OSIS-MPK",
+    tahunAjaran: activePeriod?.tahun || "",
+    allPeriods: allPeriods.map(p => ({ tahun: p.tahun, kabinet: p.namaKabinet }))
+  };
+}
+
+export default async function PengurusPage({ searchParams }: { searchParams: { periode?: string } }) {
+  const { members, angkatanTitle, tahunAjaran, allPeriods } = await getPengurusData(searchParams);
+
   return (
     <PengurusClient 
-      members={formattedMembers} 
-      angkatanTitle={activePeriod?.namaKabinet || "Generasi OSIS-MPK"} 
-      tahunAjaran={activePeriod?.tahun || ""}
-      allPeriods={allPeriods.map(p => ({ tahun: p.tahun, kabinet: p.namaKabinet }))}
+       members={members} 
+       angkatanTitle={angkatanTitle} 
+       tahunAjaran={tahunAjaran} 
+       allPeriods={allPeriods} 
     />
   );
 }

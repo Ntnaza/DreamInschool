@@ -15,7 +15,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 export default function BeritaClient({ initialPosts, dynamicCategories }: { initialPosts: any[], dynamicCategories: string[] }) {
   const [posts, setPosts] = useState(initialPosts);
-  const [isDataLoading, setIsDataLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -36,13 +35,11 @@ export default function BeritaClient({ initialPosts, dynamicCategories }: { init
 
   const categories = ["Semua", ...dynamicCategories];
 
-  // Efek 1: Inisialisasi Data & Skeleton
+  // Efek 1: Inisialisasi Data
   useEffect(() => {
     setIsClient(true);
     if (initialPosts) {
       setPosts(initialPosts);
-      const timer = setTimeout(() => setIsDataLoading(false), 500);
-      return () => clearTimeout(timer);
     }
   }, [initialPosts]);
 
@@ -183,20 +180,7 @@ export default function BeritaClient({ initialPosts, dynamicCategories }: { init
             </div>
 
             <div className="flex-1 overflow-y-auto pb-32 custom-scrollbar pr-2 pt-4">
-              {isDataLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 animate-pulse">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                    <div key={i} className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden h-[380px] flex flex-col">
-                      <div className="aspect-[4/3] bg-slate-200 dark:bg-slate-800 shrink-0" />
-                      <div className="p-4 flex-1 space-y-4">
-                        <div className="space-y-2"><div className="h-4 w-full bg-slate-200 dark:bg-slate-800 rounded" /><div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded" /></div>
-                        <div className="flex gap-3"><div className="h-3 w-16 bg-slate-100 dark:bg-slate-800/50 rounded" /><div className="h-3 w-16 bg-slate-100 dark:bg-slate-800/50 rounded" /></div>
-                        <div className="space-y-2 pt-2"><div className="h-2.5 w-full bg-slate-50 dark:bg-slate-800/30 rounded" /><div className="h-2.5 w-4/5 bg-slate-50 dark:bg-slate-800/30 rounded" /></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : filteredPosts.length > 0 ? (
+              {filteredPosts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2">
                   {filteredPosts.map((post, idx) => (
                     <div key={post.id} className={`group relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-xl transition-all duration-300 h-[380px] flex flex-col overflow-hidden ${idx === 0 ? 'tour-berita-card' : ''}`}>

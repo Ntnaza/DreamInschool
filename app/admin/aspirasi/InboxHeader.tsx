@@ -28,7 +28,7 @@ export default function InboxHeader() {
       <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
          <div>
             <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-3xl font-black font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                <h1 className="text-3xl font-bold font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
                    Inbox Aspirasi <span className="text-2xl p-2 bg-pink-100 dark:bg-pink-900/30 rounded-full">📩</span>
                 </h1>
                 

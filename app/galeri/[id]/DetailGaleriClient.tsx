@@ -80,7 +80,7 @@ export default function DetailGaleriClient({ item }: { item: any }) {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center justify-start gap-3"
           >
-            <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-black uppercase tracking-[0.2em] border border-blue-100 dark:border-blue-500/20">
+            <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-bold uppercase tracking-[0.2em] border border-blue-100 dark:border-blue-500/20">
               {item.category}
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800" />
@@ -94,7 +94,7 @@ export default function DetailGaleriClient({ item }: { item: any }) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white leading-tight tracking-tight"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight"
           >
             {item.title}
           </motion.h1>
@@ -144,7 +144,7 @@ export default function DetailGaleriClient({ item }: { item: any }) {
 
         {/* FOOTER INFO */}
         <div className="mt-32 pt-12 border-t border-slate-100 dark:border-white/5 text-center">
-          <p className="text-slate-400 dark:text-slate-600 text-[10px] font-black uppercase tracking-[0.4em]">Terima kasih telah berkunjung</p>
+          <p className="text-slate-400 dark:text-slate-600 text-[10px] font-bold uppercase tracking-[0.4em]">Terima kasih telah berkunjung</p>
         </div>
       </div>
 
@@ -170,7 +170,7 @@ export default function DetailGaleriClient({ item }: { item: any }) {
                    <X size={24} />
                  </button>
 
-                 <div className="hidden md:block text-white/50 text-[10px] font-black uppercase tracking-[0.4em]">
+                 <div className="hidden md:block text-white/50 text-[10px] font-bold uppercase tracking-[0.4em]">
                     {selectedIndex + 1} / {item.album.length}
                  </div>
 

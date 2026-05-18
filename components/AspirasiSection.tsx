@@ -56,7 +56,7 @@ export default function AspirasiSection() {
               Suara Anda Berharga 📢
             </span>
             
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white leading-tight">
+            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white leading-tight">
               Punya Ide atau <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
                 Masukan Membangun?

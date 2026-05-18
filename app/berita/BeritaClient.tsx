@@ -1,20 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-// Terima data dari Server
-export default function BeritaClient({ posts }: { posts: any[] }) {
+export default function BeritaClient({ dataPromise }: { dataPromise: Promise<any[]> }) {
+  return (
+    <main className="min-h-screen bg-slate-50 dark:bg-[#020617] transition-colors duration-500 pt-24 pb-24 font-sans">
+      
+      {/* Background Decor */}
+      <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.10] pointer-events-none z-0" />
+      
+      <div className="container mx-auto px-6 md:px-12 relative z-10">
+        
+        {/* HEADER */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <span className="px-4 py-2 rounded-full bg-blue-100 dark:bg-white/10 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-widest border border-blue-200 dark:border-white/10">
+            Mading Digital 📰
+          </span>
+          <h1 className="text-4xl md:text-5xl font-bold mt-4 mb-4 pb-2 leading-tight
+            text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700
+            dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
+            Berita & Artikel
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
+            Informasi terkini, prestasi, dan cerita inspiratif dari warga sekolah.
+          </p>
+        </div>
+
+        <Suspense fallback={<BeritaSkeleton />}>
+          <BeritaContent dataPromise={dataPromise} />
+        </Suspense>
+
+      </div>
+    </main>
+  );
+}
+
+function BeritaContent({ dataPromise }: { dataPromise: Promise<any[]> }) {
+  const posts = use(dataPromise);
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Ambil kategori unik dari data yang ada
-  const categories = ["Semua", ...Array.from(new Set(posts.map(p => p.kategori)))];
+  const categories = ["Semua", ...Array.from(new Set(posts.map((p: any) => p.kategori)))];
 
   // Logic Filter & Search
-  const filteredPosts = posts.filter((post) => {
+  const filteredPosts = posts.filter((post: any) => {
     const matchesCategory = activeCategory === "Semua" || post.kategori === activeCategory;
     const matchesSearch = post.judul.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -27,28 +60,7 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
   const regularPosts = showHeadline ? filteredPosts.slice(1) : filteredPosts; // Sisanya
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-[#020617] transition-colors duration-500 pt-24 pb-24">
-      
-      {/* Background Decor */}
-      <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.10] pointer-events-none z-0" />
-      
-      <div className="container mx-auto px-6 md:px-12 relative z-10">
-        
-        {/* HEADER */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="px-4 py-2 rounded-full bg-blue-100 dark:bg-white/10 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-widest border border-blue-200 dark:border-white/10">
-            Mading Digital 📰
-          </span>
-          <h1 className="text-4xl md:text-5xl font-black mt-4 mb-6 pb-2 
-            text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700
-            dark:from-slate-100 dark:via-slate-300 dark:to-slate-500">
-            Berita & Artikel
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-lg font-bold">
-            Informasi terkini, prestasi, dan cerita inspiratif dari warga sekolah.
-          </p>
-        </div>
-
+    <>
         {/* === SEARCH & FILTER BAR === */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 sticky top-20 z-30 bg-slate-50/80 dark:bg-[#020617]/80 backdrop-blur-md p-4 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
           
@@ -90,7 +102,7 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
             className="mb-16"
           >
             {/* Hapus 'h-...' dan biarkan grid mengatur tinggi */}
-            <div className="group relative rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-2 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 shadow-2xl items-center">
+            <Link href={`/berita/${featuredPost.id}`} className="group relative rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-2 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 shadow-2xl items-center block cursor-pointer">
               
               {/* Image Column */}
               {/* Hapus 'h-64' dan 'overflow-hidden' yang membatasi. Biarkan 'relative' aja */}
@@ -117,7 +129,7 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
                   <span>•</span>
                   <span>{new Date(featuredPost.createdAt).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
-                <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-4 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {featuredPost.judul}
                 </h2>
                 <div 
@@ -125,17 +137,17 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
                    dangerouslySetInnerHTML={{ __html: featuredPost.konten.substring(0, 200) + "..." }} 
                 />
                 
-                <Link href={`/berita/${featuredPost.id}`} className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white group-hover:gap-4 transition-all">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white group-hover:gap-4 transition-all">
                   Baca Selengkapnya <span className="text-blue-500">→</span>
-                </Link>
+                </div>
               </div>
-            </div>
+            </Link>
           </motion.div>
         )}
 
         {/* === REGULAR POSTS GRID === */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
-          {regularPosts.map((post, idx) => (
+          {regularPosts.map((post: any, idx: number) => (
             <motion.div
               key={post.id}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -200,8 +212,45 @@ export default function BeritaClient({ posts }: { posts: any[] }) {
             </button>
           </div>
         )}
+    </>
+  );
+}
 
+function BeritaSkeleton() {
+  return (
+    <div className="animate-pulse space-y-12">
+      {/* FILTER BAR SKELETON */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12 bg-slate-100 dark:bg-white/5 p-4 rounded-2xl border border-slate-200 dark:border-white/10">
+         <div className="flex gap-2">
+            {[1,2,3,4].map(i => <div key={i} className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded-full" />)}
+         </div>
+         <div className="h-10 w-full md:w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full" />
       </div>
-    </main>
+
+      {/* HEADLINE SKELETON */}
+      <div className="rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-2 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 shadow-2xl items-center">
+         <div className="w-full aspect-[4/3] md:aspect-auto md:h-[400px] bg-slate-200 dark:bg-slate-800" />
+         <div className="p-8 md:p-12 space-y-4">
+            <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-10 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-24 w-full bg-slate-100 dark:bg-slate-800/50 rounded" />
+            <div className="h-6 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+         </div>
+      </div>
+
+      {/* REGULAR POSTS SKELETON */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
+         {[1,2,3,4,5,6].map(i => (
+           <div key={i} className="bg-white dark:bg-[#0f172a] rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-lg">
+              <div className="w-full aspect-video bg-slate-200 dark:bg-slate-800" />
+              <div className="p-6 space-y-3">
+                 <div className="flex justify-between"><div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded" /><div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" /></div>
+                 <div className="h-6 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+                 <div className="h-16 w-full bg-slate-100 dark:bg-slate-800/50 rounded" />
+              </div>
+           </div>
+         ))}
+      </div>
+    </div>
   );
 }

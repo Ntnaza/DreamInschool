@@ -40,8 +40,7 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
   
   const [selectedLedgerId, setSelectedLedgerId] = useState<number>(ledgers[0]?.id || 1);
   const [expandedProkerId, setExpandedProkerId] = useState<number | null>(null);
-  const [isClient, setIsClient] = useState(false); 
-  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   
   // STATE MODAL
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,24 +64,15 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
   const lpjRef = useRef<HTMLDivElement>(null);
   const tourRef = useRef<any>(null);
 
-  const handleStartTour = () => {
-    if (tourRef.current) tourRef.current.startTour();
-  };
-
   useEffect(() => { 
     setIsClient(true); 
-    // Beri delay halus untuk transisi skeleton awal
-    const timer = setTimeout(() => setIsDataLoading(false), 500);
-    return () => clearTimeout(timer);
   }, []);
 
   const handleTabChange = (tab: 'general' | 'events') => {
-    setIsDataLoading(true); // Tampilkan skeleton saat pindah tab
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams);
     params.set("tab", tab);
     router.replace(`${pathname}?${params.toString()}`);
-    setTimeout(() => setIsDataLoading(false), 400);
   };
 
   const currentLedger = ledgers.find(l => l.id === selectedLedgerId) || ledgers[0];
@@ -338,32 +328,7 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
           )}
       </AnimatePresence>
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-4 shrink-0 px-4 md:px-0 no-print">
-         <div className="tour-finance-header">
-            <div className="flex items-center gap-4">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">Financial System <span className="text-2xl p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">💰</span></h1>
-                
-                {isClient && (
-                  <button 
-                    onClick={handleStartTour}
-                    className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 text-sm font-medium"
-                    title="Bantuan Panduan"
-                  >
-                    <HelpCircle className="w-5 h-5" />
-                    <span className="hidden sm:inline">Panduan</span>
-                  </button>
-                )}
-
-                {isClient && <TourGuide ref={tourRef} steps={financeTourSteps} tourKey="finance" />}
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Pembukuan Multi-Ledger & Audit Realisasi.</p>
-         </div>
-         <div className="flex bg-slate-100 dark:bg-[#1e293b] p-1 rounded-xl border border-slate-200 dark:border-white/10 tour-tab-switcher">
-            <button onClick={() => handleTabChange('general')} className={`px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'general' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm' : 'text-slate-500'}`}>Dompet Kas</button>
-            <button onClick={() => handleTabChange('events')} className={`px-6 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === 'events' ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-white shadow-sm' : 'text-slate-500'}`}>Anggaran Kegiatan</button>
-         </div>
-      </div>
+      {/* HEADER IS NOW HANDLED BY KasHeader.tsx IN page.tsx */}
 
       {activeTab === 'general' && (
         <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden no-print">
@@ -376,32 +341,20 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-2 custom-scrollbar tour-ledger-sidebar">
-                    {isDataLoading ? (
-                        [1, 2, 3].map(i => (
-                            <div key={i} className="p-4 rounded-xl border border-transparent bg-slate-50/50 dark:bg-white/5 animate-pulse flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-800" />
-                                <div className="flex-1 space-y-2">
-                                    <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
-                                    <div className="h-2 w-24 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                    {ledgers.map(l => (
+                        <div key={l.id} onClick={() => setSelectedLedgerId(l.id)} className={`p-4 rounded-xl cursor-pointer transition-all border relative ${selectedLedgerId === l.id ? 'bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'}`}>
+                            {selectedLedgerId === l.id && <motion.div layoutId="ledgerActive" className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full" />}
+                            <div className="flex items-center gap-3">
+                                <div className={`p-2 rounded-lg ${selectedLedgerId === l.id ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
+                                    {l.icon === 'Heart' ? <Heart size={16}/> : l.icon === 'Users' ? <Users size={16}/> : l.icon === 'BookOpen' ? <BookOpen size={16}/> : <Wallet size={16}/>}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h4 className={`text-xs font-bold truncate ${selectedLedgerId === l.id ? 'text-blue-900 dark:text-blue-100' : 'text-slate-700 dark:text-slate-300'}`}>{l.nama}</h4>
+                                    <p className="text-[10px] font-medium text-slate-400 truncate">{l.deskripsi}</p>
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        ledgers.map(l => (
-                            <div key={l.id} onClick={() => setSelectedLedgerId(l.id)} className={`p-4 rounded-xl cursor-pointer transition-all border relative ${selectedLedgerId === l.id ? 'bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30' : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-white/5'}`}>
-                                {selectedLedgerId === l.id && <motion.div layoutId="ledgerActive" className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-full" />}
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${selectedLedgerId === l.id ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
-                                        {l.icon === 'Heart' ? <Heart size={16}/> : l.icon === 'Users' ? <Users size={16}/> : l.icon === 'BookOpen' ? <BookOpen size={16}/> : <Wallet size={16}/>}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <h4 className={`text-xs font-bold truncate ${selectedLedgerId === l.id ? 'text-blue-900 dark:text-blue-100' : 'text-slate-700 dark:text-slate-300'}`}>{l.nama}</h4>
-                                        <p className="text-[10px] font-medium text-slate-400 truncate">{l.deskripsi}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
+                        </div>
+                    ))}
                 </div>
             </div>
 
@@ -435,15 +388,7 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
                                 <tr><th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-6">Tanggal</th><th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan</th><th className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right pr-6">Nominal</th></tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                                {isDataLoading ? (
-                                    [1, 2, 3, 4, 5].map(i => (
-                                        <tr key={i} className="animate-pulse">
-                                            <td className="p-4 pl-6"><div className="h-3 w-12 bg-slate-100 dark:bg-slate-800 rounded" /></td>
-                                            <td className="p-4"><div className="space-y-2"><div className="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded" /><div className="h-2 w-20 bg-slate-100 dark:bg-slate-800/50 rounded" /></div></td>
-                                            <td className="p-4 pr-6"><div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded ml-auto" /></td>
-                                        </tr>
-                                    ))
-                                ) : ledgerTransactions.length === 0 ? ( <tr><td colSpan={3} className="p-12 text-center text-slate-400 text-xs font-medium">Belum ada riwayat transaksi.</td></tr> ) : (
+                                {ledgerTransactions.length === 0 ? ( <tr><td colSpan={3} className="p-12 text-center text-slate-400 text-xs font-medium">Belum ada riwayat transaksi.</td></tr> ) : (
                                     ledgerTransactions.map((t:any) => (
                                         <tr key={t.id} className="hover:bg-slate-50/80 dark:hover:bg-white/5 transition-colors">
                                             <td className="p-4 text-[11px] font-medium text-slate-500 pl-6">{new Date(t.tanggal).toLocaleDateString('id-ID', { day:'2-digit', month:'short' })}</td>
@@ -485,11 +430,11 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
                                         <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-md border border-slate-100 dark:border-white/10 bg-slate-100 flex items-center justify-center">{ev.image ? <img src={ev.image} alt={ev.name} className="w-full h-full object-cover" /> : <ImageOff size={20} className="text-slate-400" />}</div>
                                         <div className="flex-1 min-w-0">
                                             <h3 className="text-base font-bold text-slate-900 dark:text-white truncate">{ev.name}</h3>
-                                            <div className="flex items-center gap-3 mt-0.5"><span className="text-[10px] font-bold text-purple-600 uppercase tracking-tighter">Budget: {formatIDR(ev.budget)}</span><div className="w-1 h-1 rounded-full bg-slate-300" /><span className={`text-[10px] font-bold uppercase tracking-tighter ${sisa <= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>Sisa: {formatIDR(sisa)}</span>{sisa <= 0 && ev.status !== 'DONE' && <motion.span animate={{ opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">OVER BUDGET!</motion.span>}</div>
+                                            <div className="flex items-center gap-3 mt-0.5"><span className="text-[10px] font-bold text-purple-600 uppercase tracking-tighter">Budget: {formatIDR(ev.budget)}</span><div className="w-1 h-1 rounded-full bg-slate-300" /><span className={`text-[10px] font-bold uppercase tracking-tighter ${sisa <= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>Sisa: {formatIDR(sisa)}</span>{sisa <= 0 && ev.status !== 'DONE' && <motion.span animate={{ opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="text-[9px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">OVER BUDGET!</motion.span>}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        {isExpanded && ev.status !== 'DONE' && <button onClick={(e) => { e.stopPropagation(); setModalType('new_event'); setFormData({ ...formData, prokerId: ev.id, isSubsidi: true }); setIsModalOpen(true); }} className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-[9px] font-black shadow-sm flex items-center gap-1.5"><TrendingDown size={12}/> TAMBAH DANA</button>}
+                                        {isExpanded && ev.status !== 'DONE' && <button onClick={(e) => { e.stopPropagation(); setModalType('new_event'); setFormData({ ...formData, prokerId: ev.id, isSubsidi: true }); setIsModalOpen(true); }} className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-[9px] font-bold shadow-sm flex items-center gap-1.5"><TrendingDown size={12}/> TAMBAH DANA</button>}
                                         <div className="hidden md:block w-32"><div className="w-full h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(percent, 100)}%` }} className={`h-full ${percent > 100 ? 'bg-rose-500' : 'bg-purple-500'}`} /></div></div>
                                         <ChevronDown size={20} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                     </div>
@@ -537,9 +482,9 @@ export default function KeuanganClient({ ledgers, events, prokers }: { ledgers: 
                             </div>
                             <div className="flex-1 overflow-auto bg-slate-200 p-8 custom-scrollbar flex justify-center">
                                 <div ref={lpjRef} className="bg-white p-12 w-full max-w-[800px] shadow-sm relative overflow-hidden text-black font-serif" style={{ minHeight: '1123px' }}>
-                                    <div className="border-b-[3px] border-black pb-4 mb-8 flex items-center justify-between"><img src="/logos/SMK.png" alt="SMK" className="w-24 h-24 object-contain" /><div className="text-center flex-1 px-4"><h1 className="text-lg font-bold uppercase tracking-wider leading-tight text-black">PEMERINTAH DAERAH PROVINSI</h1><h2 className="text-md font-bold uppercase tracking-widest leading-tight text-black">DINAS PENDIDIKAN</h2><h2 className="text-2xl font-black my-1 tracking-wider text-black">SMK NEGERI INDONESIA</h2><p className="text-xs font-medium text-black">Jl. Pendidikan No. 1, Kota Impian, Kodepos 12345</p></div><img src="/logos/OSKA.png" alt="OSIS" className="w-24 h-24 object-contain" /></div>
-                                    <div className="text-center mb-10"><h3 className="text-lg font-black uppercase tracking-widest underline underline-offset-4 mb-2 text-black">LAPORAN PERTANGGUNGJAWABAN (LPJ) KEUANGAN</h3><p className="text-sm font-bold uppercase text-black">KEGIATAN: {activeEvent.name}</p></div>
-                                    <table className="w-full border-collapse border border-black mb-10 text-sm text-black"><thead className="bg-gray-100"><tr><th className="border border-black p-2 font-bold text-center w-10 text-black">NO</th><th className="border border-black p-2 font-bold text-center w-24 text-black">TANGGAL</th><th className="border border-black p-2 font-bold text-left text-black">URAIAN PENGELUARAN</th><th className="border border-black p-2 font-bold text-center w-16 text-black">VOL</th><th className="border border-black p-2 font-bold text-right w-28 text-black">HARGA SATUAN</th><th className="border border-black p-2 font-bold text-right w-32 text-black">JUMLAH (Rp)</th></tr></thead><tbody>{activeEvent.transactions.map((t:any, i:number) => ( <tr key={t.id}><td className="border border-black p-2 text-center text-black">{i+1}</td><td className="border border-black p-2 text-center text-black">{t.date}</td><td className="border border-black p-2 text-black">{t.title}</td><td className="border border-black p-2 text-center text-black">{t.kuantitas} {t.satuan}</td><td className="border border-black p-2 text-right text-black">{formatIDR(t.amount/t.kuantitas)}</td><td className="border border-black p-2 text-right font-bold text-black">{formatIDR(t.amount)}</td></tr> ))}<tr className="bg-gray-50"><td colSpan={5} className="border border-black p-2 font-bold text-right uppercase text-black">JUMLAH TOTAL PENGELUARAN</td><td className="border border-black p-2 font-bold text-right text-red-700">{formatIDR(activeEvent.used)}</td></tr><tr><td colSpan={5} className="border border-black p-2 font-bold text-right uppercase text-black">ALOKASI ANGGARAN AWAL</td><td className="border border-black p-2 font-bold text-right text-black">{formatIDR(activeEvent.budget)}</td></tr><tr className="bg-gray-200"><td colSpan={5} className="border border-black p-2 font-black text-right uppercase text-black">SISA SALDO KEPANITIAAN</td><td className="border border-black p-2 font-black text-right text-green-700">{formatIDR(activeEvent.budget - activeEvent.used)}</td></tr></tbody></table>
+                                    <div className="border-b-[3px] border-black pb-4 mb-8 flex items-center justify-between"><img src="/logos/SMK.png" alt="SMK" className="w-24 h-24 object-contain" /><div className="text-center flex-1 px-4"><h1 className="text-lg font-bold uppercase tracking-wider leading-tight text-black">PEMERINTAH DAERAH PROVINSI</h1><h2 className="text-md font-bold uppercase tracking-widest leading-tight text-black">DINAS PENDIDIKAN</h2><h2 className="text-2xl font-bold my-1 tracking-wider text-black">SMK NEGERI INDONESIA</h2><p className="text-xs font-medium text-black">Jl. Pendidikan No. 1, Kota Impian, Kodepos 12345</p></div><img src="/logos/OSKA.png" alt="OSIS" className="w-24 h-24 object-contain" /></div>
+                                    <div className="text-center mb-10"><h3 className="text-lg font-bold uppercase tracking-widest underline underline-offset-4 mb-2 text-black">LAPORAN PERTANGGUNGJAWABAN (LPJ) KEUANGAN</h3><p className="text-sm font-bold uppercase text-black">KEGIATAN: {activeEvent.name}</p></div>
+                                    <table className="w-full border-collapse border border-black mb-10 text-sm text-black"><thead className="bg-gray-100"><tr><th className="border border-black p-2 font-bold text-center w-10 text-black">NO</th><th className="border border-black p-2 font-bold text-center w-24 text-black">TANGGAL</th><th className="border border-black p-2 font-bold text-left text-black">URAIAN PENGELUARAN</th><th className="border border-black p-2 font-bold text-center w-16 text-black">VOL</th><th className="border border-black p-2 font-bold text-right w-28 text-black">HARGA SATUAN</th><th className="border border-black p-2 font-bold text-right w-32 text-black">JUMLAH (Rp)</th></tr></thead><tbody>{activeEvent.transactions.map((t:any, i:number) => ( <tr key={t.id}><td className="border border-black p-2 text-center text-black">{i+1}</td><td className="border border-black p-2 text-center text-black">{t.date}</td><td className="border border-black p-2 text-black">{t.title}</td><td className="border border-black p-2 text-center text-black">{t.kuantitas} {t.satuan}</td><td className="border border-black p-2 text-right text-black">{formatIDR(t.amount/t.kuantitas)}</td><td className="border border-black p-2 text-right font-bold text-black">{formatIDR(t.amount)}</td></tr> ))}<tr className="bg-gray-50"><td colSpan={5} className="border border-black p-2 font-bold text-right uppercase text-black">JUMLAH TOTAL PENGELUARAN</td><td className="border border-black p-2 font-bold text-right text-red-700">{formatIDR(activeEvent.used)}</td></tr><tr><td colSpan={5} className="border border-black p-2 font-bold text-right uppercase text-black">ALOKASI ANGGARAN AWAL</td><td className="border border-black p-2 font-bold text-right text-black">{formatIDR(activeEvent.budget)}</td></tr><tr className="bg-gray-200"><td colSpan={5} className="border border-black p-2 font-bold text-right uppercase text-black">SISA SALDO KEPANITIAAN</td><td className="border border-black p-2 font-bold text-right text-green-700">{formatIDR(activeEvent.budget - activeEvent.used)}</td></tr></tbody></table>
                                     <div className="mt-12"><h3 className="text-md font-bold uppercase border-b-2 border-black pb-2 mb-6 tracking-widest text-black">LAMPIRAN: BUKTI FISIK & NOTA BELANJA</h3><div className="grid grid-cols-2 gap-8">{activeEvent.transactions.map((t:any, i:number) => ( <div key={t.id} className="border border-black p-4" style={{ pageBreakInside: 'avoid' }}><p className="text-xs font-bold uppercase mb-3 border-b border-black pb-2 text-black">Bukti {i+1}: {t.title}</p><div className="grid grid-cols-2 gap-4"> <div className="space-y-1"><p className="text-[10px] font-bold text-center uppercase text-black">Fisik Barang</p>{t.fotoBarang ? <img src={t.fotoBarang} className="w-full h-32 object-contain border border-gray-300" /> : <div className="w-full h-32 flex items-center justify-center border border-dashed border-gray-400 text-[9px] text-gray-500">NO FOTO</div>}</div> <div className="space-y-1"><p className="text-[10px] font-bold text-center uppercase text-black">Nota / Struk</p>{t.fotoNota ? <img src={t.fotoNota} className="w-full h-32 object-contain border border-gray-300" /> : <div className="w-full h-32 flex items-center justify-center border border-dashed border-gray-400 text-[9px] text-gray-500">NO NOTA</div>}</div> </div><p className="text-right text-xs font-bold mt-4 pt-2 border-t border-black text-black">Total: {formatIDR(t.amount)}</p></div> ))}</div></div>
                                     <div className="mt-20 grid grid-cols-2 text-center text-black" style={{ pageBreakInside: 'avoid' }}><div className="space-y-24"><p className="text-sm font-bold uppercase">Mengetahui,<br/>Bendahara OSIS/MPK</p><p className="text-sm font-bold underline">( NAMA BENDAHARA )</p></div><div className="space-y-24"><p className="text-sm font-bold uppercase">Disetujui Oleh,<br/>Ketua Pelaksana</p><p className="text-sm font-bold underline">( NAMA KETUA )</p></div></div>
                                 </div>

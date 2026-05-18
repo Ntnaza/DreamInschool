@@ -47,7 +47,7 @@ export default function Footer() {
           
           {/* KOLOM 1: IDENTITAS */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span className="text-blue-600 uppercase">{data.namaOrganisasi.split(' ')[0]}</span> {data.namaOrganisasi.split(' ').slice(1).join(' ')}
             </h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-bold">

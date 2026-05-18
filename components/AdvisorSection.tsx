@@ -34,7 +34,7 @@ export default async function AdvisorSection() {
         
         {/* HEADER */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
             Pembina <span className="text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-slate-200 dark:to-slate-400">Organisasi</span>
           </h2>
           <div className="w-20 h-1 bg-blue-600 dark:bg-slate-500 mx-auto rounded-full" />

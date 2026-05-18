@@ -41,7 +41,7 @@ export default async function ProgramSection({ periodeId }: { periodeId?: number
         
         {/* HEADER */}
         <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 dark:text-white">
+          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white">
             Program <span className="text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-slate-200 dark:to-slate-500">Unggulan</span>
           </h2>
           <p className="text-slate-600 dark:text-slate-400 font-bold">
@@ -108,7 +108,7 @@ export default async function ProgramSection({ periodeId }: { periodeId?: number
                     </span>
                   )}
 
-                  <h3 className={`${isMain ? 'text-2xl md:text-4xl' : 'text-lg md:text-xl'} font-black text-white mb-2 leading-tight drop-shadow-md`}>
+                  <h3 className={`${isMain ? 'text-2xl md:text-4xl' : 'text-lg md:text-xl'} font-bold text-white mb-2 leading-tight drop-shadow-md`}>
                     {program.nama}
                   </h3>
                   

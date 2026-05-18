@@ -77,7 +77,7 @@ export default function ToastContainer() {
             
             {/* TEXT CONTENT */}
             <div className="flex-1 min-w-0 py-0.5">
-              <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-0.5">
+              <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-0.5">
                 {toast.title || (toast.type === 'success' ? 'Berhasil' : toast.type === 'error' ? 'Gagal' : 'Informasi')}
               </h4>
               <p className="text-[13px] font-bold text-slate-700 dark:text-slate-200 leading-tight truncate">

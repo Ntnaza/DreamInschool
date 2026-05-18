@@ -109,7 +109,7 @@ export default function ProfileClient({ data }: { data: any }) {
                 </div>
                 <div className="flex items-center justify-between text-left">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
-                  <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black rounded-full">{data.status}</span>
+                  <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold rounded-full">{data.status}</span>
                 </div>
               </div>
 

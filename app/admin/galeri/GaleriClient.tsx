@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, use, Suspense } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Image as ImageIcon, Plus, Trash2, Search, 
@@ -20,10 +20,8 @@ const galeriTourSteps = [
     { target: '.tour-gallery-card', content: 'Arahkan kursor pada album untuk memunculkan tombol Edit atau Hapus.' },
 ];
 
-export default function GaleriClient({ initialData, categories, fullCategories }: { initialData: any[], categories: string[], fullCategories: any[] }) {
+export default function GaleriClient({ dataPromise, catsPromise, fullCatsPromise }: { dataPromise: Promise<any[]>, catsPromise: Promise<string[]>, fullCatsPromise: Promise<any[]> }) {
   const router = useRouter();
-  const [items, setItems] = useState(initialData);
-  const [isDataLoading, setIsDataLoading] = useState(true);
   const [filterKategori, setFilterKategori] = useState("Semua");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false); 
@@ -39,15 +37,12 @@ export default function GaleriClient({ initialData, categories, fullCategories }
 
   useEffect(() => { 
     setIsClient(true); 
-    setItems(initialData);
-    const timer = setTimeout(() => setIsDataLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, [initialData]);
+  }, []);
 
   // Form State
   const [form, setForm] = useState<{ id?: number, judul: string, kategori: string, tanggal: string, images: string[], deskripsi: string }>({
     judul: "",
-    kategori: categories[0] || "Umum",
+    kategori: "Umum",
     tanggal: new Date().toISOString().split('T')[0],
     images: [], 
     deskripsi: ""
@@ -130,7 +125,7 @@ export default function GaleriClient({ initialData, categories, fullCategories }
   };
 
   const resetForm = () => {
-    setForm({ judul: "", kategori: categories[0] || "Umum", tanggal: new Date().toISOString().split('T')[0], images: [], deskripsi: "" });
+    setForm({ judul: "", kategori: "Umum", tanggal: new Date().toISOString().split('T')[0], images: [], deskripsi: "" });
     setIsEditing(false);
     setIsModalOpen(false);
   };
@@ -177,8 +172,6 @@ export default function GaleriClient({ initialData, categories, fullCategories }
     });
   }
 
-  const filteredItems = items.filter(item => filterKategori === "Semua" ? true : item.kategori === filterKategori);
-
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col gap-6 font-sans">
       
@@ -216,16 +209,13 @@ export default function GaleriClient({ initialData, categories, fullCategories }
       </div>
 
       {/* FILTER BAR */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide tour-filter-bar">
-         <button onClick={() => setFilterKategori("Semua")} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${filterKategori === "Semua" ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}>Semua</button>
-         {categories.map(cat => (
-            <button key={cat} onClick={() => setFilterKategori(cat)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${filterKategori === cat ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}>{cat}</button>
-         ))}
-      </div>
+      <Suspense fallback={<div className="h-10 w-full bg-slate-200 dark:bg-slate-800 animate-pulse rounded-full" />}>
+         <GaleriFilters catsPromise={catsPromise} filterKategori={filterKategori} setFilterKategori={setFilterKategori} />
+      </Suspense>
 
       {/* GALLERY GRID */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
-         {isDataLoading ? (
+         <Suspense fallback={
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                     <div key={i} className="bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-white/5 overflow-hidden">
@@ -234,34 +224,9 @@ export default function GaleriClient({ initialData, categories, fullCategories }
                     </div>
                 ))}
             </div>
-         ) : filteredItems.length === 0 ? (
-            <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-               <ImageIcon size={48} className="mb-2 opacity-50"/><p className="text-sm font-bold">Belum ada foto di kategori ini.</p>
-            </div>
-         ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-               {filteredItems.map((item, idx) => (
-                  <div key={item.id} className={`group relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ${idx === 0 ? 'tour-gallery-card' : ''}`}>
-                     <div className="aspect-[4/3] relative bg-slate-100 overflow-hidden">
-                        <Image src={item.images[0]} alt={item.judul} fill className="object-cover group-hover:scale-110 transition-transform duration-700"/>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                           <div className="flex justify-end gap-2">
-                                <button onClick={() => openEditModal(item)} className="p-2 bg-white text-slate-900 rounded-lg shadow-lg hover:bg-blue-500 hover:text-white transition-all transform hover:scale-110"><Edit size={16}/></button>
-                                <button onClick={() => handleDelete(item.id)} className="p-2 bg-white text-red-600 rounded-lg shadow-lg hover:bg-red-600 hover:text-white transition-all transform hover:scale-110"><Trash2 size={16}/></button>
-                           </div>
-                        </div>
-                        <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-md rounded-md text-[10px] font-bold text-slate-900 uppercase tracking-wider shadow-sm">{item.kategori}</div>
-                        {item.images.length > 1 && (<div className="absolute top-3 right-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded-md text-[10px] font-bold text-white shadow-sm flex items-center gap-1"><ImageIcon size={10}/> +{item.images.length}</div>)}
-                     </div>
-                     <div className="p-4">
-                        <h3 className="font-bold text-slate-800 dark:text-white mb-1 line-clamp-1">{item.judul}</h3>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500"><Calendar size={12}/> {new Date(item.tanggal).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-                        {item.deskripsi && <p className="text-xs text-slate-500 mt-2 line-clamp-2">{item.deskripsi}</p>}
-                     </div>
-                  </div>
-               ))}
-            </div>
-         )}
+         }>
+            <GaleriGrid dataPromise={dataPromise} filterKategori={filterKategori} openEditModal={openEditModal} handleDelete={handleDelete} />
+         </Suspense>
       </div>
 
       {/* MODALS */}
@@ -270,7 +235,7 @@ export default function GaleriClient({ initialData, categories, fullCategories }
             <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCatModalOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
                 <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-md bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-white/10 p-8">
-                    <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-black font-bold text-slate-900 dark:text-white">Atur Kategori</h2><button onClick={() => setIsCatModalOpen(false)}><X size={24} className="text-slate-400" /></button></div>
+                    <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold font-bold text-slate-900 dark:text-white">Atur Kategori</h2><button onClick={() => setIsCatModalOpen(false)}><X size={24} className="text-slate-400" /></button></div>
                     <div className="flex gap-2 mb-6">
                         <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Nama kategori..." className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-blue-500 text-sm font-bold dark:text-white" />
                         <button onClick={async () => {
@@ -280,17 +245,14 @@ export default function GaleriClient({ initialData, categories, fullCategories }
                             if(res.success) { showToast(res.message, "success"); router.refresh(); setNewCatName(""); setEditingCatId(null); }
                         }} className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm">{editingCatId ? "Update" : "Tambah"}</button>
                     </div>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-                        {fullCategories.map(cat => (
-                            <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
-                                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{cat.nama}</span>
-                                <div className="flex gap-2">
-                                    <button onClick={() => { setEditingCatId(cat.id); setNewCatName(cat.nama); }} className="p-1.5 text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
-                                    <button onClick={async () => { if(confirm("Hapus?")) { const res = await deleteKategoriGaleri(cat.id); if(res.success) { showToast("Dihapus", "success"); router.refresh(); } } }} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <Suspense fallback={<div className="space-y-2"><div className="h-10 bg-slate-100 dark:bg-white/5 rounded-xl animate-pulse"/><div className="h-10 bg-slate-100 dark:bg-white/5 rounded-xl animate-pulse"/></div>}>
+                        <KategoriModalList 
+                           fullCatsPromise={fullCatsPromise} 
+                           setEditingCatId={setEditingCatId} 
+                           setNewCatName={setNewCatName} 
+                           router={router} 
+                        />
+                    </Suspense>
                 </motion.div>
             </div>
         )}
@@ -300,7 +262,7 @@ export default function GaleriClient({ initialData, categories, fullCategories }
          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
             <div className="bg-white dark:bg-[#1e293b] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                <div className="p-5 border-b border-slate-100 dark:border-white/10 flex justify-between items-center">
-                  <h3 className="font-black text-lg text-slate-800 dark:text-white">{isEditing ? 'Edit Album' : 'Upload Dokumentasi'}</h3>
+                  <h3 className="font-bold text-lg text-slate-800 dark:text-white">{isEditing ? 'Edit Album' : 'Upload Dokumentasi'}</h3>
                   <button onClick={resetForm}><X size={20}/></button>
                </div>
                <form onSubmit={handleSave} className="p-6 overflow-y-auto custom-scrollbar space-y-4">
@@ -322,7 +284,9 @@ export default function GaleriClient({ initialData, categories, fullCategories }
                   <div className="space-y-3">
                      <div><label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Judul Kegiatan</label><input required type="text" className="w-full p-2.5 border rounded-lg text-sm font-bold bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 outline-none focus:border-blue-500" value={form.judul} onChange={e => setForm({...form, judul: e.target.value})}/></div>
                      <div className="grid grid-cols-2 gap-4">
-                        <div><label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Kategori</label><select className="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 outline-none focus:border-blue-500" value={form.kategori} onChange={e => setForm({...form, kategori: e.target.value})}>{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                        <Suspense fallback={<div><label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Kategori</label><div className="w-full h-10 border rounded-lg bg-slate-50 dark:bg-white/5 animate-pulse" /></div>}>
+                           <GaleriKategoriSelect catsPromise={catsPromise} form={form} setForm={setForm} />
+                        </Suspense>
                         <div><label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Tanggal</label><input type="date" className="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 outline-none focus:border-blue-500" value={form.tanggal} onChange={e => setForm({...form, tanggal: e.target.value})}/></div>
                      </div>
                      <div><label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Deskripsi Singkat</label><textarea className="w-full p-2.5 border rounded-lg text-sm h-20 resize-none bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 outline-none focus:border-blue-500" value={form.deskripsi} onChange={e => setForm({...form, deskripsi: e.target.value})}/></div>
@@ -342,5 +306,83 @@ export default function GaleriClient({ initialData, categories, fullCategories }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
       `}</style>
     </div>
+  );
+}
+
+// --------------------------------------------------------------------------------------
+// SKELETONS & EXTRACTED COMPONENTS (REACT 19 STREAMING)
+// --------------------------------------------------------------------------------------
+
+function GaleriFilters({ catsPromise, filterKategori, setFilterKategori }: any) {
+  const categories = use(catsPromise) as string[];
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide tour-filter-bar">
+       <button onClick={() => setFilterKategori("Semua")} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${filterKategori === "Semua" ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}>Semua</button>
+       {categories.map(cat => (
+          <button key={cat} onClick={() => setFilterKategori(cat)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${filterKategori === cat ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-white dark:bg-[#0f172a] border-slate-200 dark:border-white/10 text-slate-500 hover:border-slate-300"}`}>{cat}</button>
+       ))}
+    </div>
+  );
+}
+
+function GaleriGrid({ dataPromise, filterKategori, openEditModal, handleDelete }: any) {
+  const items = use(dataPromise) as any[];
+  const filteredItems = items.filter(item => filterKategori === "Semua" ? true : item.kategori === filterKategori);
+
+  if (filteredItems.length === 0) {
+    return (
+      <div className="h-64 flex flex-col items-center justify-center text-slate-400">
+         <ImageIcon size={48} className="mb-2 opacity-50"/><p className="text-sm font-bold">Belum ada foto di kategori ini.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+       {filteredItems.map((item, idx) => (
+          <div key={item.id} className={`group relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 ${idx === 0 ? 'tour-gallery-card' : ''}`}>
+             <div className="aspect-[4/3] relative bg-slate-100 overflow-hidden">
+                <Image src={item.images[0]} alt={item.judul} fill className="object-cover group-hover:scale-110 transition-transform duration-700"/>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                   <div className="flex justify-end gap-2">
+                        <button onClick={() => openEditModal(item)} className="p-2 bg-white text-slate-900 rounded-lg shadow-lg hover:bg-blue-500 hover:text-white transition-all transform hover:scale-110"><Edit size={16}/></button>
+                        <button onClick={() => handleDelete(item.id)} className="p-2 bg-white text-red-600 rounded-lg shadow-lg hover:bg-red-600 hover:text-white transition-all transform hover:scale-110"><Trash2 size={16}/></button>
+                   </div>
+                </div>
+                <div className="absolute top-3 left-3 px-2 py-1 bg-white/90 backdrop-blur-md rounded-md text-[10px] font-bold text-slate-900 uppercase tracking-wider shadow-sm">{item.kategori}</div>
+                {item.images.length > 1 && (<div className="absolute top-3 right-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded-md text-[10px] font-bold text-white shadow-sm flex items-center gap-1"><ImageIcon size={10}/> +{item.images.length}</div>)}
+             </div>
+             <div className="p-4">
+                <h3 className="font-bold text-slate-800 dark:text-white mb-1 line-clamp-1">{item.judul}</h3>
+                <div className="flex items-center gap-2 text-[10px] text-slate-500"><Calendar size={12}/> {new Date(item.tanggal).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                {item.deskripsi && <p className="text-xs text-slate-500 mt-2 line-clamp-2">{item.deskripsi}</p>}
+             </div>
+          </div>
+       ))}
+    </div>
+  );
+}
+
+function KategoriModalList({ fullCatsPromise, setEditingCatId, setNewCatName, router }: any) {
+  const fullCategories = use(fullCatsPromise) as any[];
+  return (
+    <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+        {fullCategories.map((cat: any) => (
+            <div key={cat.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{cat.nama}</span>
+                <div className="flex gap-2">
+                    <button onClick={() => { setEditingCatId(cat.id); setNewCatName(cat.nama); }} className="p-1.5 text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
+                    <button onClick={async () => { if(confirm("Hapus?")) { const res = await deleteKategoriGaleri(cat.id); if(res.success) { showToast("Dihapus", "success"); router.refresh(); } } }} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                </div>
+            </div>
+        ))}
+    </div>
+  );
+}
+
+function GaleriKategoriSelect({ catsPromise, form, setForm }: any) {
+  const categories = use(catsPromise) as string[];
+  return (
+    <div><label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">Kategori</label><select className="w-full p-2.5 border rounded-lg text-sm bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 outline-none focus:border-blue-500" value={form.kategori} onChange={e => setForm({...form, kategori: e.target.value})}>{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
   );
 }

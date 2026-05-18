@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, use, Suspense } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { 
   Ruler, 
@@ -83,7 +83,7 @@ const TimelineItem = ({ data, index }: { data: any, index: number }) => {
 
           </div>
 
-          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 leading-tight relative z-10">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 leading-tight relative z-10">
             {data.nama}
           </h3>
           <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 leading-relaxed relative z-10 line-clamp-3 font-bold">
@@ -108,7 +108,7 @@ const TimelineItem = ({ data, index }: { data: any, index: number }) => {
 };
 
 // === MAIN COMPONENT ===
-export default function ProgramClient({ programs }: { programs: any[] }) {
+export default function ProgramClient({ programsPromise }: { programsPromise: Promise<any[]> }) {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -214,7 +214,7 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
             Roadmap 2024/2025 🗺️
           </span>
           
-          <h1 className="text-4xl md:text-5xl font-black mt-4 mb-6 pb-2
+          <h1 className="text-4xl md:text-5xl font-bold mt-4 mb-6 pb-2
             text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700
             dark:from-slate-100 dark:via-slate-300 dark:to-slate-500"
           >
@@ -239,15 +239,9 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
           />
 
           {/* CARDS */}
-          {programs.length === 0 ? (
-            <div className="text-center py-20 text-slate-400 font-bold">Belum ada Program Kerja yang diinput.</div>
-          ) : (
-             <div className="space-y-12 pb-24">
-                {programs.map((prog, index) => (
-                  <TimelineItem key={prog.id} data={prog} index={index} />
-                ))}
-             </div>
-          )}
+          <Suspense fallback={<ProgramSkeleton />}>
+            <ProgramContent programsPromise={programsPromise} />
+          </Suspense>
 
           {/* FINISH LINE */}
           <div className="flex justify-center pt-8">
@@ -263,5 +257,52 @@ export default function ProgramClient({ programs }: { programs: any[] }) {
 
       </div>
     </main>
+  );
+}
+
+function ProgramContent({ programsPromise }: { programsPromise: Promise<any[]> }) {
+  const programs = use(programsPromise);
+
+  if (programs.length === 0) {
+    return (
+      <div className="text-center py-20 text-slate-400 font-bold">Belum ada Program Kerja yang diinput.</div>
+    );
+  }
+
+  return (
+    <div className="space-y-12 pb-24">
+      {programs.map((prog, index) => (
+        <TimelineItem key={prog.id} data={prog} index={index} />
+      ))}
+    </div>
+  );
+}
+
+function ProgramSkeleton() {
+  return (
+    <div className="space-y-12 pb-24 animate-pulse">
+      {[1, 2, 3, 4].map((i, index) => {
+        const isLeft = index % 2 === 0;
+        return (
+          <div key={i} className={`flex items-center justify-between w-full mb-8 ${isLeft ? "flex-row-reverse" : ""}`}>
+            <div className="hidden md:block w-5/12" />
+            <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center z-20">
+              <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800" />
+            </div>
+            <div className={`w-full md:w-5/12 pl-12 md:pl-0 ${isLeft ? "md:pr-8" : "md:pl-8"}`}>
+              <div className="bg-white dark:bg-[#0f172a] p-6 rounded-2xl shadow-xl border border-slate-100 dark:border-white/10 h-40">
+                <div className="flex justify-between mb-4">
+                  <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                </div>
+                <div className="h-6 w-3/4 bg-slate-200 dark:bg-slate-800 rounded mb-4" />
+                <div className="h-4 w-full bg-slate-100 dark:bg-slate-800/50 rounded mb-2" />
+                <div className="h-4 w-2/3 bg-slate-100 dark:bg-slate-800/50 rounded" />
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

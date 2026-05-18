@@ -74,7 +74,7 @@ export default function PageGuide({ title, description, features }: PageGuidePro
                               <Lightbulb size={28} className="text-yellow-300 fill-yellow-300" />
                           </div>
                           <div>
-                              <h2 className="text-xl font-black font-bold tracking-tight">{title}</h2>
+                              <h2 className="text-xl font-bold font-bold tracking-tight">{title}</h2>
                               <p className="text-blue-100 text-xs mt-1 leading-relaxed font-medium opacity-90">{description}</p>
                           </div>
                       </div>
@@ -82,7 +82,7 @@ export default function PageGuide({ title, description, features }: PageGuidePro
 
                   {/* Body Content */}
                   <div className="p-6 bg-slate-50 dark:bg-[#0b1121]">
-                      <h3 className="text-xs font-black font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4">Fitur Utama & Cara Pakai</h3>
+                      <h3 className="text-xs font-bold font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4">Fitur Utama & Cara Pakai</h3>
                       
                       <div className="space-y-3">
                           {features.map((feature, idx) => (
@@ -91,7 +91,7 @@ export default function PageGuide({ title, description, features }: PageGuidePro
                                       <CheckCircle2 size={18} className="text-green-500" />
                                   </div>
                                   <div>
-                                      <h4 className="text-xs font-black font-bold text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">
+                                      <h4 className="text-xs font-bold font-bold text-slate-800 dark:text-white group-hover:text-blue-600 transition-colors">
                                           {feature.label}
                                       </h4>
                                       <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">

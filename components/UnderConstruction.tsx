@@ -39,7 +39,7 @@ export default function UnderConstruction({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-3">
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">
           {title}
         </h2>
         <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-8 leading-relaxed">

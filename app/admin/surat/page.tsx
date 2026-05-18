@@ -154,7 +154,7 @@ export default function MagicLetterPage() {
          
          {/* HEADER + TOUR GUIDE BUTTON */}
          <div className="bg-white dark:bg-[#0f172a] p-5 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm tour-magic-header flex justify-between items-center">
-            <h1 className="text-xl font-bold font-black text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-wide">
+            <h1 className="text-xl font-bold font-bold text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-wide">
                <span className="p-1.5 bg-blue-600 text-white rounded-lg"><Sparkles size={18} /></span>
                Magic Letter
             </h1>
@@ -169,7 +169,7 @@ export default function MagicLetterPage() {
                
                {/* 1. Header */}
                <div>
-                  <h3 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">
                      <LayoutTemplate size={14}/> Header & Tujuan
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -198,7 +198,7 @@ export default function MagicLetterPage() {
 
                {/* 2. Isi */}
                <div>
-                  <h3 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">
                      <AlignLeft size={14}/> Konten Surat
                   </h3>
                   <div className="space-y-3">
@@ -219,7 +219,7 @@ export default function MagicLetterPage() {
 
                {/* 3. TTD */}
                <div className="tour-ttd-section">
-                  <h3 className="text-xs font-black text-slate-800 dark:text-white flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 uppercase tracking-wider">
                      <PenTool size={14}/> Tanda Tangan
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -298,7 +298,7 @@ export default function MagicLetterPage() {
                   <div className="text-center flex-1 px-2 leading-tight">
                      <h3 className="text-[10pt] font-bold uppercase tracking-wider">Pemerintah Provinsi Jawa Barat</h3>
                      <h3 className="text-[10pt] font-bold uppercase tracking-wider">Dinas Pendidikan</h3>
-                     <h1 className="text-[14pt] font-black uppercase tracking-wide mt-1">SMK Nurul Islam Cianjur</h1>
+                     <h1 className="text-[14pt] font-bold uppercase tracking-wide mt-1">SMK Nurul Islam Cianjur</h1>
                      <p className="text-[9pt] italic mt-1">Jl. Raya Bandung Km 09, Karangtengah, Cianjur - Jawa Barat 43281</p>
                      <p className="text-[8pt]">Website: www.smknurulislam.sch.id | Email: osis@smknurulislam.sch.id</p>
                   </div>

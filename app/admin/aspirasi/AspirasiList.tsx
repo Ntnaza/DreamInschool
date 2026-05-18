@@ -157,7 +157,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                    <button 
                      key={tab.id}
                      onClick={() => setSelectedTab(tab.id)}
-                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black font-bold transition-all
+                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold font-bold transition-all
                        ${selectedTab === tab.id 
                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-white shadow-sm border border-slate-100 dark:border-white/5" 
                          : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
@@ -195,11 +195,11 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
 
                         <div className="flex justify-between items-start mb-2">
                            <div className="flex items-center gap-2">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black font-bold text-white shadow-sm bg-gradient-to-br from-slate-400 to-slate-600`}>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold font-bold text-white shadow-sm bg-gradient-to-br from-slate-400 to-slate-600`}>
                                  {msg.pengirim.charAt(0)}
                               </div>
                               <div className="min-w-0">
-                                 <h4 className={`text-xs truncate font-black font-bold ${selectedId === msg.id ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-white"}`}>
+                                 <h4 className={`text-xs truncate font-bold font-bold ${selectedId === msg.id ? "text-blue-600 dark:text-blue-400" : "text-slate-900 dark:text-white"}`}>
                                    {msg.pengirim}
                                  </h4>
                                  <p className="text-[10px] text-slate-400 font-medium">{msg.kelas || "Siswa"}</p>
@@ -235,11 +235,11 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                     <div className="p-8 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex-shrink-0">
                        <div className="flex justify-between items-start mb-6">
                           <div className="flex items-center gap-4">
-                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-black font-bold shadow-lg shadow-blue-500/20">
+                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold font-bold shadow-lg shadow-blue-500/20">
                                 {selectedMsg.pengirim.charAt(0)}
                              </div>
                              <div>
-                                <h2 className="text-xl font-black font-bold text-slate-900 dark:text-white">{selectedMsg.pengirim}</h2>
+                                <h2 className="text-xl font-bold font-bold text-slate-900 dark:text-white">{selectedMsg.pengirim}</h2>
                                 <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{selectedMsg.kelas || "Siswa Anonim"}</p>
                              </div>
                           </div>
@@ -253,17 +253,17 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                        <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/10 shadow-sm">
                              <Tag size={14} className="text-slate-400" />
-                             <span className={`text-[10px] font-black font-bold uppercase tracking-wider ${tagColorMap[getTagColor(selectedMsg.kategori)]} px-2 py-0.5 rounded-md border`}>
+                             <span className={`text-[10px] font-bold font-bold uppercase tracking-wider ${tagColorMap[getTagColor(selectedMsg.kategori)]} px-2 py-0.5 rounded-md border`}>
                                 {selectedMsg.kategori}
                              </span>
                           </div>
                           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/10 shadow-sm">
                              <Calendar size={14} className="text-slate-400" />
-                             <span className="text-[10px] font-black font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{formatDateFull(selectedMsg.createdAt)}</span>
+                             <span className="text-[10px] font-bold font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{formatDateFull(selectedMsg.createdAt)}</span>
                           </div>
                           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/10 shadow-sm">
                              <Clock size={14} className="text-slate-400" />
-                             <span className={`text-[10px] font-black font-bold uppercase tracking-wider ${selectedMsg.status === 'SELESAI' ? 'text-green-500' : 'text-blue-500'}`}>
+                             <span className={`text-[10px] font-bold font-bold uppercase tracking-wider ${selectedMsg.status === 'SELESAI' ? 'text-green-500' : 'text-blue-500'}`}>
                                 {selectedMsg.status === 'SELESAI' ? 'TERJAWAB' : 'MENUNGGU BALASAN'}
                              </span>
                           </div>
@@ -272,7 +272,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
 
                     <div className="flex-1 p-8 overflow-y-auto custom-scrollbar space-y-8 min-h-0">
                        <div className="bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 relative">
-                          <div className="absolute -top-3 left-6 px-3 py-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/10 rounded-lg text-[10px] font-black font-bold text-slate-400 uppercase tracking-widest">Aspirasi</div>
+                          <div className="absolute -top-3 left-6 px-3 py-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/10 rounded-lg text-[10px] font-bold font-bold text-slate-400 uppercase tracking-widest">Aspirasi</div>
                           <p className="text-sm md:text-md leading-relaxed text-slate-700 dark:text-slate-200 font-medium">
                              {selectedMsg.isi}
                           </p>
@@ -280,7 +280,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
 
                        {selectedMsg.status === 'SELESAI' && selectedMsg.balasan && (
                          <div className="bg-blue-50/50 dark:bg-blue-500/5 p-6 rounded-[2rem] border border-blue-100/50 dark:border-blue-500/20 relative ml-8">
-                            <div className="absolute -top-3 left-6 px-3 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-black font-bold uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                            <div className="absolute -top-3 left-6 px-3 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-bold font-bold uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center gap-2">
                                <Reply size={10} className="-scale-x-100" /> Jawaban Admin
                             </div>
                             <p className="text-sm text-blue-900 dark:text-blue-100 font-bold leading-relaxed">
@@ -296,7 +296,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                           <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 pb-10">
                              <div className="flex items-center gap-2 mb-4">
                                 <MessageSquare size={18} className="text-blue-500" />
-                                <h3 className="text-sm font-black font-bold text-slate-800 dark:text-white uppercase tracking-widest">Tulis Tanggapan</h3>
+                                <h3 className="text-sm font-bold font-bold text-slate-800 dark:text-white uppercase tracking-widest">Tulis Tanggapan</h3>
                              </div>
                              <div className="relative group">
                                 <textarea 
@@ -309,7 +309,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                                    <button 
                                      onClick={handleSendReply}
                                      disabled={isSubmitting || !replyText.trim()}
-                                     className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-2xl font-black font-bold text-sm shadow-xl shadow-blue-500/30 flex items-center gap-2 transition-all active:scale-95"
+                                     className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-2xl font-bold font-bold text-sm shadow-xl shadow-blue-500/30 flex items-center gap-2 transition-all active:scale-95"
                                    >
                                       {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
                                       {isSubmitting ? "Mengirim..." : "Kirim Jawaban"}
@@ -328,7 +328,7 @@ export default function AspirasiList({ initialData }: { initialData: any[] }) {
                     <div className="w-24 h-24 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
                        <Inbox size={48} className="text-slate-200" />
                     </div>
-                    <h3 className="text-lg font-black font-bold text-slate-800 dark:text-white mb-2">Pilih Aspirasi</h3>
+                    <h3 className="text-lg font-bold font-bold text-slate-800 dark:text-white mb-2">Pilih Aspirasi</h3>
                     <p className="text-sm text-slate-400 max-w-xs">Silakan pilih salah satu pesan di daftar kiri untuk membaca detail dan memberikan tanggapan.</p>
                  </div>
               )}

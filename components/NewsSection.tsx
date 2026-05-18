@@ -81,7 +81,7 @@ export default async function NewsSection({ periodeId }: { periodeId?: number | 
               <h4 className="text-blue-600 dark:text-blue-400 font-bold tracking-widest text-sm uppercase">
                Update Terbaru
               </h4>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
                Berita & <span className="text-blue-600">Artikel</span>
               </h2>
               <p className="text-slate-600 dark:text-slate-400 font-bold">
