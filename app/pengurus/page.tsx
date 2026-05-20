@@ -5,7 +5,7 @@ import PengurusClient from "./PengurusClient";
 export const dynamic = "force-dynamic";
 
 async function getPengurusData(searchParams: { periode?: string }) {
-  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulasi delay
+
 
   const allPeriods = await prisma.periode.findMany({
     orderBy: { tahun: 'desc' }

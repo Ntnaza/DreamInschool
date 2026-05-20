@@ -128,7 +128,7 @@ export default function GalleryClient({ items }: { items: any[] }) {
                 
                 {/* KIRI: IMAGE SLIDER */}
                 <div className="relative w-full md:w-3/4 h-[50%] md:h-full bg-white dark:bg-[#1e293b] flex items-center justify-center border-r border-slate-100 dark:border-slate-700/50"> 
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] dark:opacity-[0.05] pointer-events-none" />
+                    <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.02] dark:opacity-[0.05] pointer-events-none" />
                     
                     <div className="relative w-full h-full p-2 md:p-8 flex items-center justify-center z-10">
                       <Image 

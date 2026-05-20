@@ -10,7 +10,7 @@ export default function BeritaClient({ dataPromise }: { dataPromise: Promise<any
     <main className="min-h-screen bg-slate-50 dark:bg-[#020617] transition-colors duration-500 pt-24 pb-24 font-sans">
       
       {/* Background Decor */}
-      <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.10] pointer-events-none z-0" />
+      <div className="fixed inset-0 bg-[url('/noise.svg')] opacity-[0.03] dark:opacity-[0.10] pointer-events-none z-0" />
       
       <div className="container mx-auto px-6 md:px-12 relative z-10">
         

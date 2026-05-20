@@ -59,6 +59,8 @@ export async function submitAspirasi(formData: FormData) {
 }
 
 export async function replyAspirasi(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const id = Number(formData.get("id"));
   const balasan = formData.get("balasan") as string;
   if (!balasan || balasan.trim() === "") return { success: false, message: "Balasan tidak boleh kosong." };
@@ -73,6 +75,8 @@ export async function replyAspirasi(formData: FormData) {
 }
 
 export async function deleteAspirasi(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.aspirasi.delete({ where: { id } });
     revalidatePath("/admin/aspirasi");
@@ -123,6 +127,8 @@ export async function createBerita(formData: FormData) {
 }
 
 export async function updateBerita(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const id = Number(formData.get("id"));
   const judul = formData.get("judul") as string;
   const konten = formData.get("konten") as string;
@@ -140,6 +146,8 @@ export async function updateBerita(formData: FormData) {
 }
 
 export async function deleteBerita(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.berita.delete({ where: { id } });
     revalidatePath("/admin/berita");
@@ -154,6 +162,8 @@ export async function deleteBerita(id: number) {
 ====================================================== */
 
 export async function createProgramKerja(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const nama = formData.get("nama") as string;
   const progress = Number(formData.get("progress"));
   let status = "TODO";
@@ -183,6 +193,8 @@ export async function createProgramKerja(formData: FormData) {
 }
 
 export async function updateProgramKerja(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const id = Number(formData.get("id"));
   const progress = Number(formData.get("progress"));
   let status = "TODO";
@@ -214,6 +226,8 @@ export async function updateProgramKerja(formData: FormData) {
 }
 
 export async function deleteProgramKerja(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.programKerja.delete({ where: { id } });
     revalidatePath("/admin/proker"); revalidatePath("/");
@@ -230,6 +244,8 @@ import bcrypt from "bcryptjs";
 ====================================================== */
 
 export async function saveUserAccount(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const pengurusId = Number(formData.get("pengurusId"));
   const username = formData.get("username") as string;
   const password = formData.get("password") as string;
@@ -266,6 +282,8 @@ export async function saveUserAccount(formData: FormData) {
 }
 
 export async function deleteUserAccount(pengurusId: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.user.delete({ where: { pengurusId } });
     revalidatePath("/admin/pengurus");
@@ -276,6 +294,8 @@ export async function deleteUserAccount(pengurusId: number) {
 }
 
 export async function createPengurus(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const nama = formData.get("nama") as string;
   const nis = formData.get("nis") as string;
   const jabatan = formData.get("jabatan") as string;
@@ -302,6 +322,8 @@ export async function createPengurus(formData: FormData) {
 }
 
 export async function updatePengurus(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const id = Number(formData.get("id"));
   try {
     await prisma.pengurus.update({
@@ -361,6 +383,8 @@ export async function updateSelfProfile(formData: FormData) {
 }
 
 export async function deletePengurus(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.pengurus.delete({ where: { id } });
     revalidatePath("/admin/pengurus");
@@ -375,6 +399,8 @@ export async function deletePengurus(id: number) {
 ====================================================== */
 
 export async function createAcara(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const nama = formData.get("nama") as string;
   const tanggalStr = formData.get("tanggal") as string;
   try {
@@ -399,6 +425,8 @@ export async function createAcara(formData: FormData) {
 }
 
 export async function updateAcara(id: number, formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   const tanggalStr = formData.get("tanggal") as string;
   try {
     const start = formData.get("waktuMulai") ? new Date(`${tanggalStr}T${formData.get("waktuMulai")}`) : null;
@@ -422,6 +450,8 @@ export async function updateAcara(id: number, formData: FormData) {
 }
 
 export async function deleteAcara(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.acara.delete({ where: { id } });
     revalidatePath("/admin/absensi");
@@ -432,6 +462,8 @@ export async function deleteAcara(id: number) {
 }
 
 export async function startAcaraSession(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const result = await prisma.$transaction(async (tx) => {
       await tx.acara.update({ where: { id }, data: { status: "ONGOING", waktuMulaiAktual: new Date() } });
@@ -445,6 +477,8 @@ export async function startAcaraSession(id: number) {
 }
 
 export async function stopAcaraSession(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const acara = await prisma.acara.findUnique({ where: { id } });
     if (!acara) return { success: false, message: "Acara tidak ditemukan" };
@@ -462,6 +496,8 @@ export async function stopAcaraSession(id: number) {
 }
 
 export async function scanAbsensi(nis: string, acaraId: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const pengurus = await prisma.pengurus.findUnique({ where: { nis } });
     if (!pengurus) return { success: false, message: "❌ QR Tidak Terdaftar!" };
@@ -477,6 +513,8 @@ export async function scanAbsensi(nis: string, acaraId: number) {
 }
 
 export async function inputManualAbsensi(acaraId: number, pengurusId: number, status: any) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const sesiAktif = await prisma.sesiAcara.findFirst({ where: { acaraId, status: "ONGOING" }, orderBy: { waktuMulai: 'desc' } });
     if (!sesiAktif) return { success: false, message: "Sesi tidak aktif" };
@@ -491,6 +529,8 @@ export async function inputManualAbsensi(acaraId: number, pengurusId: number, st
 }
 
 export async function autoAlpaRemaining(acaraId: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const sesiAktif = await prisma.sesiAcara.findFirst({ where: { acaraId, status: "ONGOING" }, orderBy: { waktuMulai: 'desc' } });
     if (!sesiAktif) return { success: false, message: "Sesi tidak aktif" };
@@ -547,6 +587,8 @@ export async function checkAndAutoStopAcara() { return { success: true, message:
 ====================================================== */
 
 export async function createBukuKas(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.bukuKas.create({ data: { nama: formData.get("nama") as string, deskripsi: formData.get("deskripsi") as string, color: formData.get("color") as string || "blue", icon: formData.get("icon") as string || "Wallet" } });
     revalidatePath("/admin/keuangan"); return { success: true, message: "Buku Kas dibuat!" };
@@ -554,6 +596,8 @@ export async function createBukuKas(formData: FormData) {
 }
 
 export async function updateBukuKas(id: number, formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.bukuKas.update({ where: { id }, data: { nama: formData.get("nama") as string, deskripsi: formData.get("deskripsi") as string, color: formData.get("color") as string, icon: formData.get("icon") as string } });
     revalidatePath("/admin/keuangan"); return { success: true, message: "Buku Kas diperbarui!" };
@@ -561,6 +605,8 @@ export async function updateBukuKas(id: number, formData: FormData) {
 }
 
 export async function deleteBukuKas(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.bukuKas.delete({ where: { id } });
     revalidatePath("/admin/keuangan"); return { success: true, message: "Buku Kas dihapus!" };
@@ -568,6 +614,8 @@ export async function deleteBukuKas(id: number) {
 }
 
 export async function createGeneralTrx(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.keuangan.create({ data: { judul: formData.get("title") as string, nominal: Number(formData.get("amount")), tipe: formData.get("type") as any, kategori: formData.get("category") as string, tanggal: new Date(), bukuKasId: Number(formData.get("bukuKasId")) } });
     revalidatePath("/admin/keuangan"); return { success: true, message: "Dicatat!" };
@@ -575,6 +623,8 @@ export async function createGeneralTrx(formData: FormData) {
 }
 
 export async function createEventBudget(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.programKerja.update({ where: { id: Number(formData.get("prokerId")) }, data: { anggaran: { increment: Number(formData.get("amount")) } } });
     revalidatePath("/admin/keuangan"); return { success: true, message: "Dialokasikan!" };
@@ -582,6 +632,8 @@ export async function createEventBudget(formData: FormData) {
 }
 
 export async function createEventTrx(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.$transaction([
       prisma.keuangan.create({ data: { judul: formData.get("title") as string, nominal: Number(formData.get("amount")), tipe: "PENGELUARAN", kategori: "Event", tanggal: new Date(), prokerId: Number(formData.get("prokerId")) } }),
@@ -592,6 +644,8 @@ export async function createEventTrx(formData: FormData) {
 }
 
 export async function closeEventBudget(prokerId: number, targetBukuId: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.programKerja.update({ where: { id: prokerId }, data: { status: "DONE" } });
     revalidatePath("/admin/keuangan"); return { success: true, message: "Ditutup!" };
@@ -603,6 +657,8 @@ export async function closeEventBudget(prokerId: number, targetBukuId: number) {
 ====================================================== */
 
 export async function saveInventaris(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const id = formData.get("id");
     const data = {
@@ -626,6 +682,8 @@ export async function saveInventaris(formData: FormData) {
 }
 
 export async function deleteInventaris(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.inventaris.delete({ where: { id } });
     revalidatePath("/admin/inventaris"); return { success: true, message: "Hapus!" };
@@ -633,6 +691,8 @@ export async function deleteInventaris(id: number) {
 }
 
 export async function pinjamBarang(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.inventaris.update({ where: { id: Number(formData.get("id")) }, data: { status: "BORROWED", peminjam: formData.get("borrower") as string, tglPinjam: new Date() } });
     revalidatePath("/admin/inventaris"); return { success: true, message: "Dipinjam!" };
@@ -640,6 +700,8 @@ export async function pinjamBarang(formData: FormData) {
 }
 
 export async function kembalikanBarang(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.inventaris.update({ where: { id: Number(formData.get("id")) }, data: { status: "AVAILABLE", peminjam: null, tglPinjam: null } });
     revalidatePath("/admin/inventaris"); return { success: true, message: "Kembali!" };
@@ -651,6 +713,8 @@ export async function kembalikanBarang(formData: FormData) {
 ====================================================== */
 
 export async function saveGaleri(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const id = formData.get("id");
     const tanggalStr = formData.get("tanggal") as string;
@@ -681,6 +745,8 @@ export async function saveGaleri(formData: FormData) {
 }
 
 export async function deleteGaleri(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.galeri.delete({ where: { id } });
     revalidatePath("/admin/galeri"); return { success: true, message: "Hapus!" };
@@ -688,6 +754,8 @@ export async function deleteGaleri(id: number) {
 }
 
 export async function createKategoriGaleri(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.kategoriGaleri.create({ data: { nama: formData.get("nama") as string } });
     revalidatePath("/admin/galeri"); return { success: true, message: "Kategori dibuat!" };
@@ -695,6 +763,8 @@ export async function createKategoriGaleri(formData: FormData) {
 }
 
 export async function updateKategoriGaleri(id: number, formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.kategoriGaleri.update({ where: { id }, data: { nama: formData.get("nama") as string } });
     revalidatePath("/admin/galeri"); return { success: true, message: "Update!" };
@@ -702,6 +772,8 @@ export async function updateKategoriGaleri(id: number, formData: FormData) {
 }
 
 export async function deleteKategoriGaleri(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.kategoriGaleri.delete({ where: { id } });
     revalidatePath("/admin/galeri"); return { success: true, message: "Hapus!" };
@@ -713,10 +785,14 @@ export async function deleteKategoriGaleri(id: number) {
 ====================================================== */
 
 export async function updateIdCardDesign(id: number, designUrl: string | null) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.pengurus.update({ where: { id }, data: { idCardDesign: designUrl } }); revalidatePath("/admin/idcard"); return { success: true, message: "Desain disimpan" }; } catch (e) { return { success: false, message: "Gagal" }; }
 }
 
 export async function saveIdCardBackground(imageUrl: string | null) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.appConfig.upsert({ where: { id: 1 }, update: { idCardBackImage: imageUrl }, create: { id: 1, idCardBackImage: imageUrl } }); revalidatePath("/admin/idcard"); return { success: true, message: "BG disimpan" }; } catch (e) { return { success: false, message: "Gagal" }; }
 }
 
@@ -725,18 +801,26 @@ export async function trackVisitor(ip: string, userAgent: string, path: string) 
 }
 
 export async function createDivisi(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.divisi.create({ data: { nama: formData.get("nama") as string } }); revalidatePath("/admin/pengurus"); return { success: true, message: "Divisi dibuat!" }; } catch (error) { return { success: false, message: "Gagal." }; }
 }
 
 export async function updateDivisi(id: number, formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.divisi.update({ where: { id }, data: { nama: formData.get("nama") as string } }); revalidatePath("/admin/pengurus"); return { success: true, message: "Divisi diperbarui" }; } catch (error) { return { success: false, message: "Gagal." }; }
 }
 
 export async function deleteDivisi(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.divisi.delete({ where: { id } }); revalidatePath("/admin/pengurus"); return { success: true, message: "Divisi dihapus" }; } catch (error) { return { success: false, message: "Gagal." }; }
 }
 
 export async function createJabatan(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { 
     await prisma.jabatan.create({ 
       data: { 
@@ -753,14 +837,20 @@ export async function createJabatan(formData: FormData) {
 }
 
 export async function updateJabatan(id: number, formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.jabatan.update({ where: { id }, data: { nama: formData.get("nama") as string } }); revalidatePath("/admin/pengurus"); return { success: true, message: "Jabatan diperbarui" }; } catch (error) { return { success: false, message: "Gagal." }; }
 }
 
 export async function deleteJabatan(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.jabatan.delete({ where: { id } }); revalidatePath("/admin/pengurus"); return { success: true, message: "Jabatan dihapus" }; } catch (error) { return { success: false, message: "Gagal." }; }
 }
 
 export async function updateStatusKehadiran(absensiId: number, status: any) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try { await prisma.absensi.update({ where: { id: absensiId }, data: { status } }); revalidatePath("/admin/absensi"); return { success: true, message: "Status diperbarui" }; } catch (error) { return { success: false, message: "Gagal." }; }
 }
 
@@ -769,6 +859,8 @@ export async function updateStatusKehadiran(absensiId: number, status: any) {
 ====================================================== */
 
 export async function saveHelpVideo(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const id = formData.get("id");
     const data = {
@@ -790,6 +882,8 @@ export async function saveHelpVideo(formData: FormData) {
 }
 
 export async function deleteHelpVideo(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.helpVideo.delete({ where: { id } });
     revalidatePath("/admin/bantuan");
@@ -816,6 +910,8 @@ export async function submitHelpTicket(formData: FormData) {
 }
 
 export async function updateTicketStatus(id: number, status: any) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.helpTicket.update({ where: { id }, data: { status } });
     revalidatePath("/admin/bantuan/inbox");
@@ -824,6 +920,8 @@ export async function updateTicketStatus(id: number, status: any) {
 }
 
 export async function deleteHelpTicket(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.helpTicket.delete({ where: { id } });
     revalidatePath("/admin/bantuan/inbox");
@@ -885,6 +983,8 @@ export async function getAllPeriode() {
 }
 
 export async function createPeriode(formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.periode.create({
       data: {
@@ -901,6 +1001,8 @@ export async function createPeriode(formData: FormData) {
 }
 
 export async function updatePeriode(id: number, formData: FormData) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.periode.update({
       where: { id },
@@ -917,6 +1019,8 @@ export async function updatePeriode(id: number, formData: FormData) {
 }
 
 export async function setActivePeriode(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     await prisma.$transaction([
       // Nonaktifkan semua periode
@@ -930,6 +1034,8 @@ export async function setActivePeriode(id: number) {
 }
 
 export async function deletePeriode(id: number) {
+  const session = await getCurrentUser();
+  if (!session) return { success: false, message: "Unauthorized: Silakan login terlebih dahulu." };
   try {
     const isAktif = await prisma.periode.findUnique({ where: { id }, select: { isAktif: true } });
     if (isAktif?.isAktif) return { success: false, message: "Periode aktif tidak bisa dihapus." };

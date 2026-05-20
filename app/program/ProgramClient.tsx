@@ -203,7 +203,7 @@ export default function ProgramClient({ programsPromise }: { programsPromise: Pr
          </div>
 
          {/* 3. Noise Overlay */}
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.10] mix-blend-overlay" />
+         <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] dark:opacity-[0.10] mix-blend-overlay" />
       </div>
 
       <div className="container mx-auto px-6 md:px-12 relative z-10">

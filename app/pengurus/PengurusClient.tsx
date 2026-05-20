@@ -107,7 +107,7 @@ export default function PengurusClient({
       id: i, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, size: `${Math.random() * 2 + 1}px`, opacity: Math.random() * 0.4 + 0.1, animationDuration: `${Math.random() * 3 + 2}s`
     }));
     setStars(generatedStars);
-    const generatedIcons = Array.from({ length: 35 }).map((_, i) => ({
+    const generatedIcons = Array.from({ length: 80 }).map((_, i) => ({
       iconIdx: Math.floor(Math.random() * 12), style: { top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, rotate: Math.random() * 360, scale: Math.random() * 0.4 + 0.4, duration: Math.random() * 15 + 15, delay: Math.random() * 10 }
     }));
     setDecorIcons(generatedIcons);
@@ -131,7 +131,7 @@ export default function PengurusClient({
         <div className="absolute top-[-5%] right-[-10%] w-[70%] h-[1200px] bg-purple-900/20 rounded-full blur-[100px]" />
         <div className="absolute top-[15%] left-[-10%] w-[70%] h-[1200px] bg-blue-900/20 rounded-full blur-[100px]" />
         <div className="absolute bottom-[10%] left-[20%] w-[60%] h-[1000px] bg-indigo-900/20 rounded-full blur-[100px]" />
-        <div className="absolute inset-0 opacity-[0.35]">
+        <div className="absolute inset-0 opacity-[0.45]">
             {decorIcons.map((item, i) => {
               const IconComponent = schoolIcons[item.iconIdx];
               return (
@@ -146,7 +146,7 @@ export default function PengurusClient({
             <div key={star.id} className="absolute rounded-full bg-white animate-pulse shadow-[0_0_5px_rgba(255,255,255,0.8)]" style={{ top: star.top, left: star.left, width: star.size, height: star.size, opacity: star.opacity + 0.2, animationDuration: star.animationDuration }} />
             ))}
         </div>
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] dark:opacity-[0.10] mix-blend-overlay" />
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] dark:opacity-[0.10] mix-blend-overlay" />
       </div>
 
       <div className="relative z-10 w-full max-w-[100vw] mx-auto px-4" ref={containerRef}>

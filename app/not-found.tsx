@@ -9,7 +9,7 @@ export default function NotFound() {
     <main className="min-h-screen bg-[#020617] flex items-center justify-center relative overflow-hidden font-sans selection:bg-blue-500 selection:text-white">
       
       {/* DEKORASI BACKGROUND (BLOB & GLOW) */}
-      <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-overlay z-0 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.svg')] opacity-[0.05] mix-blend-overlay z-0 pointer-events-none" />
       <div className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px] z-0 animate-pulse" />
       <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-indigo-600/10 blur-[120px] z-0" />
 

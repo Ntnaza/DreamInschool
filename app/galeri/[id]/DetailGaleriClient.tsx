@@ -54,7 +54,7 @@ export default function DetailGaleriClient({ item }: { item: any }) {
   return (
     <main className="min-h-screen bg-white dark:bg-[#020617] pt-24 pb-24 transition-colors duration-500 relative">
       {/* Background Subtle Noise */}
-      <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] dark:opacity-[0.05] pointer-events-none" />
+      <div className="fixed inset-0 bg-[url('/noise.svg')] opacity-[0.02] dark:opacity-[0.05] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         

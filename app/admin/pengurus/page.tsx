@@ -5,11 +5,21 @@ import PengurusClient from "./PengurusClient";
 // Bungkus dalam async function agar mengembalikan Native Promise, 
 // sehingga Next.js tidak melakukan sinkronisasi blocking saat serialisasi PrismaPromise.
 async function getMembers() {
-  await new Promise(resolve => setTimeout(resolve, 1500)); // Simulasi delay
   const id = await getActivePeriodeId();
   const rawMembers = await prisma.pengurus.findMany({
     where: { periodeId: id || undefined },
-    include: { user: true }, 
+    include: { 
+      user: {
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          pengurusId: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      } 
+    }, 
     orderBy: { nama: "asc" },
   });
   return rawMembers.map((m) => ({

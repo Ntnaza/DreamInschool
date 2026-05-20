@@ -84,7 +84,7 @@ export default function HeroSection({ selectedPeriodeId, currentPeriode }: { sel
         />
         
         {/* Noise Texture */}
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] dark:opacity-[0.10] mix-blend-overlay z-0 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.svg')] opacity-[0.04] dark:opacity-[0.10] mix-blend-overlay z-0 pointer-events-none" />
 
         {/* Konten Hero */}
         <div className="container mx-auto px-6 md:px-16 lg:px-24 xl:px-32 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 w-full pt-20 pb-12 lg:py-0">

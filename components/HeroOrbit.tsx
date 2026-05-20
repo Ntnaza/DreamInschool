@@ -105,6 +105,8 @@ export default function HeroOrbit() {
                    src={logo.src} 
                    alt={logo.alt}
                    fill 
+                   sizes="(max-width: 768px) 200px, 300px"
+                   priority
                    className="object-contain"
                    style={{
                       // AURA PUTIH KUAT (Motherbase Glow)
@@ -145,6 +147,7 @@ export default function HeroOrbit() {
                  src={planet.img} 
                  alt={planet.name} 
                  fill 
+                 sizes="(max-width: 768px) 100px, 150px"
                  className="object-contain transform group-hover:scale-110 transition-transform duration-300"
                  style={{
                     // AURA WARNA (Sesuai Jurusan)

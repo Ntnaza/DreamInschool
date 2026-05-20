@@ -82,7 +82,7 @@ export default async function LeaderSection({ periodeId }: { periodeId?: number 
   return (
     <section className="relative w-full pt-20 pb-40 z-10 overflow-hidden transition-colors duration-500">
       <div className="absolute inset-0 bg-gradient-to-b from-slate-200 to-slate-300 dark:from-[#020617] dark:to-[#0f172a] z-0" />
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] dark:opacity-[0.10] mix-blend-overlay z-0" />
+      <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.04] dark:opacity-[0.10] mix-blend-overlay z-0" />
       
       
 

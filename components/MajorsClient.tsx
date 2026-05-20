@@ -119,6 +119,7 @@ export default function MajorsClient({ majors }: { majors: any[] }) {
                                     src={activeMajor.logo} 
                                     alt={activeMajor.title} 
                                     fill 
+                                    sizes="(max-width: 768px) 280px, 320px"
                                     className="object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]" 
                                     priority
                                 />
